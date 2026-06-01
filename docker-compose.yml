@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: baud_flow_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+  # Speedtest CLI sidecar.
+  # For local dev (`just dev`): the app execs into this container to run
+  # speedtest without needing the binary on the host.
+  # For production docker-compose: the app image already bundles speedtest
+  # and ignores this service.
+  speedtest:
+    build: docker/speedtest
+    container_name: baudflow-speedtest
+
+  app:
+    image: baudflow:latest
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: "ecto://postgres:postgres@db/baud_flow_dev"
+      SECRET_KEY_BASE: "${SECRET_KEY_BASE:-BAuDFLOW SECRET KEY FOR LOCAL DEVELOPMENT ONLY PLEASE CHANGE IN PROD}"
+      PHX_HOST: "localhost"
+      PHX_SERVER: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        /app/bin/baud_flow eval "BaudFlow.Release.migrate()"
+        exec /app/bin/baud_flow start
+
+volumes:
+  pgdata:

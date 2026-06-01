@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Honor SPEEDTEST_EXIT to simulate failures; default prints a valid result.
+if [ -n "$SPEEDTEST_EXIT" ]; then echo "boom" >&2; exit "$SPEEDTEST_EXIT"; fi
+cat <<'JSON'
+{"type":"result","timestamp":"2025-10-10T13:41:42Z",
+ "ping":{"jitter":0.165,"latency":9.937,"low":9.787,"high":10.120},
+ "download":{"bandwidth":6384715,"bytes":74974592,"elapsed":11900,
+   "latency":{"iqm":88.716,"low":15.697,"high":539.705,"jitter":22.146}},
+ "upload":{"bandwidth":3615276,"bytes":14101120,"elapsed":3900,
+   "latency":{"iqm":19.483,"low":13.968,"high":264.839,"jitter":7.657}},
+ "packetLoss":0,"isp":"ISP",
+ "server":{"id":52611,"host":"ookla.akton.hr","name":"Akton d.o.o.","location":"Zagreb"},
+ "result":{"id":"RESULT_ID","url":"https://www.speedtest.net/result/c/RESULT_ID"}}
+JSON

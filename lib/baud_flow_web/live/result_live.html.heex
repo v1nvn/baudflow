@@ -1,0 +1,299 @@
+<div class="flex items-center justify-between">
+  <div>
+    <p class="text-xs text-text-ghost mb-1">Test Result</p>
+    <h1 class="text-xl font-bold text-text">
+      {Calendar.strftime(@measurement.timestamp, "%Y-%m-%d %H:%M")}
+    </h1>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= if @older_id || @newer_id do %>
+      <div class="flex items-center gap-1">
+        <%= if @older_id do %>
+          <.link
+            navigate={~p"/results/#{@older_id}"}
+            class="bf-btn-ghost"
+            aria-label="Older result"
+          >
+            <.icon name="hero-chevron-left-mini" class="size-3" />
+          </.link>
+        <% end %>
+        <%= if @newer_id do %>
+          <.link
+            navigate={~p"/results/#{@newer_id}"}
+            class="bf-btn-ghost"
+            aria-label="Newer result"
+          >
+            <.icon name="hero-chevron-right-mini" class="size-3" />
+          </.link>
+        <% end %>
+      </div>
+    <% end %>
+    <.link
+      navigate={if @ref == :runs, do: ~p"/runs", else: ~p"/history"}
+      class="bf-btn-ghost"
+    >
+      <.icon name="hero-arrow-left-mini" class="size-4" />
+      {if @ref == :runs, do: "Back to Runs", else: "Back to History"}
+    </.link>
+  </div>
+</div>
+
+<!-- Speed Summary -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+  <div class="glass-card">
+    <div class="p-3">
+      <p class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+        Download
+      </p>
+      <p class="stat-value text-2xl font-bold text-cyan">
+        {Float.round(@measurement.download_mbps, 1)}
+        <span class="text-xs font-normal text-text-ghost">Mbps</span>
+      </p>
+    </div>
+  </div>
+  <div class="glass-card">
+    <div class="p-3">
+      <p class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+        Upload
+      </p>
+      <p class="stat-value text-2xl font-bold text-green">
+        {Float.round(@measurement.upload_mbps, 1)}
+        <span class="text-xs font-normal text-text-ghost">Mbps</span>
+      </p>
+    </div>
+  </div>
+  <div class="glass-card">
+    <div class="p-3">
+      <p class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+        Latency
+      </p>
+      <p class="stat-value text-2xl font-bold text-amber">
+        {Float.round(@measurement.ping_latency, 1)}
+        <span class="text-xs font-normal text-text-ghost">ms</span>
+      </p>
+    </div>
+  </div>
+  <div class="glass-card">
+    <div class="p-3">
+      <p class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+        Jitter
+      </p>
+      <p class="stat-value text-2xl font-bold text-text">
+        {Float.round(@measurement.ping_jitter, 1)}
+        <span class="text-xs font-normal text-text-ghost">ms</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Health Check -->
+<div class="border-t border-border">
+  <p class="text-xs font-semibold tracking-wider text-text-ghost uppercase mb-3 pt-1">
+    Health
+  </p>
+</div>
+<%= if @measurement.benchmarks do %>
+  <div class="glass-card">
+    <div class="p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+          <.icon name="hero-shield-check-mini" class="size-4" /> Health Check
+        </h2>
+        <%= if @measurement.healthy do %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25">
+            <.icon name="hero-check-mini" class="size-3" /> Healthy
+          </span>
+        <% else %>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/25">
+            <.icon name="hero-x-mark-mini" class="size-3" /> Unhealthy
+          </span>
+        <% end %>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <%= for {metric, result} <- @measurement.benchmarks do %>
+          <div class="flex items-center justify-between p-2 rounded-lg bg-white/[0.03]">
+            <div>
+              <p class="text-xs text-text-ghost capitalize">{metric}</p>
+              <p class="stat-value text-sm font-semibold">
+                {Float.round(result["value"], 1)}
+                <span class="text-xs text-text-ghost">{result["unit"]}</span>
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-text-ghost">
+                {if metric == "ping", do: "Max", else: "Min"}: {Float.round(
+                  result["threshold"],
+                  1
+                )} {result["unit"]}
+              </p>
+              <%= if result["passed"] do %>
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-500/15 text-emerald-400">
+                  Pass
+                </span>
+              <% else %>
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-rose-500/15 text-rose-400">
+                  Fail
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Details Grid -->
+<div class="border-t border-border">
+  <p class="text-xs font-semibold tracking-wider text-text-ghost uppercase mb-3 pt-1">
+    Details
+  </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <!-- Ping Details -->
+  <div class="glass-card">
+    <div class="p-4">
+      <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-3">
+        Ping
+      </h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="text-xs text-text-ghost">Low</p>
+          <p class="stat-value text-sm">{@measurement.ping_low}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">High</p>
+          <p class="stat-value text-sm">{@measurement.ping_high}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Latency</p>
+          <p class="stat-value text-sm">{@measurement.ping_latency}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Jitter</p>
+          <p class="stat-value text-sm">{@measurement.ping_jitter}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<!-- Server & Connection -->
+  <div class="glass-card">
+    <div class="p-4">
+      <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-3">
+        <.icon name="hero-globe-alt-mini" class="size-4" /> Server
+      </h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="text-xs text-text-ghost">ISP</p>
+          <p class="text-sm font-medium text-text">{@measurement.isp}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Server</p>
+          <p class="text-sm font-medium text-text">{@measurement.server_name}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Location</p>
+          <p class="text-sm font-medium text-text">{@measurement.server_location}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Host</p>
+          <p class="stat-value text-xs truncate">{@measurement.server_host}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<!-- Download Details -->
+  <div class="glass-card">
+    <div class="p-4">
+      <h2 class="text-xs font-semibold text-cyan uppercase tracking-wider mb-3">
+        <.icon name="hero-arrow-down-tray-mini" class="size-4" /> Download
+      </h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="text-xs text-text-ghost">Bandwidth</p>
+          <p class="stat-value text-sm">{format_bandwidth(@measurement.download_bandwidth)}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Bytes</p>
+          <p class="stat-value text-sm">{format_bytes(@measurement.download_bytes)}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Elapsed</p>
+          <p class="stat-value text-sm">{format_duration_ms(@measurement.download_elapsed)}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Packet Loss</p>
+          <p class="stat-value text-sm">{@measurement.packet_loss}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<!-- Upload Details -->
+  <div class="glass-card">
+    <div class="p-4">
+      <h2 class="text-xs font-semibold text-green uppercase tracking-wider mb-3">
+        <.icon name="hero-arrow-up-tray-mini" class="size-4" /> Upload
+      </h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="text-xs text-text-ghost">Bandwidth</p>
+          <p class="stat-value text-sm">{format_bandwidth(@measurement.upload_bandwidth)}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Bytes</p>
+          <p class="stat-value text-sm">{format_bytes(@measurement.upload_bytes)}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Elapsed</p>
+          <p class="stat-value text-sm">{format_duration_ms(@measurement.upload_elapsed)}</p>
+        </div>
+        <div>
+          <p class="text-xs text-text-ghost">Version</p>
+          <p class="stat-value text-sm">{@measurement.speedtest_version}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Prev/Next Navigation -->
+<%= if @older_id || @newer_id do %>
+  <div class="flex justify-between items-center border-t border-border pt-3">
+    <%= if @older_id do %>
+      <.link navigate={~p"/results/#{@older_id}"} class="bf-btn-ghost">
+        <.icon name="hero-chevron-left-mini" class="size-4" /> Older
+      </.link>
+    <% else %>
+      <span></span>
+    <% end %>
+    <%= if @newer_id do %>
+      <.link navigate={~p"/results/#{@newer_id}"} class="bf-btn-ghost">
+        Newer <.icon name="hero-chevron-right-mini" class="size-4" />
+      </.link>
+    <% else %>
+      <span></span>
+    <% end %>
+  </div>
+<% end %>
+
+<!-- Footer: timestamp + external link -->
+<div class="border-t border-border pt-2">
+  <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-text-ghost">
+    <p class="font-mono text-xs">
+      {Calendar.strftime(@measurement.timestamp, "%Y-%m-%d %H:%M:%S UTC")} · {@measurement.source}
+    </p>
+    <%= if @measurement.result_url do %>
+      <a
+        href={@measurement.result_url}
+        target="_blank"
+        rel="noopener"
+        class="text-accent hover:underline text-xs gap-1 inline-flex items-center transition-colors"
+      >
+        View on speedtest.net <.icon name="hero-arrow-top-right-on-square-mini" class="size-3" />
+      </a>
+    <% end %>
+  </div>
+</div>

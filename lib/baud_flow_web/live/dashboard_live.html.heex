@@ -1,0 +1,316 @@
+<!-- Health Status Bar — full-width, always visible -->
+<div class={[
+  "health-bar",
+  @latest_measurement && @latest_measurement.healthy == true && "healthy",
+  @latest_measurement && @latest_measurement.healthy == false && "unhealthy",
+  (!@latest_measurement || @latest_measurement.healthy == nil) && "unknown"
+]}>
+</div>
+
+<!-- Hero: Current Speed Readout -->
+<section class="pt-8 pb-6">
+  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+    <div>
+      <p class="text-xs font-semibold tracking-[0.15em] uppercase text-text-dim mb-3">
+        <%= if @latest_measurement do %>
+          Download Speed
+        <% else %>
+          No Data
+        <% end %>
+      </p>
+      <div class="flex items-baseline gap-2">
+        <%= if @latest_measurement do %>
+          <span class="speed-hero">
+            {Float.round(@latest_measurement.download_mbps, 1)}
+            <span class="unit">Mbps</span>
+          </span>
+        <% else %>
+          <span class="speed-hero text-text-ghost">
+            -- <span class="unit">Mbps</span>
+          </span>
+        <% end %>
+      </div>
+      <div class="flex items-center gap-4 mt-3 text-sm">
+        <%= if @latest_measurement do %>
+          <span class="text-text-dim">
+            <span class="stat-value font-semibold text-text">
+              {Float.round(@latest_measurement.upload_mbps, 1)}
+            </span>
+            <span class="text-text-ghost ml-0.5">Mbps up</span>
+          </span>
+          <span class="text-border">|</span>
+          <span class="text-text-dim">
+            <span class="stat-value font-semibold text-text">
+              {Float.round(@latest_measurement.ping_latency, 1)}
+            </span>
+            <span class="text-text-ghost ml-0.5">ms</span>
+          </span>
+          <span class="text-border">|</span>
+          <span class="text-text-dim">
+            <span class="stat-value font-semibold text-text">
+              {Float.round(@latest_measurement.ping_jitter, 1)}
+            </span>
+            <span class="text-text-ghost ml-0.5">ms jitter</span>
+          </span>
+          <span class="text-border">|</span>
+          <span class="text-text-ghost">
+            {Calendar.strftime(@latest_measurement.timestamp, "%b %d, %H:%M UTC")}
+          </span>
+        <% else %>
+          <span class="text-text-ghost">Run your first speedtest to see results</span>
+        <% end %>
+      </div>
+    </div>
+    
+<!-- Action Controls -->
+    <div class="flex flex-wrap items-center gap-3 lg:pb-1">
+      <div class="seg-control">
+        <button
+          phx-click="set_range"
+          phx-value-range="24h"
+          class={@time_range == "24h" && "active"}
+        >
+          24h
+        </button>
+        <button
+          phx-click="set_range"
+          phx-value-range="7d"
+          class={@time_range == "7d" && "active"}
+        >
+          7d
+        </button>
+        <button
+          phx-click="set_range"
+          phx-value-range="30d"
+          class={@time_range == "30d" && "active"}
+        >
+          30d
+        </button>
+      </div>
+
+      <div class="relative">
+        <select
+          id="server-select"
+          name="server_id"
+          phx-change="select_server"
+          class="bf-select max-w-[200px]"
+          disabled={@test_running}
+        >
+          <option value="auto" selected={@selected_server_id == "auto"}>Auto (closest)</option>
+          <%= for server <- @available_servers do %>
+            <option value={server[:id]} selected={@selected_server_id == to_string(server[:id])}>
+              {server[:name]}{if server[:location] != "", do: " - #{server[:location]}", else: ""}
+            </option>
+          <% end %>
+        </select>
+        <%= if not @servers_loaded do %>
+          <button
+            phx-click="load_servers"
+            aria-label="Load nearby servers"
+            class="absolute right-7 top-1/2 -translate-y-1/2 text-text-ghost hover:text-text-dim transition-colors"
+            title="Load nearby servers"
+          >
+            <.icon name="hero-arrow-path-mini" class="size-3.5" />
+          </button>
+        <% end %>
+      </div>
+
+      <button
+        id="run-test-btn"
+        phx-click="run_test"
+        class="cta-run"
+        disabled={@test_running}
+      >
+        <%= if @test_running do %>
+          <span class="inline-block size-4 border-2 border-white/30 border-t-white rounded-full animate-spin">
+          </span>
+          Running...
+        <% else %>
+          <.icon name="hero-play-mini" class="size-4" /> Run Test
+        <% end %>
+      </button>
+    </div>
+  </div>
+</section>
+
+<%= if @measurements == [] do %>
+  <!-- Empty State -->
+  <section class="border border-border rounded-xl py-20 flex flex-col items-center justify-center text-center">
+    <div class="size-12 rounded-xl bg-surface-3 flex items-center justify-center mb-4">
+      <.icon name="hero-signal" class="size-6 text-text-ghost" />
+    </div>
+    <p class="text-text-dim text-sm font-medium">No measurements yet</p>
+    <p class="text-text-ghost text-xs mt-1">Run your first speedtest to populate the dashboard</p>
+  </section>
+<% else %>
+  <!-- Speed Chart — full width, the main story -->
+  <section class="chart-section">
+    <div class="chart-section-header">
+      <div class="flex items-center gap-2">
+        <span class="size-2 rounded-full bg-cyan"></span>
+        <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+          Speed History
+        </span>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-text-ghost">
+        <span class="flex items-center gap-1.5">
+          <span class="inline-block w-3 h-0.5 bg-cyan rounded"></span> Download
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="inline-block w-3 h-0.5 bg-green rounded"></span> Upload
+        </span>
+      </div>
+    </div>
+    <div class="chart-section-body">
+      <div id="speed-chart" phx-hook="SpeedChart" class="w-full" style="min-height: 300px;">
+        <canvas id="speed-chart-canvas"></canvas>
+      </div>
+    </div>
+  </section>
+  
+<!-- Secondary Metrics Row -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="metric-tile">
+      <p class="text-xs text-text-ghost uppercase tracking-wider font-medium mb-1">Download</p>
+      <%= if @latest_measurement do %>
+        <p class="stat-value text-2xl font-bold text-text">
+          {Float.round(@latest_measurement.download_mbps, 1)}
+          <span class="text-xs font-normal text-text-ghost ml-0.5">Mbps</span>
+        </p>
+      <% else %>
+        <p class="stat-value text-2xl font-bold text-text-ghost">--</p>
+      <% end %>
+    </div>
+    <div class="metric-tile">
+      <p class="text-xs text-text-ghost uppercase tracking-wider font-medium mb-1">Upload</p>
+      <%= if @latest_measurement do %>
+        <p class="stat-value text-2xl font-bold text-text">
+          {Float.round(@latest_measurement.upload_mbps, 1)}
+          <span class="text-xs font-normal text-text-ghost ml-0.5">Mbps</span>
+        </p>
+      <% else %>
+        <p class="stat-value text-2xl font-bold text-text-ghost">--</p>
+      <% end %>
+    </div>
+    <div class="metric-tile">
+      <p class="text-xs text-text-ghost uppercase tracking-wider font-medium mb-1">Latency</p>
+      <%= if @latest_measurement do %>
+        <p class="stat-value text-2xl font-bold text-text">
+          {Float.round(@latest_measurement.ping_latency, 1)}
+          <span class="text-xs font-normal text-text-ghost ml-0.5">ms</span>
+        </p>
+      <% else %>
+        <p class="stat-value text-2xl font-bold text-text-ghost">--</p>
+      <% end %>
+    </div>
+    <div class="metric-tile">
+      <p class="text-xs text-text-ghost uppercase tracking-wider font-medium mb-1">Jitter</p>
+      <%= if @latest_measurement do %>
+        <p class="stat-value text-2xl font-bold text-text">
+          {Float.round(@latest_measurement.ping_jitter, 1)}
+          <span class="text-xs font-normal text-text-ghost ml-0.5">ms</span>
+        </p>
+      <% else %>
+        <p class="stat-value text-2xl font-bold text-text-ghost">--</p>
+      <% end %>
+    </div>
+  </div>
+  
+<!-- Network Quality Charts — 2 column -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <section class="chart-section">
+      <div class="chart-section-header">
+        <div class="flex items-center gap-2">
+          <span class="size-2 rounded-full bg-amber"></span>
+          <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">Ping</span>
+        </div>
+      </div>
+      <div class="chart-section-body">
+        <div id="ping-chart" phx-hook="PingChart" class="w-full" style="min-height: 220px;">
+          <canvas id="ping-chart-canvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-section">
+      <div class="chart-section-header">
+        <div class="flex items-center gap-2">
+          <span class="size-2 rounded-full bg-rose"></span>
+          <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">Jitter</span>
+        </div>
+      </div>
+      <div class="chart-section-body">
+        <div id="jitter-chart" phx-hook="JitterChart" class="w-full" style="min-height: 220px;">
+          <canvas id="jitter-chart-canvas"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<!-- Detail Charts — 2 column -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <section class="chart-section">
+      <div class="chart-section-header">
+        <div class="flex items-center gap-2">
+          <span class="size-2 rounded-full bg-amber"></span>
+          <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+            Ping Detail
+          </span>
+        </div>
+      </div>
+      <div class="chart-section-body">
+        <div
+          id="ping-detail-chart"
+          phx-hook="PingDetailChart"
+          class="w-full"
+          style="min-height: 220px;"
+        >
+          <canvas id="ping-detail-chart-canvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-section">
+      <div class="chart-section-header">
+        <div class="flex items-center gap-2">
+          <span class="size-2 rounded-full bg-cyan"></span>
+          <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+            Test Duration
+          </span>
+        </div>
+      </div>
+      <div class="chart-section-body">
+        <div
+          id="duration-chart"
+          phx-hook="DurationChart"
+          class="w-full"
+          style="min-height: 220px;"
+        >
+          <canvas id="duration-chart-canvas"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<!-- Reliability — full width -->
+  <section class="chart-section">
+    <div class="chart-section-header">
+      <div class="flex items-center gap-2">
+        <span class="size-2 rounded-full bg-red"></span>
+        <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+          Packet Loss
+        </span>
+      </div>
+    </div>
+    <div class="chart-section-body">
+      <div
+        id="packet-loss-chart"
+        phx-hook="PacketLossChart"
+        class="w-full"
+        style="min-height: 160px;"
+      >
+        <canvas id="packet-loss-chart-canvas"></canvas>
+      </div>
+    </div>
+  </section>
+<% end %>

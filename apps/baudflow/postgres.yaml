@@ -1,0 +1,25 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: baudflow-db
+  namespace: baudflow
+spec:
+  instances: 1
+  storage:
+    # 5Gi, not 2Gi: the local-path provisioner does NOT support volume expansion,
+    # so growing this later means destroying + recreating the PVC (a data migration).
+    # Over-allocate now while it's free.
+    size: 5Gi
+    storageClass: local-path
+  resources:
+    requests:
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  bootstrap:
+    initdb:
+      database: baud_flow
+      owner: baud_flow
+  affinity:
+    nodeSelector:
+      storage: local

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: baudflow-svc
+  namespace: baudflow
+spec:
+  selector:
+    app: baudflow
+  ports:
+    - port: 4000
+      targetPort: 4000

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Fake `timeout` for macOS dev/test environments.
+# On Linux, the real coreutil is used. This shim just execs the command
+# directly, ignoring the timeout duration arg (the fake_speedtest already
+# simulates timeouts via exit 124 when SPEEDTEST_EXIT=124).
+shift # skip the duration arg (e.g. "120")
+exec "$@"

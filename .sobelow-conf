@@ -1,0 +1,4 @@
+[
+  skip_files: [],
+  ignore: ["Config.CSP", "CI.System"]
+]
