@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.0](https://github.com/v1nvn/baudflow/compare/v0.1.0...v0.2.0) (2026-06-02)
+
+
+
+
+### Features:
+
+* rename to baudflow by v1nvn
+
+### Bug Fixes:
+
+* add git identity configuration for release workflow by v1nvn
+
+* update Dockerfile user permissions by v1nvn
+
+* lint issues by v1nvn
+
+* lint issues by v1nvn
+
 ## [v0.1.0](https://github.com/v1nvn/baudflow/compare/v0.1.0...v0.1.0) (2026-06-02)
 
 
