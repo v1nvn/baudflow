@@ -80,7 +80,7 @@ defmodule BaudFlowWeb.CoreComponents do
         <div class="flex-1" />
         <button
           type="button"
-          class="self-start p-1 rounded-lg hover:bg-white/10 cursor-pointer transition-colors"
+          class="self-start p-1 rounded-lg hover:bg-surface-3 cursor-pointer transition-colors"
           aria-label="close"
         >
           <.icon name="hero-x-mark" class="size-5 text-text-ghost hover:text-text" />

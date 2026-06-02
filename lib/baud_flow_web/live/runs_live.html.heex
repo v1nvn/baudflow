@@ -1,204 +1,205 @@
-<div class="flex items-center justify-between">
-  <div>
-    <h1 class="text-xl font-bold text-text">Run History</h1>
-    <p class="text-sm text-text-dim mt-1">Speedtest run log and status</p>
+<Layouts.app flash={@flash} active_page={@active_page}>
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-text">Run History</h1>
+      <p class="text-sm text-text-dim mt-1">Speedtest run log and status</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <%= if @runs != [] do %>
+        <span class="text-sm text-text-dim">Page {@page} of {@total_pages}</span>
+      <% end %>
+      <.link navigate={~p"/"} class="bf-btn-primary !py-1.5">
+        <.icon name="hero-play-mini" class="size-4" /> Run Test
+      </.link>
+    </div>
   </div>
-  <div class="flex items-center gap-3">
-    <%= if @runs != [] do %>
-      <span class="text-sm text-text-dim">Page {@page} of {@total_pages}</span>
-    <% end %>
-    <.link navigate={~p"/"} class="bf-btn-primary !py-1.5">
-      <.icon name="hero-play-mini" class="size-4" /> Run Test
-    </.link>
-  </div>
-</div>
 
-<%!-- Status Filter --%>
-<div class="glass-card">
-  <div class="p-3 sm:p-4">
-    <.form for={%{}} id="runs-filter-form" phx-change="filter">
-      <div class="flex flex-wrap items-end gap-3">
-        <div>
-          <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-            Status
-          </label>
-          <select
-            name="status"
-            class="bf-select !w-32 !text-sm"
-          >
-            <option value="" selected={@status == ""}>All</option>
-            <option value="success" selected={@status == "success"}>Success</option>
-            <option value="failure" selected={@status == "failure"}>Failed</option>
-            <option value="timeout" selected={@status == "timeout"}>Timeout</option>
-          </select>
+  <%!-- Status Filter --%>
+  <div class="glass-card">
+    <div class="p-3 sm:p-4">
+      <.form for={%{}} id="runs-filter-form" phx-change="filter">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
+              Status
+            </label>
+            <select
+              name="status"
+              class="bf-select !w-32 !text-sm"
+            >
+              <option value="" selected={@status == ""}>All</option>
+              <option value="success" selected={@status == "success"}>Success</option>
+              <option value="failure" selected={@status == "failure"}>Failed</option>
+              <option value="timeout" selected={@status == "timeout"}>Timeout</option>
+            </select>
+          </div>
+        </div>
+      </.form>
+    </div>
+  </div>
+
+  <%= if @runs == [] do %>
+    <div class="glass-card">
+      <div class="flex flex-col items-center justify-center py-16 text-center">
+        <.icon name="hero-command-line-mini" class="size-8 text-text-ghost mb-3" />
+        <p class="text-text-dim text-sm">No runs recorded yet</p>
+        <p class="text-text-ghost text-xs mt-1">
+          Speedtest runs will appear here once scheduled or triggered
+        </p>
+      </div>
+    </div>
+  <% else %>
+    <%!-- Summary stat cards --%>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="glass-card">
+        <div class="p-3">
+          <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+            Total
+          </span>
+          <span class="stat-value text-lg font-semibold text-text block">
+            {@total_runs}
+          </span>
         </div>
       </div>
-    </.form>
-  </div>
-</div>
+      <div class="glass-card">
+        <div class="p-3">
+          <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+            Success
+          </span>
+          <span class="stat-value text-lg font-semibold text-green block">
+            {Map.get(@status_counts, "success", 0)}
+          </span>
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="p-3">
+          <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+            Failed
+          </span>
+          <span class="stat-value text-lg font-semibold text-red block">
+            {Map.get(@status_counts, "failure", 0)}
+          </span>
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="p-3">
+          <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
+            Timeout
+          </span>
+          <span class="stat-value text-lg font-semibold text-amber block">
+            {Map.get(@status_counts, "timeout", 0)}
+          </span>
+        </div>
+      </div>
+    </div>
 
-<%= if @runs == [] do %>
-  <div class="glass-card">
-    <div class="flex flex-col items-center justify-center py-16 text-center">
-      <.icon name="hero-command-line-mini" class="size-8 text-text-ghost mb-3" />
-      <p class="text-text-dim text-sm">No runs recorded yet</p>
-      <p class="text-text-ghost text-xs mt-1">
-        Speedtest runs will appear here once scheduled or triggered
-      </p>
-    </div>
-  </div>
-<% else %>
-  <%!-- Summary stat cards --%>
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <div class="glass-card">
-      <div class="p-3">
-        <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
-          Total
-        </span>
-        <span class="stat-value text-lg font-semibold text-text block">
-          {@total_runs}
-        </span>
-      </div>
-    </div>
-    <div class="glass-card">
-      <div class="p-3">
-        <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
-          Success
-        </span>
-        <span class="stat-value text-lg font-semibold text-green block">
-          {Map.get(@status_counts, "success", 0)}
-        </span>
-      </div>
-    </div>
-    <div class="glass-card">
-      <div class="p-3">
-        <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
-          Failed
-        </span>
-        <span class="stat-value text-lg font-semibold text-red block">
-          {Map.get(@status_counts, "failure", 0)}
-        </span>
-      </div>
-    </div>
-    <div class="glass-card">
-      <div class="p-3">
-        <span class="text-xs font-medium tracking-wider text-text-ghost uppercase">
-          Timeout
-        </span>
-        <span class="stat-value text-lg font-semibold text-amber block">
-          {Map.get(@status_counts, "timeout", 0)}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <%!-- Runs table --%>
-  <div class="glass-card overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm" id="runs-table">
-        <thead>
-          <tr class="border-b border-border">
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              Started
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              Duration
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              Status
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              Error
-            </th>
-            <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for run <- @runs do %>
-            <tr class="border-b border-border last:border-0 hover:bg-white/[0.03] transition-colors duration-150">
-              <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-text">
-                {Calendar.strftime(run.started_at, "%Y-%m-%d %H:%M")}
-              </td>
-              <td class="px-4 py-3">
-                <%= if run.completed_at && run.started_at do %>
-                  <% dur = DateTime.diff(run.completed_at, run.started_at, :millisecond) / 1000 %>
-                  <span class="stat-value font-semibold text-cyan">
-                    {Float.round(dur, 1)}
-                  </span>
-                  <span class="text-xs text-text-ghost">s</span>
-                <% else %>
-                  <span class="text-text-ghost">--</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3">
-                <span class={[
-                  "status-pill",
-                  run.status == "success" && "success",
-                  run.status == "failure" && "error",
-                  run.status == "timeout" && "warning"
-                ]}>
-                  <%= cond do %>
-                    <% run.status == "success" -> %>
-                      <.icon name="hero-check-mini" class="size-3" />
-                    <% run.status == "failure" -> %>
-                      <.icon name="hero-x-mark-mini" class="size-3" />
-                    <% run.status == "timeout" -> %>
-                      <.icon name="hero-clock-mini" class="size-3" />
-                    <% true -> %>
-                      {run.status}
-                  <% end %>
-                  {run.status}
-                </span>
-              </td>
-              <td class="px-4 py-3 max-w-[200px]">
-                <%= if run.error do %>
-                  <span class="text-xs text-red/70 truncate block" title={run.error}>
-                    {String.slice(run.error, 0, 40)}
-                    <%= if String.length(run.error) > 40 do %>
-                      &hellip;
-                    <% end %>
-                  </span>
-                <% else %>
-                  <span class="text-text-ghost">--</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3">
-                <%= if run.status == "success" && run.measurement_id do %>
-                  <.link
-                    navigate={~p"/results/#{run.measurement_id}?ref=runs"}
-                    class="bf-btn-ghost"
-                  >
-                    <.icon name="hero-eye-mini" class="size-3" /> View
-                  </.link>
-                <% else %>
-                  <span class="text-text-ghost text-xs">--</span>
-                <% end %>
-              </td>
+    <%!-- Runs table --%>
+    <div class="glass-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="runs-table">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                Started
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                Duration
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                Error
+              </th>
+              <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <%= for run <- @runs do %>
+              <tr class="border-b border-border last:border-0 hover:bg-accent/5 transition-colors duration-150">
+                <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-text">
+                  {Calendar.strftime(run.started_at, "%Y-%m-%d %H:%M")}
+                </td>
+                <td class="px-4 py-3">
+                  <%= if run.completed_at && run.started_at do %>
+                    <% dur = DateTime.diff(run.completed_at, run.started_at, :millisecond) / 1000 %>
+                    <span class="stat-value font-semibold text-cyan">
+                      {Float.round(dur, 1)}
+                    </span>
+                    <span class="text-xs text-text-ghost">s</span>
+                  <% else %>
+                    <span class="text-text-ghost">--</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3">
+                  <span class={[
+                    "status-pill",
+                    run.status == "success" && "success",
+                    run.status == "failure" && "error",
+                    run.status == "timeout" && "warning"
+                  ]}>
+                    <%= cond do %>
+                      <% run.status == "success" -> %>
+                        <.icon name="hero-check-mini" class="size-3" />
+                      <% run.status == "failure" -> %>
+                        <.icon name="hero-x-mark-mini" class="size-3" />
+                      <% run.status == "timeout" -> %>
+                        <.icon name="hero-clock-mini" class="size-3" />
+                      <% true -> %>
+                    <% end %>
+                    {run.status}
+                  </span>
+                </td>
+                <td class="px-4 py-3 max-w-[200px]">
+                  <%= if run.error do %>
+                    <span class="text-xs text-error truncate block" title={run.error}>
+                      {String.slice(run.error, 0, 40)}
+                      <%= if String.length(run.error) > 40 do %>
+                        &hellip;
+                      <% end %>
+                    </span>
+                  <% else %>
+                    <span class="text-text-ghost">--</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3">
+                  <%= if run.status == "success" && run.measurement_id do %>
+                    <.link
+                      navigate={~p"/results/#{run.measurement_id}?ref=runs"}
+                      class="bf-btn-ghost"
+                    >
+                      <.icon name="hero-eye-mini" class="size-3" /> View
+                    </.link>
+                  <% else %>
+                    <span class="text-text-ghost text-xs">--</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <%!-- Pagination --%>
-  <div class="flex justify-center items-center gap-1">
-    <%= if @page > 1 do %>
-      <.link
-        patch={pagination_path(@page - 1, @status)}
-        class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-white/5 transition-all duration-200 inline-flex items-center gap-1"
-      >
-        <.icon name="hero-chevron-left-mini" class="size-3" /> Prev
-      </.link>
-    <% end %>
-    <span class="px-3 py-1.5 text-sm text-text-ghost">Page {@page} of {@total_pages}</span>
-    <%= if @page < @total_pages do %>
-      <.link
-        patch={pagination_path(@page + 1, @status)}
-        class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-white/5 transition-all duration-200 inline-flex items-center gap-1"
-      >
-        Next <.icon name="hero-chevron-right-mini" class="size-3" />
-      </.link>
-    <% end %>
-  </div>
-<% end %>
+    <%!-- Pagination --%>
+    <div class="flex justify-center items-center gap-1">
+      <%= if @page > 1 do %>
+        <.link
+          patch={pagination_path(@page - 1, @status)}
+          class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-surface-3 hover:text-text transition-all duration-200 inline-flex items-center gap-1"
+        >
+          <.icon name="hero-chevron-left-mini" class="size-3" /> Prev
+        </.link>
+      <% end %>
+      <span class="px-3 py-1.5 text-sm text-text-ghost">Page {@page} of {@total_pages}</span>
+      <%= if @page < @total_pages do %>
+        <.link
+          patch={pagination_path(@page + 1, @status)}
+          class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-surface-3 hover:text-text transition-all duration-200 inline-flex items-center gap-1"
+        >
+          Next <.icon name="hero-chevron-right-mini" class="size-3" />
+        </.link>
+      <% end %>
+    </div>
+  <% end %>
+</Layouts.app>

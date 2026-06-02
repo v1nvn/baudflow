@@ -1,267 +1,269 @@
-<div class="flex items-center justify-between">
-  <div>
-    <h1 class="text-xl font-bold text-text">Speed Test History</h1>
-    <p class="text-sm text-text-dim mt-1">All measurement results</p>
+<Layouts.app flash={@flash} active_page={@active_page}>
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-text">Speed Test History</h1>
+      <p class="text-sm text-text-dim mt-1">All measurement results</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <%= if @measurements != [] do %>
+        <span class="text-sm text-text-dim">Page {@page} of {@total_pages}</span>
+      <% end %>
+      <.link navigate={~p"/"} class="bf-btn-primary !py-1.5">
+        <.icon name="hero-play-mini" class="size-4" /> Run Test
+      </.link>
+    </div>
   </div>
-  <div class="flex items-center gap-3">
-    <%= if @measurements != [] do %>
-      <span class="text-sm text-text-dim">Page {@page} of {@total_pages}</span>
-    <% end %>
-    <.link navigate={~p"/"} class="bf-btn-primary !py-1.5">
-      <.icon name="hero-play-mini" class="size-4" /> Run Test
-    </.link>
-  </div>
-</div>
 
-<%!-- Filter Bar --%>
-<div class="glass-card">
-  <div class="p-3 sm:p-4">
-    <.form for={%{}} id="filter-form" phx-submit="filter">
-      <div class="flex flex-wrap items-end gap-3">
-        <div>
-          <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-            From
-          </label>
-          <input
-            type="date"
-            name="filters[date_from]"
-            value={@filters["date_from"]}
-            class="bf-input !w-36"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-            To
-          </label>
-          <input
-            type="date"
-            name="filters[date_to]"
-            value={@filters["date_to"]}
-            class="bf-input !w-36"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-            Health
-          </label>
-          <select
-            name="filters[healthy]"
-            class="bf-select !w-32 !text-sm"
-          >
-            <option value="" selected={@filters["healthy"] == ""}>All</option>
-            <option value="healthy" selected={@filters["healthy"] == "healthy"}>Healthy</option>
-            <option value="unhealthy" selected={@filters["healthy"] == "unhealthy"}>
-              Unhealthy
-            </option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-            Server
-          </label>
-          <select
-            name="filters[server]"
-            class="bf-select !w-40 !text-sm"
-          >
-            <option value="" selected={@filters["server"] == ""}>All Servers</option>
-            <%= for name <- @server_names do %>
-              <option value={name} selected={@filters["server"] == name}>{name}</option>
-            <% end %>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-2 pb-0.5">
-          <button type="submit" class="bf-btn-primary !py-1.5">
-            <.icon name="hero-funnel-mini" class="size-3.5" /> Apply
-          </button>
-          <.link patch={~p"/history"} class="bf-btn-ghost">
-            Clear
-          </.link>
-        </div>
-      </div>
-    </.form>
-  </div>
-</div>
-
-<%!-- Data Table or Empty State --%>
-<%= if @measurements == [] do %>
+  <%!-- Filter Bar --%>
   <div class="glass-card">
-    <div class="flex flex-col items-center justify-center py-12 text-text-ghost">
-      <.icon name="hero-magnifying-glass" class="size-10 mb-3 opacity-40" />
-      <p class="text-sm font-medium">No measurements found</p>
-      <p class="text-xs mt-1">Try adjusting your filters</p>
-    </div>
-  </div>
-<% else %>
-  <div class="glass-card overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm" id="history-table">
-        <thead>
-          <tr class="border-b border-border">
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              <button
-                phx-click="sort"
-                phx-value-field="timestamp"
-                aria-label="Sort by timestamp"
-                class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
-              >
-                Timestamp
-                <%= if @sort_by == "timestamp" do %>
-                  <.icon
-                    name={
-                      if @sort_dir == "asc",
-                        do: "hero-chevron-up-mini",
-                        else: "hero-chevron-down-mini"
-                    }
-                    class="size-3 text-accent"
-                  />
-                <% end %>
-              </button>
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              <button
-                phx-click="sort"
-                phx-value-field="download"
-                aria-label="Sort by download speed"
-                class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
-              >
-                Download
-                <%= if @sort_by == "download" do %>
-                  <.icon
-                    name={
-                      if @sort_dir == "asc",
-                        do: "hero-chevron-up-mini",
-                        else: "hero-chevron-down-mini"
-                    }
-                    class="size-3 text-accent"
-                  />
-                <% end %>
-              </button>
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              <button
-                phx-click="sort"
-                phx-value-field="upload"
-                aria-label="Sort by upload speed"
-                class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
-              >
-                Upload
-                <%= if @sort_by == "upload" do %>
-                  <.icon
-                    name={
-                      if @sort_dir == "asc",
-                        do: "hero-chevron-up-mini",
-                        else: "hero-chevron-down-mini"
-                    }
-                    class="size-3 text-accent"
-                  />
-                <% end %>
-              </button>
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              <button
-                phx-click="sort"
-                phx-value-field="latency"
-                aria-label="Sort by latency"
-                class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
-              >
-                Latency
-                <%= if @sort_by == "latency" do %>
-                  <.icon
-                    name={
-                      if @sort_dir == "asc",
-                        do: "hero-chevron-up-mini",
-                        else: "hero-chevron-down-mini"
-                    }
-                    class="size-3 text-accent"
-                  />
-                <% end %>
-              </button>
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
-              Jitter
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+    <div class="p-3 sm:p-4">
+      <.form for={%{}} id="filter-form" phx-submit="filter">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
+              From
+            </label>
+            <input
+              type="date"
+              name="filters[date_from]"
+              value={@filters["date_from"]}
+              class="bf-input !w-36"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
+              To
+            </label>
+            <input
+              type="date"
+              name="filters[date_to]"
+              value={@filters["date_to"]}
+              class="bf-input !w-36"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
               Health
-            </th>
-            <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for m <- @measurements do %>
-            <tr class="border-b border-border last:border-0 hover:bg-white/[0.03] transition-colors duration-150">
-              <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-text">
-                {Calendar.strftime(m.timestamp, "%Y-%m-%d %H:%M")}
-              </td>
-              <td class="px-4 py-3">
-                <span class="stat-value font-semibold text-cyan">
-                  {Float.round(m.download_mbps, 1)}
-                </span>
-                <span class="text-xs text-text-ghost">Mbps</span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="stat-value font-semibold text-green">
-                  {Float.round(m.upload_mbps, 1)}
-                </span>
-                <span class="text-xs text-text-ghost">Mbps</span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="stat-value font-semibold text-amber">
-                  {Float.round(m.ping_latency, 1)}
-                </span>
-                <span class="text-xs text-text-ghost">ms</span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="stat-value">{Float.round(m.ping_jitter, 2)}</span>
-                <span class="text-xs text-text-ghost">ms</span>
-              </td>
-              <td class="px-4 py-3">
-                <%= cond do %>
-                  <% m.healthy == true -> %>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25">
-                      <.icon name="hero-check-mini" class="size-3" /> OK
-                    </span>
-                  <% m.healthy == false -> %>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/25">
-                      <.icon name="hero-x-mark-mini" class="size-3" /> Fail
-                    </span>
-                  <% true -> %>
-                    <span class="text-text-ghost">--</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3">
-                <.link navigate={~p"/results/#{m.id}"} class="bf-btn-ghost">
-                  <.icon name="hero-eye-mini" class="size-3" /> View
-                </.link>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+            </label>
+            <select
+              name="filters[healthy]"
+              class="bf-select !w-32 !text-sm"
+            >
+              <option value="" selected={@filters["healthy"] == ""}>All</option>
+              <option value="healthy" selected={@filters["healthy"] == "healthy"}>Healthy</option>
+              <option value="unhealthy" selected={@filters["healthy"] == "unhealthy"}>
+                Unhealthy
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
+              Server
+            </label>
+            <select
+              name="filters[server]"
+              class="bf-select !w-40 !text-sm"
+            >
+              <option value="" selected={@filters["server"] == ""}>All Servers</option>
+              <%= for name <- @server_names do %>
+                <option value={name} selected={@filters["server"] == name}>{name}</option>
+              <% end %>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2 pb-0.5">
+            <button type="submit" class="bf-btn-primary !py-1.5">
+              <.icon name="hero-funnel-mini" class="size-3.5" /> Apply
+            </button>
+            <.link patch={~p"/history"} class="bf-btn-ghost">
+              Clear
+            </.link>
+          </div>
+        </div>
+      </.form>
     </div>
   </div>
 
-  <%!-- Pagination --%>
-  <div class="flex justify-center items-center gap-1">
-    <%= if @page > 1 do %>
-      <.link
-        patch={pagination_path(@page - 1, @filters, @sort_by, @sort_dir)}
-        class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-white/5 transition-all duration-200 inline-flex items-center gap-1"
-      >
-        <.icon name="hero-chevron-left-mini" class="size-3" /> Prev
-      </.link>
-    <% end %>
-    <span class="px-3 py-1.5 text-sm text-text-ghost">Page {@page} of {@total_pages}</span>
-    <%= if @page < @total_pages do %>
-      <.link
-        patch={pagination_path(@page + 1, @filters, @sort_by, @sort_dir)}
-        class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-white/5 transition-all duration-200 inline-flex items-center gap-1"
-      >
-        Next <.icon name="hero-chevron-right-mini" class="size-3" />
-      </.link>
-    <% end %>
-  </div>
-<% end %>
+  <%!-- Data Table or Empty State --%>
+  <%= if @measurements == [] do %>
+    <div class="glass-card">
+      <div class="flex flex-col items-center justify-center py-12 text-text-ghost">
+        <.icon name="hero-magnifying-glass" class="size-10 mb-3 opacity-40" />
+        <p class="text-sm font-medium">No measurements found</p>
+        <p class="text-xs mt-1">Try adjusting your filters</p>
+      </div>
+    </div>
+  <% else %>
+    <div class="glass-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="history-table">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                <button
+                  phx-click="sort"
+                  phx-value-field="timestamp"
+                  aria-label="Sort by timestamp"
+                  class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
+                >
+                  Timestamp
+                  <%= if @sort_by == "timestamp" do %>
+                    <.icon
+                      name={
+                        if @sort_dir == "asc",
+                          do: "hero-chevron-up-mini",
+                          else: "hero-chevron-down-mini"
+                      }
+                      class="size-3 text-accent"
+                    />
+                  <% end %>
+                </button>
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                <button
+                  phx-click="sort"
+                  phx-value-field="download"
+                  aria-label="Sort by download speed"
+                  class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
+                >
+                  Download
+                  <%= if @sort_by == "download" do %>
+                    <.icon
+                      name={
+                        if @sort_dir == "asc",
+                          do: "hero-chevron-up-mini",
+                          else: "hero-chevron-down-mini"
+                      }
+                      class="size-3 text-accent"
+                    />
+                  <% end %>
+                </button>
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                <button
+                  phx-click="sort"
+                  phx-value-field="upload"
+                  aria-label="Sort by upload speed"
+                  class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
+                >
+                  Upload
+                  <%= if @sort_by == "upload" do %>
+                    <.icon
+                      name={
+                        if @sort_dir == "asc",
+                          do: "hero-chevron-up-mini",
+                          else: "hero-chevron-down-mini"
+                      }
+                      class="size-3 text-accent"
+                    />
+                  <% end %>
+                </button>
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                <button
+                  phx-click="sort"
+                  phx-value-field="latency"
+                  aria-label="Sort by latency"
+                  class="inline-flex items-center gap-1 hover:text-text transition-colors cursor-pointer"
+                >
+                  Latency
+                  <%= if @sort_by == "latency" do %>
+                    <.icon
+                      name={
+                        if @sort_dir == "asc",
+                          do: "hero-chevron-up-mini",
+                          else: "hero-chevron-down-mini"
+                      }
+                      class="size-3 text-accent"
+                    />
+                  <% end %>
+                </button>
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                Jitter
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-ghost uppercase tracking-wider">
+                Health
+              </th>
+              <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for m <- @measurements do %>
+              <tr class="border-b border-border last:border-0 hover:bg-accent/5 transition-colors duration-150">
+                <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-text">
+                  {Calendar.strftime(m.timestamp, "%Y-%m-%d %H:%M")}
+                </td>
+                <td class="px-4 py-3">
+                  <span class="stat-value font-semibold text-cyan">
+                    {Float.round(m.download_mbps, 1)}
+                  </span>
+                  <span class="text-xs text-text-ghost">Mbps</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="stat-value font-semibold text-green">
+                    {Float.round(m.upload_mbps, 1)}
+                  </span>
+                  <span class="text-xs text-text-ghost">Mbps</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="stat-value font-semibold text-amber">
+                    {Float.round(m.ping_latency, 1)}
+                  </span>
+                  <span class="text-xs text-text-ghost">ms</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="stat-value">{Float.round(m.ping_jitter, 2)}</span>
+                  <span class="text-xs text-text-ghost">ms</span>
+                </td>
+                <td class="px-4 py-3">
+                  <%= cond do %>
+                    <% m.healthy == true -> %>
+                      <span class="status-pill success">
+                        <.icon name="hero-check-mini" class="size-3" /> OK
+                      </span>
+                    <% m.healthy == false -> %>
+                      <span class="status-pill error">
+                        <.icon name="hero-x-mark-mini" class="size-3" /> Fail
+                      </span>
+                    <% true -> %>
+                      <span class="text-text-ghost">--</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3">
+                  <.link navigate={~p"/results/#{m.id}"} class="bf-btn-ghost">
+                    <.icon name="hero-eye-mini" class="size-3" /> View
+                  </.link>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <%!-- Pagination --%>
+    <div class="flex justify-center items-center gap-1">
+      <%= if @page > 1 do %>
+        <.link
+          patch={pagination_path(@page - 1, @filters, @sort_by, @sort_dir)}
+          class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-surface-3 hover:text-text transition-all duration-200 inline-flex items-center gap-1"
+        >
+          <.icon name="hero-chevron-left-mini" class="size-3" /> Prev
+        </.link>
+      <% end %>
+      <span class="px-3 py-1.5 text-sm text-text-ghost">Page {@page} of {@total_pages}</span>
+      <%= if @page < @total_pages do %>
+        <.link
+          patch={pagination_path(@page + 1, @filters, @sort_by, @sort_dir)}
+          class="px-3 py-1.5 rounded-lg text-sm font-medium text-text-dim border border-border hover:bg-surface-3 hover:text-text transition-all duration-200 inline-flex items-center gap-1"
+        >
+          Next <.icon name="hero-chevron-right-mini" class="size-3" />
+        </.link>
+      <% end %>
+    </div>
+  <% end %>
+</Layouts.app>

@@ -22,7 +22,7 @@ defmodule BaudFlowWeb.Layouts do
   def app(assigns) do
     ~H"""
     <header class="sticky top-0 z-40 bg-surface-0/90 backdrop-blur-md border-b border-border">
-      <div class="flex items-center justify-between h-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-12 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex-1">
           <.link navigate={~p"/"} class="flex items-center gap-2">
             <div class="p-1 rounded-md bg-accent">
@@ -99,8 +99,8 @@ defmodule BaudFlowWeb.Layouts do
       </div>
     </header>
 
-    <main class="px-4 py-6 sm:px-6 lg:px-8 bg-surface-0 min-h-screen">
-      <div class="mx-auto max-w-7xl space-y-6">
+    <main class="px-4 py-8 sm:px-6 lg:px-10 bg-surface-0 min-h-screen">
+      <div class="mx-auto max-w-5xl space-y-8">
         {render_slot(@inner_block)}
       </div>
     </main>
