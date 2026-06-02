@@ -54,7 +54,8 @@ defmodule BaudFlowWeb.Layouts do
                 aria-label="History"
                 class={[
                   "px-2.5 py-1 text-xs font-medium rounded-md transition-colors duration-150",
-                  @active_page != :history && "text-text-ghost hover:text-text-dim hover:bg-surface-3",
+                  @active_page != :history &&
+                    "text-text-ghost hover:text-text-dim hover:bg-surface-3",
                   @active_page == :history && "text-text bg-surface-3"
                 ]}
               >
