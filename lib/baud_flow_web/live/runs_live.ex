@@ -34,10 +34,7 @@ defmodule BaudFlowWeb.RunsLive do
   @impl true
   def handle_event("filter", %{"status" => status}, socket) do
     params =
-      cond do
-        status != "" -> %{"status" => status}
-        true -> %{}
-      end
+      if status != "", do: %{"status" => status}, else: %{}
 
     {:noreply, push_patch(socket, to: ~p"/runs?#{params}")}
   end

@@ -22,18 +22,16 @@ defmodule BaudFlowWeb.SettingsLive do
 
     cron = params["schedule_cron"] || ""
 
-    cond do
-      not valid_cron?(cron) ->
-        {:noreply,
-         put_flash(socket, :error, "Invalid cron expression: expected 5 space-separated fields")}
+    if valid_cron?(cron) do
+      :ok = Settings.update_all(params)
 
-      true ->
-        :ok = Settings.update_all(params)
-
-        {:noreply,
-         socket
-         |> assign_settings(params)
-         |> put_flash(:info, "Settings saved — schedule takes effect within 1 minute")}
+      {:noreply,
+       socket
+       |> assign_settings(params)
+       |> put_flash(:info, "Settings saved — schedule takes effect within 1 minute")}
+    else
+      {:noreply,
+       put_flash(socket, :error, "Invalid cron expression: expected 5 space-separated fields")}
     end
   end
 

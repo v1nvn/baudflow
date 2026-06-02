@@ -73,10 +73,9 @@ defmodule BaudFlow.Measurements.NotificationWorker do
     failed =
       measurement.benchmarks
       |> Enum.filter(fn {_, %{"passed" => p}} -> not p end)
-      |> Enum.map(fn {metric, %{"value" => v, "threshold" => t, "unit" => u}} ->
+      |> Enum.map_join("\n", fn {metric, %{"value" => v, "threshold" => t, "unit" => u}} ->
         "#{String.capitalize(to_string(metric))}: #{Float.round(v, 1)} vs #{Float.round(t, 1)} #{u}"
       end)
-      |> Enum.join("\n")
 
     message = """
     Absolute threshold exceeded!

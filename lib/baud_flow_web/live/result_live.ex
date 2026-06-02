@@ -13,11 +13,7 @@ defmodule BaudFlowWeb.ResultLive do
     measurement = Measurements.get_measurement!(id)
     neighbors = Measurements.get_neighbor_ids(id)
 
-    ref =
-      cond do
-        params["ref"] == "runs" -> :runs
-        true -> :history
-      end
+    ref = if params["ref"] == "runs", do: :runs, else: :history
 
     {:noreply,
      socket

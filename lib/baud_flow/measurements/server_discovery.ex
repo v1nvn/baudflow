@@ -43,18 +43,16 @@ defmodule BaudFlow.Measurements.ServerDiscovery do
     preferred = parse_server_list(settings["preferred_servers"])
     blocked = parse_server_list(settings["blocked_servers"])
 
-    cond do
-      preferred != [] ->
-        Enum.random(preferred)
+    if preferred != [] do
+      Enum.random(preferred)
+    else
+      servers = list_available_servers()
+      allowed = filter_blocked(servers, blocked)
 
-      true ->
-        servers = list_available_servers()
-        allowed = filter_blocked(servers, blocked)
-
-        case List.first(allowed) do
-          nil -> nil
-          server -> server[:id]
-        end
+      case List.first(allowed) do
+        nil -> nil
+        server -> server[:id]
+      end
     end
   end
 

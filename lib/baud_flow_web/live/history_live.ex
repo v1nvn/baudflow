@@ -64,10 +64,9 @@ defmodule BaudFlowWeb.HistoryLive do
 
   def handle_event("sort", %{"field" => field}, socket) do
     new_dir =
-      cond do
-        socket.assigns.sort_by == field and socket.assigns.sort_dir == "desc" -> "asc"
-        true -> "desc"
-      end
+      if socket.assigns.sort_by == field and socket.assigns.sort_dir == "desc",
+        do: "asc",
+        else: "desc"
 
     params =
       %{}
