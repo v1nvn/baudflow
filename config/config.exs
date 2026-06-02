@@ -54,6 +54,15 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Automated versioning (conventional commits → changelog → tag)
+config :git_ops,
+  mix_project: BaudFlow.MixProject,
+  changelog_file: "CHANGELOG.md",
+  repository_url: "https://github.com/v1nvn/baudflow",
+  manage_mix_version?: true,
+  manage_readme_version: false,
+  version_tag_prefix: "v"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

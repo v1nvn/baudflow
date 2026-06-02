@@ -1,10 +1,12 @@
 defmodule BaudFlow.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :baud_flow,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -91,7 +93,10 @@ defmodule BaudFlow.MixProject do
       # Phoenix-focused security scanner
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       # Dependency CVE scanning
-      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+
+      # Automated versioning via conventional commits
+      {:git_ops, "~> 2.8", only: [:dev, :test], runtime: false}
     ]
   end
 

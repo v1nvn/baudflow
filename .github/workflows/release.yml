@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  release:
+    # Only run when the CI workflow succeeds — never on a failing build
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18.2"
+          otp-version: "27.3"
+
+      - uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-deps-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-deps-
+
+      - run: mix deps.get
+
+      - name: Bump version, update changelog, commit, tag
+        run: mix git_ops.release --yes --no-major
+        env:
+          MIX_ENV: test
+
+      - name: Push version bump and tag
+        run: git push --follow-tags origin main
