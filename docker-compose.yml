@@ -25,7 +25,7 @@ services:
     container_name: baudflow-speedtest
 
   app:
-    image: baudflow:latest
+    build: .
     ports:
       - "4000:4000"
     environment:

@@ -65,14 +65,14 @@ RUN case "$TARGETARCH" in \
 ENV SPEEDTEST_VERSION=${SPEEDTEST_VERSION}
 
 WORKDIR /app
-RUN mkdir -p /home/nobody && chown nobody /home/nobody
-RUN chown nobody /app
+RUN mkdir -p /home/appuser && chown 1000:1000 /home/appuser
+RUN chown -R 1000:1000 /app
 
 ENV MIX_ENV=prod
-ENV HOME=/home/nobody
+ENV HOME=/home/appuser
 
-COPY --from=builder --chown=nobody:root /app/_build/prod/rel/baudflow ./
+COPY --from=builder --chown=1000:1000 /app/_build/prod/rel/baudflow ./
 
-USER nobody
+USER 1000:1000
 
 CMD ["/app/bin/server"]
