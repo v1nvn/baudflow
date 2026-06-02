@@ -1,11 +1,11 @@
 import Config
 
 # Configure your database
-config :baud_flow, BaudFlow.Repo,
+config :baudflow, Baudflow.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "baud_flow_dev",
+  database: "baudflow_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -16,7 +16,7 @@ config :baud_flow, BaudFlow.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :baud_flow, BaudFlowWeb.Endpoint,
+config :baudflow, BaudflowWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}],
@@ -25,8 +25,8 @@ config :baud_flow, BaudFlowWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "VRhRC8xuQdizbC6nY6HgPGNkKcX/E39HZspbsiX7+UQ+nxVU2Uft9idhQYiJtQ+W",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:baud_flow, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:baud_flow, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:baudflow, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:baudflow, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -53,33 +53,33 @@ config :baud_flow, BaudFlowWeb.Endpoint,
 # different ports.
 
 # Reload browser tabs when matching files change.
-config :baud_flow, BaudFlowWeb.Endpoint,
+config :baudflow, BaudflowWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
       # Static assets, except user uploads
       ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg)$",
       # Router, Controllers, LiveViews and LiveComponents
-      ~r"lib/baud_flow_web/router\.ex$",
-      ~r"lib/baud_flow_web/(controllers|live|components)/.*\.(ex|heex)$"
+      ~r"lib/baudflow_web/router\.ex$",
+      ~r"lib/baudflow_web/(controllers|live|components)/.*\.(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :baud_flow, dev_routes: true
+config :baudflow, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
-config :baud_flow, Oban,
+config :baudflow, Oban,
   queues: [scheduler: 1, speedtest: 1, notifications: 1, default: 1],
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [
-       {"* * * * *", BaudFlow.Measurements.SchedulerWorker},
-       {"0 3 * * *", BaudFlow.Measurements.CleanupWorker}
+       {"* * * * *", Baudflow.Measurements.SchedulerWorker},
+       {"0 3 * * *", Baudflow.Measurements.CleanupWorker}
      ]}
   ]
 

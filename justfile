@@ -63,11 +63,11 @@ docker-rebuild:
 
 # Attach remote console to running container
 console:
-    docker compose exec app /app/bin/baud_flow remote
+    docker compose exec app /app/bin/baudflow remote
 
 # Run pending migrations in the container
 migrate:
-    docker compose exec app /app/bin/baud_flow eval "BaudFlow.Release.migrate()"
+    docker compose exec app /app/bin/baudflow eval "Baudflow.Release.migrate()"
 
 # Wipe DB volume and start fresh
 db-reset:

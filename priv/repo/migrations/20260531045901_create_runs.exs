@@ -1,4 +1,4 @@
-defmodule BaudFlow.Repo.Migrations.CreateRuns do
+defmodule Baudflow.Repo.Migrations.CreateRuns do
   use Ecto.Migration
 
   def change do

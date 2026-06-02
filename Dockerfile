@@ -71,7 +71,7 @@ RUN chown nobody /app
 ENV MIX_ENV=prod
 ENV HOME=/home/nobody
 
-COPY --from=builder --chown=nobody:root /app/_build/prod/rel/baud_flow ./
+COPY --from=builder --chown=nobody:root /app/_build/prod/rel/baudflow ./
 
 USER nobody
 

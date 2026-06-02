@@ -12,15 +12,15 @@ import Config
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/baud_flow start
+#     PHX_SERVER=true bin/baudflow start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :baud_flow, BaudFlowWeb.Endpoint, server: true
+  config :baudflow, BaudflowWeb.Endpoint, server: true
 end
 
-config :baud_flow, BaudFlowWeb.Endpoint,
+config :baudflow, BaudflowWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
@@ -33,7 +33,7 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
-  config :baud_flow, BaudFlow.Repo,
+  config :baudflow, Baudflow.Repo,
     # ssl: true,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
@@ -41,13 +41,13 @@ if config_env() == :prod do
     # pool_count: 4,
     socket_options: maybe_ipv6
 
-  config :baud_flow, Oban,
+  config :baudflow, Oban,
     queues: [scheduler: 1, speedtest: 1, notifications: 1, default: 1],
     plugins: [
       {Oban.Plugins.Cron,
        crontab: [
-         {"* * * * *", BaudFlow.Measurements.SchedulerWorker},
-         {"0 3 * * *", BaudFlow.Measurements.CleanupWorker}
+         {"* * * * *", Baudflow.Measurements.SchedulerWorker},
+         {"0 3 * * *", Baudflow.Measurements.CleanupWorker}
        ]}
     ]
 
@@ -65,9 +65,9 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
-  config :baud_flow, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  config :baudflow, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :baud_flow, BaudFlowWeb.Endpoint,
+  config :baudflow, BaudflowWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -81,7 +81,7 @@ end
 
 if config_env() == :test do
   if url = System.get_env("DATABASE_URL") do
-    config :baud_flow, BaudFlow.Repo,
+    config :baudflow, Baudflow.Repo,
       url: url,
       pool: Ecto.Adapters.SQL.Sandbox,
       pool_size: System.schedulers_online() * 2

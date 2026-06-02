@@ -36,7 +36,7 @@
           ~r"/deps/",
           ~r"/node_modules/",
           # Generated scaffold - not our code
-          "lib/baud_flow_web/components/core_components.ex",
+          "lib/baudflow_web/components/core_components.ex",
           "test/support/data_case.ex",
           "test/support/conn_case.ex"
         ]

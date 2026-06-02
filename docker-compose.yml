@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: baud_flow_dev
+      POSTGRES_DB: baudflow_dev
     ports:
       - "5432:5432"
     volumes:
@@ -29,7 +29,7 @@ services:
     ports:
       - "4000:4000"
     environment:
-      DATABASE_URL: "ecto://postgres:postgres@db/baud_flow_dev"
+      DATABASE_URL: "ecto://postgres:postgres@db/baudflow_dev"
       SECRET_KEY_BASE: "${SECRET_KEY_BASE:-BAuDFLOW SECRET KEY FOR LOCAL DEVELOPMENT ONLY PLEASE CHANGE IN PROD}"
       PHX_HOST: "localhost"
       PHX_SERVER: "true"
@@ -39,8 +39,8 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        /app/bin/baud_flow eval "BaudFlow.Release.migrate()"
-        exec /app/bin/baud_flow start
+        /app/bin/baudflow eval "Baudflow.Release.migrate()"
+        exec /app/bin/baudflow start
 
 volumes:
   pgdata:

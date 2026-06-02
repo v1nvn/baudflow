@@ -1,1 +1,1 @@
-call "%~dp0\baud_flow" eval BaudFlow.Release.migrate
+call "%~dp0\baudflow" eval Baudflow.Release.migrate

@@ -1,11 +1,11 @@
-defmodule BaudFlow.MixProject do
+defmodule Baudflow.MixProject do
   use Mix.Project
 
   @version "0.1.0"
 
   def project do
     [
-      app: :baud_flow,
+      app: :baudflow,
       version: @version,
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -22,7 +22,7 @@ defmodule BaudFlow.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {BaudFlow.Application, []},
+      mod: {Baudflow.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -109,10 +109,10 @@ defmodule BaudFlow.MixProject do
       # the alias usable against a plain local PG too.
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind baud_flow", "esbuild baud_flow"],
+      "assets.build": ["compile", "tailwind baudflow", "esbuild baudflow"],
       "assets.deploy": [
-        "tailwind baud_flow --minify",
-        "esbuild baud_flow --minify",
+        "tailwind baudflow --minify",
+        "esbuild baudflow --minify",
         "phx.digest"
       ],
       # Lint/typecheck/security gate - no DB required

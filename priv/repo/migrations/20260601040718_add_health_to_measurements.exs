@@ -1,4 +1,4 @@
-defmodule BaudFlow.Repo.Migrations.AddHealthToMeasurements do
+defmodule Baudflow.Repo.Migrations.AddHealthToMeasurements do
   use Ecto.Migration
 
   def change do

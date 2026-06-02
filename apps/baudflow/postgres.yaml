@@ -18,8 +18,8 @@ spec:
       memory: 256Mi
   bootstrap:
     initdb:
-      database: baud_flow
-      owner: baud_flow
+      database: baudflow
+      owner: baudflow
   affinity:
     nodeSelector:
       storage: local

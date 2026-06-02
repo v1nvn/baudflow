@@ -103,7 +103,7 @@ This is a network speed monitoring dashboard built with Phoenix v1.8 + LiveView.
 - DO give every form an explicit, unique DOM ID (e.g. `id="settings-form"`)
 - DON'T use `<.form let={f} ...>` — always use `<.form for={@form} ...>` and access fields as `@form[:field]`
 
-## BaudFlow-specific
+## Baudflow-specific
 
 ### Oban workers
 
@@ -111,7 +111,7 @@ This is a network speed monitoring dashboard built with Phoenix v1.8 + LiveView.
 - DO use `unique: [fields: [:worker, :args], period: 3600]` on speedtest jobs to prevent duplicates
 - DO keep `testing: :manual` for Oban in test config — don't switch to `:inline` or `:disabled`
 - DON'T invoke the speedtest binary directly — always go through `SpeedtestWorker` which handles timeout wrapping and output parsing
-- DO broadcast results via `Phoenix.PubSub.broadcast(BaudFlow.PubSub, "measurements", msg)` — don't create new topic names
+- DO broadcast results via `Phoenix.PubSub.broadcast(Baudflow.PubSub, "measurements", msg)` — don't create new topic names
 
 ### Settings
 
@@ -128,7 +128,7 @@ This is a network speed monitoring dashboard built with Phoenix v1.8 + LiveView.
 ### LiveView conventions
 
 - DO set `:active_page` and `:page_title` assigns on every LiveView mount
-- DO subscribe to `BaudFlow.PubSub` `"measurements"` topic in mount when the LiveView needs real-time updates
+- DO subscribe to `Baudflow.PubSub` `"measurements"` topic in mount when the LiveView needs real-time updates
 - DO use `push_patch` with URL query params for filtering/pagination — don't `push_navigate` for same-page state changes
 - DO use `push_event("append_point", ...)` for streaming chart data to the client
 
@@ -140,7 +140,7 @@ This is a network speed monitoring dashboard built with Phoenix v1.8 + LiveView.
 
 ### Speedtest CLI
 
-- DO use `Application.get_env(:baud_flow, :speedtest_bin)` for the binary path — it supports multi-word wrapper commands
+- DO use `Application.get_env(:baudflow, :speedtest_bin)` for the binary path — it supports multi-word wrapper commands
 - DO use `binary_available?()` to gate features that depend on the CLI — don't assume the binary exists
 - DO handle both pretty-printed JSON and NDJSON output from the speedtest CLI
 

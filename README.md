@@ -1,6 +1,6 @@
-# BaudFlow
+# Baudflow
 
-A self-hosted network speed monitoring dashboard built with Phoenix LiveView. BaudFlow runs automated speed tests via the [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli), stores the results, and visualizes your network performance over time.
+A self-hosted network speed monitoring dashboard built with Phoenix LiveView. Baudflow runs automated speed tests via the [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli), stores the results, and visualizes your network performance over time.
 
 ## Features
 
@@ -42,11 +42,11 @@ iex -S mix phx.server
 
 ```
 lib/
-├── baud_flow/
+├── baudflow/
 │   ├── measurements/        # Speedtest schema, worker, scheduler, cleanup
 │   ├── runs/                # Test run tracking
 │   └── settings/            # App configuration (key-value)
-└── baud_flow_web/
+└── baudflow_web/
     ├── live/
     │   ├── dashboard_live.ex   # / — main dashboard
     │   ├── history_live.ex     # /history — historical trends

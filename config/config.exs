@@ -7,28 +7,28 @@
 # General application configuration
 import Config
 
-config :baud_flow,
-  ecto_repos: [BaudFlow.Repo],
+config :baudflow,
+  ecto_repos: [Baudflow.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Oban - queues declared in runtime.exs (prod/test branches); crontab wired at integration.
-config :baud_flow, Oban, repo: BaudFlow.Repo
+config :baudflow, Oban, repo: Baudflow.Repo
 
 # Configure the endpoint
-config :baud_flow, BaudFlowWeb.Endpoint,
+config :baudflow, BaudflowWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: BaudFlowWeb.ErrorHTML, json: BaudFlowWeb.ErrorJSON],
+    formats: [html: BaudflowWeb.ErrorHTML, json: BaudflowWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: BaudFlow.PubSub,
+  pubsub_server: Baudflow.PubSub,
   live_view: [signing_salt: "UptEh1EU"]
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",
-  baud_flow: [
+  baudflow: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --external:phoenix-colocated/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
@@ -38,7 +38,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.1.12",
-  baud_flow: [
+  baudflow: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css
@@ -56,7 +56,7 @@ config :phoenix, :json_library, Jason
 
 # Automated versioning (conventional commits → changelog → tag)
 config :git_ops,
-  mix_project: BaudFlow.MixProject,
+  mix_project: Baudflow.MixProject,
   changelog_file: "CHANGELOG.md",
   repository_url: "https://github.com/v1nvn/baudflow",
   manage_mix_version?: true,

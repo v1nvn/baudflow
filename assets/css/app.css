@@ -1,10 +1,10 @@
-/* BaudFlow — Mission Control Design System */
+/* Baudflow — Mission Control Design System */
 /* Industrial monitoring aesthetic. Dark-first. Typography-driven. */
 
 @import "tailwindcss" source(none);
 @source "../css";
 @source "../js";
-@source "../../lib/baud_flow_web";
+@source "../../lib/baudflow_web";
 
 @plugin "../vendor/heroicons";
 
