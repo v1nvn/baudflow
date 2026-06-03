@@ -38,6 +38,11 @@ RUN mix compile
 # Changes to config/runtime.exs don't require a rebuild
 COPY config/runtime.exs config/
 
+# Release overlays (rel/overlays/bin/{server,migrate}) must be present for
+# `mix release` to bake them into the release. Without this the CMD below
+# (/app/bin/server) is missing from the image and the container fails to start.
+COPY rel rel
+
 # Build release
 RUN mix release
 
