@@ -20,12 +20,12 @@ defmodule Baudflow.Settings do
     "threshold_ping" => "0"
   }
 
-  @doc "Get a single setting value by key. Returns nil if not found."
+  @doc "Get a single setting value by key. Falls back to defaults if not stored."
   @spec get(String.t()) :: String.t() | nil
   def get(key) do
     case Repo.get_by(Setting, key: key) do
       %Setting{value: value} -> value
-      nil -> nil
+      nil -> Map.get(@default_settings, key)
     end
   end
 

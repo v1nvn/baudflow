@@ -47,5 +47,11 @@ defmodule Baudflow.SettingsTest do
       Settings.update_all(%{"server_id" => "12345"})
       assert Settings.get("server_id") == "12345"
     end
+
+    test "falls back to default when key is not stored" do
+      assert Settings.get("schedule_cron") == "0 * * * *"
+      assert Settings.get("retention_days") == "365"
+      assert Settings.get("dashboard_points") == "500"
+    end
   end
 end

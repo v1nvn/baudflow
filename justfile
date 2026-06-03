@@ -81,7 +81,7 @@ test:
     mix test
 
 # Pre-commit quality gate (compile + format + test)
-precommit:
+precommit: (db-up)
     mix precommit
 
 # Full lint (format, audit, credo, sobelow, dialyzer)
