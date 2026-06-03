@@ -38,3 +38,5 @@ npm-debug.log
 # Dialyzer PLT
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
+
+.elixir_ls

@@ -2,12 +2,10 @@ name: Image
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
 
-# CI gating is enforced via branch protection rules on main;
-# the CI workflow must pass before merge, so only merged code
-# triggers this image build.
+# Images are only built for version tags — the release workflow
+# creates the tag after CI passes on main.
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -33,7 +31,6 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=ref,event=branch
             type=semver,pattern={{version}}
             type=sha
 
