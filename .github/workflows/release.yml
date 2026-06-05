@@ -26,7 +26,9 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          path: deps
+          path: |
+            deps
+            _build
           key: ${{ runner.os }}-deps-${{ hashFiles('mix.lock') }}
           restore-keys: ${{ runner.os }}-deps-
 
@@ -44,3 +46,15 @@ jobs:
 
       - name: Push version bump and tag
         run: git push --follow-tags origin main
+
+      - name: Determine release tag
+        id: release-tag
+        run: echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.release-tag.outputs.tag }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
