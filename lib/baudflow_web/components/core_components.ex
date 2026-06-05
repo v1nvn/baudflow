@@ -3,7 +3,7 @@ defmodule BaudflowWeb.CoreComponents do
   Provides core UI components.
 
   The foundation for styling is Tailwind CSS, a utility-first CSS framework.
-  All components use custom Tailwind classes — no component library dependency.
+  All components use custom Tailwind classes - no component library dependency.
 
   Useful references:
 

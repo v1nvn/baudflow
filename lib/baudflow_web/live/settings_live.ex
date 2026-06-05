@@ -28,7 +28,7 @@ defmodule BaudflowWeb.SettingsLive do
       {:noreply,
        socket
        |> assign_settings(params)
-       |> put_flash(:info, "Settings saved — schedule takes effect within 1 minute")}
+       |> put_flash(:info, "Settings saved - schedule takes effect within 1 minute")}
     else
       {:noreply,
        put_flash(socket, :error, "Invalid cron expression: expected 5 space-separated fields")}

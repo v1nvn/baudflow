@@ -42,7 +42,16 @@ defmodule BaudflowWeb.DashboardLive do
        [measurement | socket.assigns.measurements]
        |> Enum.take(socket.assigns.chart_points)
      )
-     |> push_event("append_point", %{point: serialize_point(measurement)})}
+     |> push_event("append_point", %{point: serialize_point(measurement)})
+     |> push_event("speedtest_complete", %{})}
+  end
+
+  @impl true
+  def handle_info({:speedtest_progress, type, data}, socket) do
+    {:noreply,
+     socket
+     |> assign(:test_running, true)
+     |> push_event("speedtest_progress", %{type: type, data: data})}
   end
 
   @impl true
@@ -50,7 +59,8 @@ defmodule BaudflowWeb.DashboardLive do
     {:noreply,
      socket
      |> put_flash(:error, "Speedtest failed: #{reason}")
-     |> assign(:test_running, false)}
+     |> assign(:test_running, false)
+     |> push_event("speedtest_complete", %{})}
   end
 
   @impl true
@@ -58,7 +68,8 @@ defmodule BaudflowWeb.DashboardLive do
     {:noreply,
      socket
      |> put_flash(:error, "Speedtest timed out")
-     |> assign(:test_running, false)}
+     |> assign(:test_running, false)
+     |> push_event("speedtest_complete", %{})}
   end
 
   @impl true
@@ -132,7 +143,7 @@ defmodule BaudflowWeb.DashboardLive do
     else
       {:noreply,
        socket
-       |> put_flash(:error, "speedtest CLI not found — install it from speedtest.net")}
+       |> put_flash(:error, "speedtest CLI not found - install it from speedtest.net")}
     end
   end
 

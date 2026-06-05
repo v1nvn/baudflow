@@ -7,134 +7,201 @@
     (!@latest_measurement || @latest_measurement.healthy == nil) && "unknown"
   ]}>
   </div>
-  
-<!-- Hero: Current Speed Readout -->
-  <section class="pt-8 pb-6">
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-      <div>
-        <p class="text-xs font-semibold tracking-[0.15em] uppercase text-text-dim mb-3">
-          <%= if @latest_measurement do %>
-            Download Speed
-          <% else %>
-            No Data
-          <% end %>
-        </p>
-        <div class="flex items-baseline gap-2">
-          <%= if @latest_measurement do %>
-            <span class="speed-hero">
-              {Float.round(@latest_measurement.download_mbps, 1)}
-              <span class="unit">Mbps</span>
-            </span>
-          <% else %>
-            <span class="speed-hero text-text-ghost">
-              -- <span class="unit">Mbps</span>
-            </span>
-          <% end %>
+
+  <%= if @test_running do %>
+    <!-- Live Speedtest Diagnostics Panel -->
+    <section class="pt-6 pb-4">
+      <div
+        id="speedtest-viz"
+        phx-hook="SpeedtestViz"
+        phx-update="ignore"
+        class="crt-panel"
+      >
+        <!-- Phase strip -->
+        <div class="crt-phase-strip">
+          <span id="crt-phase-ping" class="crt-phase">PING</span>
+          <span class="crt-phase-sep">───</span>
+          <span id="crt-phase-download" class="crt-phase">DOWNLOAD</span>
+          <span class="crt-phase-sep">───</span>
+          <span id="crt-phase-upload" class="crt-phase">UPLOAD</span>
         </div>
-        <div class="flex items-center gap-4 mt-3 text-sm">
-          <%= if @latest_measurement do %>
-            <span class="text-text-dim">
-              <span class="stat-value font-semibold text-text">
-                {Float.round(@latest_measurement.upload_mbps, 1)}
-              </span>
-              <span class="text-text-ghost ml-0.5">Mbps up</span>
-            </span>
-            <span class="text-border">|</span>
-            <span class="text-text-dim">
-              <span class="stat-value font-semibold text-text">
-                {Float.round(@latest_measurement.ping_latency, 1)}
-              </span>
-              <span class="text-text-ghost ml-0.5">ms</span>
-            </span>
-            <span class="text-border">|</span>
-            <span class="text-text-dim">
-              <span class="stat-value font-semibold text-text">
-                {Float.round(@latest_measurement.ping_jitter, 1)}
-              </span>
-              <span class="text-text-ghost ml-0.5">ms jitter</span>
-            </span>
-            <span class="text-border">|</span>
-            <span class="text-text-ghost">
-              {Calendar.strftime(@latest_measurement.timestamp, "%b %d, %H:%M UTC")}
-            </span>
-          <% else %>
-            <span class="text-text-ghost">Run your first speedtest to see results</span>
-          <% end %>
+        
+<!-- Oscilloscope display -->
+        <div class="crt-scope">
+          <div class="crt-scanlines"></div>
+          <canvas id="crt-canvas"></canvas>
+          <div class="crt-readout">
+            <span id="crt-speed-value" class="crt-speed-num">───</span>
+            <span id="crt-speed-unit" class="crt-speed-unit-label">Mbps</span>
+          </div>
+        </div>
+        
+<!-- Live stats bar -->
+        <div class="crt-stats">
+          <div class="crt-stat">
+            <span class="crt-stat-label">LATENCY</span>
+            <span id="crt-stat-latency" class="crt-stat-value">──</span>
+            <span class="crt-stat-unit">ms</span>
+          </div>
+          <div class="crt-stat">
+            <span class="crt-stat-label">JITTER</span>
+            <span id="crt-stat-jitter" class="crt-stat-value">──</span>
+            <span class="crt-stat-unit">ms</span>
+          </div>
+          <div class="crt-stat">
+            <span class="crt-stat-label">ELAPSED</span>
+            <span id="crt-stat-elapsed" class="crt-stat-value">──</span>
+            <span class="crt-stat-unit">s</span>
+          </div>
+          <div class="crt-stat">
+            <span class="crt-stat-label">SERVER</span>
+            <span id="crt-stat-server" class="crt-stat-value">──</span>
+          </div>
         </div>
       </div>
       
-<!-- Action Controls -->
-      <div class="flex flex-wrap items-center gap-3 lg:pb-1">
-        <div class="seg-control">
-          <button
-            phx-click="set_range"
-            phx-value-range="24h"
-            class={@time_range == "24h" && "active"}
-          >
-            24h
-          </button>
-          <button
-            phx-click="set_range"
-            phx-value-range="7d"
-            class={@time_range == "7d" && "active"}
-          >
-            7d
-          </button>
-          <button
-            phx-click="set_range"
-            phx-value-range="30d"
-            class={@time_range == "30d" && "active"}
-          >
-            30d
-          </button>
-        </div>
-
-        <div class="relative">
-          <select
-            id="server-select"
-            name="server_id"
-            phx-change="select_server"
-            class="bf-select max-w-[200px]"
-            disabled={@test_running}
-          >
-            <option value="auto" selected={@selected_server_id == "auto"}>Auto (closest)</option>
-            <%= for server <- @available_servers do %>
-              <option value={server[:id]} selected={@selected_server_id == to_string(server[:id])}>
-                {server[:name]}{if server[:location] != "",
-                  do: " - #{server[:location]}",
-                  else: ""}
-              </option>
-            <% end %>
-          </select>
-          <%= if not @servers_loaded do %>
-            <button
-              phx-click="load_servers"
-              aria-label="Load nearby servers"
-              class="absolute right-7 top-1/2 -translate-y-1/2 text-text-ghost hover:text-text-dim transition-colors"
-              title="Load nearby servers"
-            >
-              <.icon name="hero-arrow-path-mini" class="size-3.5" />
-            </button>
-          <% end %>
-        </div>
-
+<!-- Controls row during test -->
+      <div class="flex items-center justify-end mt-4">
         <button
           id="run-test-btn"
           phx-click="run_test"
           class="cta-run"
-          disabled={@test_running}
+          disabled={true}
         >
-          <%= if @test_running do %>
-            <span class="inline-block size-4 border-2 border-white/30 border-t-white rounded-full animate-spin">
-            </span>
-            Running...
-          <% else %>
-            <.icon name="hero-play-mini" class="size-4" /> Run Test
-          <% end %>
+          <span class="inline-block size-4 border-2 border-white/30 border-t-white rounded-full animate-spin">
+          </span>
+          Running...
         </button>
       </div>
-    </div>
-  </section>
+    </section>
+  <% else %>
+    <!-- Hero: Current Speed Readout -->
+    <section class="pt-8 pb-6">
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div>
+          <p class="text-xs font-semibold tracking-[0.15em] uppercase text-text-dim mb-3">
+            <%= if @latest_measurement do %>
+              Download Speed
+            <% else %>
+              No Data
+            <% end %>
+          </p>
+          <div class="flex items-baseline gap-2">
+            <%= if @latest_measurement do %>
+              <span class="speed-hero">
+                {Float.round(@latest_measurement.download_mbps, 1)}
+                <span class="unit">Mbps</span>
+              </span>
+            <% else %>
+              <span class="speed-hero text-text-ghost">
+                -- <span class="unit">Mbps</span>
+              </span>
+            <% end %>
+          </div>
+          <div class="flex items-center gap-4 mt-3 text-sm">
+            <%= if @latest_measurement do %>
+              <span class="text-text-dim">
+                <span class="stat-value font-semibold text-text">
+                  {Float.round(@latest_measurement.upload_mbps, 1)}
+                </span>
+                <span class="text-text-ghost ml-0.5">Mbps up</span>
+              </span>
+              <span class="text-border">|</span>
+              <span class="text-text-dim">
+                <span class="stat-value font-semibold text-text">
+                  {Float.round(@latest_measurement.ping_latency, 1)}
+                </span>
+                <span class="text-text-ghost ml-0.5">ms</span>
+              </span>
+              <span class="text-border">|</span>
+              <span class="text-text-dim">
+                <span class="stat-value font-semibold text-text">
+                  {Float.round(@latest_measurement.ping_jitter, 1)}
+                </span>
+                <span class="text-text-ghost ml-0.5">ms jitter</span>
+              </span>
+              <span class="text-border">|</span>
+              <span class="text-text-ghost">
+                {Calendar.strftime(@latest_measurement.timestamp, "%b %d, %H:%M UTC")}
+              </span>
+            <% else %>
+              <span class="text-text-ghost">Run your first speedtest to see results</span>
+            <% end %>
+          </div>
+        </div>
+        
+<!-- Action Controls -->
+        <div class="flex flex-wrap items-center gap-3 lg:pb-1">
+          <div class="seg-control">
+            <button
+              phx-click="set_range"
+              phx-value-range="24h"
+              class={@time_range == "24h" && "active"}
+            >
+              24h
+            </button>
+            <button
+              phx-click="set_range"
+              phx-value-range="7d"
+              class={@time_range == "7d" && "active"}
+            >
+              7d
+            </button>
+            <button
+              phx-click="set_range"
+              phx-value-range="30d"
+              class={@time_range == "30d" && "active"}
+            >
+              30d
+            </button>
+          </div>
+
+          <div class="relative">
+            <select
+              id="server-select"
+              name="server_id"
+              phx-change="select_server"
+              class="bf-select max-w-[200px]"
+              disabled={@test_running}
+            >
+              <option value="auto" selected={@selected_server_id == "auto"}>
+                Auto (closest)
+              </option>
+              <%= for server <- @available_servers do %>
+                <option
+                  value={server[:id]}
+                  selected={@selected_server_id == to_string(server[:id])}
+                >
+                  {server[:name]}{if server[:location] != "",
+                    do: " - #{server[:location]}",
+                    else: ""}
+                </option>
+              <% end %>
+            </select>
+            <%= if not @servers_loaded do %>
+              <button
+                phx-click="load_servers"
+                aria-label="Load nearby servers"
+                class="absolute right-7 top-1/2 -translate-y-1/2 text-text-ghost hover:text-text-dim transition-colors"
+                title="Load nearby servers"
+              >
+                <.icon name="hero-arrow-path-mini" class="size-3.5" />
+              </button>
+            <% end %>
+          </div>
+
+          <button
+            id="run-test-btn"
+            phx-click="run_test"
+            class="cta-run"
+            disabled={@test_running}
+          >
+            <.icon name="hero-play-mini" class="size-4" /> Run Test
+          </button>
+        </div>
+      </div>
+    </section>
+  <% end %>
 
   <%= if @measurements == [] do %>
     <!-- Empty State -->
@@ -148,7 +215,7 @@
       </p>
     </section>
   <% else %>
-    <!-- Speed Chart — full width, the main story -->
+    <!-- Speed Chart - full width, the main story -->
     <section class="chart-section">
       <div class="chart-section-header">
         <div class="flex items-center gap-2">
@@ -173,7 +240,7 @@
       </div>
     </section>
     
-<!-- Network Quality Charts — 2 column -->
+<!-- Network Quality Charts - 2 column -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section class="chart-section">
         <div class="chart-section-header">
@@ -206,7 +273,7 @@
       </section>
     </div>
     
-<!-- Detail Charts — 2 column -->
+<!-- Detail Charts - 2 column -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section class="chart-section">
         <div class="chart-section-header">
@@ -251,7 +318,7 @@
       </section>
     </div>
     
-<!-- Reliability — full width -->
+<!-- Reliability - full width -->
     <section class="chart-section">
       <div class="chart-section-header">
         <div class="flex items-center gap-2">

@@ -8,7 +8,7 @@ on:
 
 jobs:
   release:
-    # Only run when the CI workflow succeeds — never on a failing build
+    # Only run when the CI workflow succeeds - never on a failing build
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:

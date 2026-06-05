@@ -536,6 +536,331 @@ chartHooks.DurationChart = {
   }
 }
 
+// ── SpeedtestViz: CRT oscilloscope diagnostics ────────────────────────
+
+chartHooks.SpeedtestViz = {
+  mounted() {
+    this.phase = null
+    this.samples = []          // ring buffer of {time, mbps}
+    this.maxSamples = 120      // keep last ~120 data points
+    this.startTime = Date.now()
+    this.pingDone = false
+    this.downloadDone = false
+    this.animId = null
+
+    // DOM refs
+    this.canvas = document.getElementById("crt-canvas")
+    this.ctx = this.canvas.getContext("2d")
+    this.speedEl = document.getElementById("crt-speed-value")
+    this.unitEl = document.getElementById("crt-speed-unit")
+    this.latencyEl = document.getElementById("crt-stat-latency")
+    this.jitterEl = document.getElementById("crt-stat-jitter")
+    this.elapsedEl = document.getElementById("crt-stat-elapsed")
+    this.serverEl = document.getElementById("crt-stat-server")
+    this.phasePing = document.getElementById("crt-phase-ping")
+    this.phaseDownload = document.getElementById("crt-phase-download")
+    this.phaseUpload = document.getElementById("crt-phase-upload")
+
+    // Size canvas to actual pixel dimensions
+    this._resize()
+    window.addEventListener("resize", this._onResize = () => this._resize())
+
+    // Phosphor colors per phase
+    this.phaseColors = {
+      ping:     { r: 251, g: 191, b: 36 },   // amber
+      download: { r: 34,  g: 211, b: 238 },   // cyan
+      upload:   { r: 52,  g: 211, b: 153 },   // green
+    }
+
+    // Start the render loop
+    this._animate()
+
+    // Listen for progress events from LiveView
+    this.handleEvent("speedtest_progress", ({type, data}) => this._onProgress(type, data))
+
+    // Clean up when the test finishes (panel gets removed from DOM)
+    this.handleEvent("speedtest_complete", () => this._stop())
+  },
+
+  destroyed() {
+    this._stop()
+  },
+
+  _resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect()
+    const dpr = window.devicePixelRatio || 1
+    this.canvas.width = rect.width * dpr
+    this.canvas.height = rect.height * dpr
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    this.w = rect.width
+    this.h = rect.height
+  },
+
+  _stop() {
+    if (this.animId) {
+      cancelAnimationFrame(this.animId)
+      this.animId = null
+    }
+    if (this._onResize) {
+      window.removeEventListener("resize", this._onResize)
+    }
+  },
+
+  // ── Data ingestion ────────────────────────────────────────────
+
+  _onProgress(type, data) {
+    const now = Date.now()
+
+    if (type === "testStart") {
+      this.startTime = now
+      const serverName = data.server?.name || data.server?.location || "──"
+      if (this.serverEl) this.serverEl.textContent = serverName
+      return
+    }
+
+    if (type === "ping") {
+      this._setPhase("ping")
+      const latency = data.ping?.latency
+      const jitter = data.ping?.jitter
+      if (latency != null && this.latencyEl) this.latencyEl.textContent = latency.toFixed(1)
+      if (jitter != null && this.jitterEl) this.jitterEl.textContent = jitter.toFixed(1)
+
+      // Show latency as the "speed" during ping phase
+      if (latency != null && this.speedEl) {
+        this.speedEl.textContent = latency.toFixed(1)
+        this.speedEl.className = "crt-speed-num ping-val"
+      }
+      if (this.unitEl) this.unitEl.textContent = "ms"
+
+      // Add to waveform — use latency inverted so lower = higher bar
+      const mbps = latency != null ? latency : 0
+      this.samples.push({time: now, mbps, raw: latency})
+      if (this.samples.length > this.maxSamples) this.samples.shift()
+
+      if ((data.ping?.progress ?? 0) >= 1) {
+        this.pingDone = true
+        this._markPhaseDone("ping")
+      }
+      return
+    }
+
+    if (type === "download") {
+      this._setPhase("download")
+      const bandwidth = data.download?.bandwidth || 0  // bytes/sec
+      const mbps = bandwidth * 8 / 1_000_000
+
+      this.samples.push({time: now, mbps})
+      if (this.samples.length > this.maxSamples) this.samples.shift()
+
+      if (this.speedEl) {
+        this.speedEl.textContent = mbps.toFixed(1)
+        this.speedEl.className = "crt-speed-num"
+      }
+      if (this.unitEl) this.unitEl.textContent = "Mbps"
+
+      if ((data.download?.progress ?? 0) >= 1) {
+        this.downloadDone = true
+        this._markPhaseDone("download")
+      }
+      return
+    }
+
+    if (type === "upload") {
+      this._setPhase("upload")
+      const bandwidth = data.upload?.bandwidth || 0
+      const mbps = bandwidth * 8 / 1_000_000
+
+      this.samples.push({time: now, mbps})
+      if (this.samples.length > this.maxSamples) this.samples.shift()
+
+      if (this.speedEl) {
+        this.speedEl.textContent = mbps.toFixed(1)
+        this.speedEl.className = "crt-speed-num mbps-upload"
+      }
+      if (this.unitEl) this.unitEl.textContent = "Mbps"
+
+      if ((data.upload?.progress ?? 0) >= 1) {
+        this._markPhaseDone("upload")
+      }
+      return
+    }
+  },
+
+  // ── Phase tracking ────────────────────────────────────────────
+
+  _setPhase(p) {
+    if (this.phase === p) return
+    // Mark previous phase as done when transitioning forward
+    if (this.phase === "ping" && p !== "ping") { this._markPhaseDone("ping"); this.pingDone = true }
+    if (this.phase === "download" && p === "upload") { this._markPhaseDone("download"); this.downloadDone = true }
+
+    this.phase = p
+    // Clear samples when changing phase so the waveform resets
+    this.samples = []
+
+    const phases = {ping: this.phasePing, download: this.phaseDownload, upload: this.phaseUpload}
+    for (const [name, el] of Object.entries(phases)) {
+      if (!el) continue
+      el.classList.remove("active", "done")
+      if (name === p) el.classList.add("active")
+    }
+  },
+
+  _markPhaseDone(name) {
+    const el = {ping: this.phasePing, download: this.phaseDownload, upload: this.phaseUpload}[name]
+    if (el) { el.classList.remove("active"); el.classList.add("done") }
+  },
+
+  // ── Render loop ───────────────────────────────────────────────
+
+  _animate() {
+    this._draw()
+    this._updateElapsed()
+    this.animId = requestAnimationFrame(() => this._animate())
+  },
+
+  _updateElapsed() {
+    if (!this.elapsedEl) return
+    const sec = ((Date.now() - this.startTime) / 1000).toFixed(1)
+    this.elapsedEl.textContent = sec
+  },
+
+  _draw() {
+    const ctx = this.ctx
+    const w = this.w
+    const h = this.h
+    if (!w || !h) return
+
+    // ── Background ──
+    ctx.fillStyle = "#020408"
+    ctx.fillRect(0, 0, w, h)
+
+    // ── Grid ──
+    const gridColor = "rgba(34, 211, 238, 0.04)"
+    ctx.strokeStyle = gridColor
+    ctx.lineWidth = 1
+
+    // Horizontal grid lines (8 divisions)
+    const hDivs = 8
+    for (let i = 1; i < hDivs; i++) {
+      const y = (h / hDivs) * i
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(w, y)
+      ctx.stroke()
+    }
+
+    // Vertical grid lines (12 divisions)
+    const vDivs = 12
+    for (let i = 1; i < vDivs; i++) {
+      const x = (w / vDivs) * i
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, h)
+      ctx.stroke()
+    }
+
+    // ── Center crosshair ──
+    ctx.strokeStyle = "rgba(34, 211, 238, 0.08)"
+    ctx.beginPath()
+    ctx.moveTo(w / 2, 0)
+    ctx.lineTo(w / 2, h)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(0, h / 2)
+    ctx.lineTo(w, h / 2)
+    ctx.stroke()
+
+    // ── Waveform ──
+    if (this.samples.length < 2) return
+
+    const color = this.phaseColors[this.phase] || this.phaseColors.download
+    const padTop = 30
+    const padBottom = 30
+    const drawH = h - padTop - padBottom
+
+    // Determine Y range: auto-scale with a minimum range
+    let maxVal = 0
+    for (const s of this.samples) {
+      if (s.mbps > maxVal) maxVal = s.mbps
+    }
+    // Ping phase: invert so waveform goes up for lower latency
+    const isPing = this.phase === "ping"
+    if (isPing && maxVal > 0) {
+      // We draw latency directly, higher = worse, so flip
+      maxVal = maxVal * 1.2
+    } else {
+      maxVal = Math.max(maxVal * 1.15, 10) // at least 10 Mbps scale
+    }
+
+    // Draw multiple "afterglow" layers for phosphor effect
+    const layers = [
+      { alpha: 0.03, width: 12 },
+      { alpha: 0.06, width: 8 },
+      { alpha: 0.15, width: 4 },
+      { alpha: 0.5,  width: 2 },
+      { alpha: 1.0,  width: 1.5 },
+    ]
+
+    for (const layer of layers) {
+      ctx.beginPath()
+      ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${layer.alpha})`
+      ctx.lineWidth = layer.width
+      ctx.lineJoin = "round"
+      ctx.lineCap = "round"
+
+      for (let i = 0; i < this.samples.length; i++) {
+        const x = (i / (this.maxSamples - 1)) * w
+        const val = isPing
+          ? (1 - this.samples[i].mbps / maxVal) // inverted for ping
+          : this.samples[i].mbps / maxVal
+        const y = padTop + drawH * (1 - Math.max(0, Math.min(1, val)))
+
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+    }
+
+    // ── Phosphor dot at the latest point ──
+    if (this.samples.length > 0) {
+      const last = this.samples[this.samples.length - 1]
+      const x = ((this.samples.length - 1) / (this.maxSamples - 1)) * w
+      const val = isPing
+        ? (1 - last.mbps / maxVal)
+        : last.mbps / maxVal
+      const y = padTop + drawH * (1 - Math.max(0, Math.min(1, val)))
+
+      // Glow
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, 20)
+      grad.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, 0.8)`)
+      grad.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`)
+      grad.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`)
+      ctx.fillStyle = grad
+      ctx.fillRect(x - 20, y - 20, 40, 40)
+
+      // Bright dot
+      ctx.beginPath()
+      ctx.arc(x, y, 3, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`
+      ctx.fill()
+    }
+
+    // ── Scale labels ──
+    ctx.fillStyle = "rgba(255, 255, 255, 0.12)"
+    ctx.font = "10px monospace"
+    ctx.textAlign = "left"
+
+    if (isPing) {
+      ctx.fillText(`${maxVal.toFixed(1)}ms`, 4, padTop + 10)
+      ctx.fillText("0ms", 4, h - padBottom - 2)
+    } else {
+      ctx.fillText(`${maxVal.toFixed(0)} Mbps`, 4, padTop + 10)
+      ctx.fillText("0", 4, h - padBottom - 2)
+    }
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

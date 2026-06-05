@@ -4,10 +4,10 @@ defmodule Baudflow.Measurements.BenchmarkWorker do
   and sets the `healthy` and `benchmarks` fields accordingly.
 
   Threshold settings (stored as strings in the settings table):
-  - `threshold_enabled` — "true" or "false" (default "false")
-  - `threshold_download` — minimum download Mbps (default "0", meaning disabled)
-  - `threshold_upload` — minimum upload Mbps (default "0", meaning disabled)
-  - `threshold_ping` — maximum ping ms (default "0", meaning disabled)
+  - `threshold_enabled` - "true" or "false" (default "false")
+  - `threshold_download` - minimum download Mbps (default "0", meaning disabled)
+  - `threshold_upload` - minimum upload Mbps (default "0", meaning disabled)
+  - `threshold_ping` - maximum ping ms (default "0", meaning disabled)
   """
   use Oban.Worker, queue: :default, max_attempts: 1
 

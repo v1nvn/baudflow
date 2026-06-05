@@ -4,19 +4,21 @@ A self-hosted network speed monitoring dashboard built with Phoenix LiveView. Ba
 
 ## Features
 
-- **Automated & manual speed tests** — schedule tests on a cron or trigger one from the dashboard
-- **Real-time dashboard** — live charts for download/upload speeds and latency via Chart.js
-- **Run history** — browse past test runs with success/failure status
-- **Per-result detail** — drill into ping, jitter, download, upload, server, and ISP info for any individual measurement
-- **Configurable settings** — cron schedule, preferred/blocked servers, retention policy, degradation thresholds
-- **Background processing** — Oban workers for test execution, scheduling, cleanup, and notifications
-- **Health endpoint** — `GET /health` for uptime monitoring
+- **Automated & manual speed tests** - schedule tests on a cron or trigger one from the dashboard
+- **Live speedtest visualization** - CRT-style oscilloscope display with real-time waveform, phase tracking (ping → download → upload), and live stats as the test runs
+- **Real-time dashboard** - historical charts for download/upload speeds, latency, jitter, packet loss, and test duration via Chart.js
+- **NDJSON streaming** - speedtest CLI output streamed line-by-line via Erlang ports for instant progress updates
+- **Run history** - browse past test runs with success/failure status
+- **Per-result detail** - drill into ping, jitter, download, upload, server, and ISP info for any individual measurement
+- **Configurable settings** - cron schedule, preferred/blocked servers, retention policy, degradation thresholds
+- **Background processing** - Oban workers for test execution, scheduling, cleanup, and notifications
+- **Health endpoint** - `GET /health` for uptime monitoring
 
 ## Quick Start
 
 ### Prerequisites
 
-- Elixir 1.18+ and Erlang/OTP 27+
+- Elixir 1.19+ and Erlang/OTP 29+
 - PostgreSQL
 - [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli) installed and in `$PATH`
 
@@ -43,18 +45,21 @@ iex -S mix phx.server
 ```
 lib/
 ├── baudflow/
-│   ├── measurements/        # Speedtest schema, worker, scheduler, cleanup
+│   ├── measurements/        # Speedtest schema, NDJSON streaming worker, scheduler, cleanup
 │   ├── runs/                # Test run tracking
 │   └── settings/            # App configuration (key-value)
 └── baudflow_web/
     ├── live/
-    │   ├── dashboard_live.ex   # / — main dashboard
-    │   ├── history_live.ex     # /history — historical trends
-    │   ├── runs_live.ex        # /runs — run management
-    │   ├── result_live.ex      # /results/:id — single result
-    │   └── settings_live.ex    # /settings — configuration
+    │   ├── dashboard_live.ex   # / - main dashboard + live speedtest viz
+    │   ├── history_live.ex     # /history - historical trends
+    │   ├── runs_live.ex        # /runs - run management
+    │   ├── result_live.ex      # /results/:id - single result
+    │   └── settings_live.ex    # /settings - configuration
     ├── components/             # Shared UI components
     └── router.ex
+assets/
+├── js/app.js                # Chart.js hooks + SpeedtestViz CRT oscilloscope hook
+└── css/app.css              # Tailwind v4 + CRT panel styles
 ```
 
 Key dependencies: **Phoenix 1.8**, **LiveView**, **Ecto + PostgreSQL**, **Oban** (jobs), **Tailwind CSS v4**, **Bandit**.

@@ -1,7 +1,8 @@
 defmodule Baudflow.Measurements.SpeedtestWorker do
   @moduledoc """
-  Oban worker that runs the speedtest CLI, parses the result, inserts a
-  measurement, broadcasts on PubSub, and enqueues a notification check.
+  Oban worker that runs the speedtest CLI, streams progress events over
+  PubSub, parses the final result, inserts a measurement, and enqueues
+  notification and benchmark workers.
 
   The speedtest command is resolved at **runtime** via
   `Application.get_env(:baudflow, :speedtest_bin)`, falling back to
@@ -10,8 +11,13 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
   (`"docker exec baudflow-speedtest speedtest"`). Tests point this at
   `test/support/fake_speedtest`.
 
-  Timeout is enforced by the OS `timeout` coreutil (exit 124), not by
-  `System.cmd` (which has no `:timeout` option).
+  Uses `--format=jsonl` (NDJSON) so the CLI streams per-phase progress
+  lines (ping, download, upload) that are broadcast on PubSub as
+  `{:speedtest_progress, type, data}`.  The final `"type": "result"` line
+  is stored as the measurement.
+
+  Timeout is enforced by the OS `timeout` coreutil (exit 124) when
+  available, otherwise by a receive timeout on the Port (125 s).
   """
   use Oban.Worker, queue: :speedtest, max_attempts: 2
 
@@ -19,6 +25,8 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
   alias Baudflow.Measurements.BenchmarkWorker
   alias Baudflow.Measurements.NotificationWorker
   alias Baudflow.Runs
+
+  @port_timeout_ms 125_000
 
   @doc """
   Returns `true` if the speedtest command is available.
@@ -38,10 +46,10 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
 
     try do
       case run_speedtest(args) do
-        {:ok, output} ->
-          handle_success(output, args, started_at, job_id)
+        {:ok, result} ->
+          handle_success(result, args, started_at, job_id)
 
-        {:error, 124, _output} ->
+        {:error, :timeout} ->
           Runs.fail_run(started_at, "speedtest timed out after 120s", job_id, "timeout")
           {:error, :timeout}
 
@@ -54,6 +62,11 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
           )
 
           {:error, "speedtest CLI exited with code #{exit_code}"}
+
+        {:error, reason} when is_binary(reason) ->
+          Runs.fail_run(started_at, reason, job_id, "failure")
+          broadcast_failure(reason)
+          {:error, reason}
       end
     rescue
       e ->
@@ -64,77 +77,111 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
     end
   end
 
-  defp handle_success(output, args, started_at, job_id) do
-    case parse_result_line(output) do
-      {:ok, result} ->
-        attrs =
-          result
-          |> map_ookla_result()
-          |> Map.put(:source, args["source"] || "scheduled")
-          |> Map.put(:speedtest_version, System.get_env("SPEEDTEST_VERSION"))
+  defp handle_success(result, args, started_at, job_id) do
+    attrs =
+      result
+      |> map_ookla_result()
+      |> Map.put(:source, args["source"] || "scheduled")
+      |> Map.put(:speedtest_version, System.get_env("SPEEDTEST_VERSION"))
 
-        case Measurements.create_measurement(attrs) do
-          {:ok, measurement} ->
-            Runs.complete_run(started_at, measurement.id, job_id)
+    case Measurements.create_measurement(attrs) do
+      {:ok, measurement} ->
+        Runs.complete_run(started_at, measurement.id, job_id)
 
-            broadcast_result(measurement)
+        broadcast_result(measurement)
 
-            %{measurement_id: measurement.id}
-            |> NotificationWorker.new()
-            |> Oban.insert()
+        %{measurement_id: measurement.id}
+        |> NotificationWorker.new()
+        |> Oban.insert()
 
-            %{measurement_id: measurement.id}
-            |> BenchmarkWorker.new()
-            |> Oban.insert()
+        %{measurement_id: measurement.id}
+        |> BenchmarkWorker.new()
+        |> Oban.insert()
 
-            :ok
+        :ok
 
-          {:error, changeset} ->
-            error = inspect(changeset.errors)
-            Runs.fail_run(started_at, error, job_id, "failure")
-            broadcast_failure(error)
-            {:error, changeset}
-        end
-
-      {:error, reason} ->
-        Runs.fail_run(started_at, reason, job_id, "failure")
-        broadcast_failure(reason)
-        {:error, reason}
+      {:error, changeset} ->
+        error = inspect(changeset.errors)
+        Runs.fail_run(started_at, error, job_id, "failure")
+        broadcast_failure(error)
+        {:error, changeset}
     end
   end
 
-  @doc """
-  Extract the result JSON from speedtest output.
+  # ── Port-based NDJSON streaming ──────────────────────────────────
 
-  Handles two formats:
-  - Pretty-printed JSON (the whole output is one JSON object)
-  - NDJSON with noise (license banners, log lines) - scans for the result line
-  """
-  def parse_result_line(output) do
-    # Try decoding the entire output first (works for pretty-printed JSON)
-    case Jason.decode(output) do
-      {:ok, %{"type" => "result"} = result} ->
-        {:ok, result}
+  defp run_speedtest(args) do
+    cmd = speedtest_cmd(args)
+    bin_path = System.find_executable(cmd.bin)
+
+    if is_nil(bin_path) do
+      {:error, "speedtest binary not found: #{cmd.bin}"}
+    else
+      port =
+        Port.open(
+          {:spawn_executable, to_charlist(bin_path)},
+          [
+            :binary,
+            :exit_status,
+            :use_stdio,
+            {:line, 4096},
+            {:args, Enum.map(cmd.args, &to_charlist/1)}
+          ]
+        )
+
+      stream_output(port, nil, [])
+    end
+  end
+
+  defp stream_output(port, result, acc) do
+    receive do
+      {^port, {:data, {:eol, line}}} ->
+        new_result = handle_ndjson_line(line, result)
+        stream_output(port, new_result, acc)
+
+      {^port, {:exit_status, 0}} ->
+        if result do
+          {:ok, result}
+        else
+          {:error, "no result line found in speedtest output"}
+        end
+
+      {^port, {:exit_status, 124}} ->
+        {:error, :timeout}
+
+      {^port, {:exit_status, code}} ->
+        {:error, code, Enum.join(Enum.reverse(acc), "\n")}
+    after
+      @port_timeout_ms ->
+        Port.close(port)
+        {:error, :timeout}
+    end
+  end
+
+  defp handle_ndjson_line(line, result) do
+    case Jason.decode(line) do
+      {:ok, %{"type" => type} = data} when type in ["testStart", "ping", "download", "upload"] ->
+        broadcast_progress(type, data)
+        result
+
+      {:ok, %{"type" => "result"} = data} ->
+        data
 
       _ ->
-        # Fall back to NDJSON line scanning (handles mixed banner + JSON output)
-        case scan_ndjson_for_result(output) do
-          nil -> {:error, "no result line found in speedtest output"}
-          result -> {:ok, result}
-        end
+        # Non-JSON line (license banner, blank line, etc.) - skip
+        result
     end
   end
 
-  defp scan_ndjson_for_result(output) do
-    output
-    |> String.split("\n")
-    |> Enum.find_value(fn line ->
-      case Jason.decode(line) do
-        {:ok, %{"type" => "result"} = parsed} -> parsed
-        _ -> nil
-      end
-    end)
+  defp broadcast_progress(type, data) do
+    Phoenix.PubSub.broadcast(
+      Baudflow.PubSub,
+      "measurements",
+      {:speedtest_progress, type, data}
+    )
   end
+
+  # ── PubSub helpers ───────────────────────────────────────────────
 
   defp broadcast_result(measurement) do
     Phoenix.PubSub.broadcast(
@@ -152,23 +199,13 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
     )
   end
 
-  defp run_speedtest(args) do
-    cmd = speedtest_cmd(args)
-
-    case System.cmd(cmd.bin, cmd.args, stderr_to_stdout: true) do
-      {output, 0} ->
-        {:ok, output}
-
-      {output, exit_code} ->
-        {:error, exit_code, output}
-    end
-  end
+  # ── Command construction ─────────────────────────────────────────
 
   defp speedtest_cmd(args) do
     server_id = args["server_id"]
 
     speedtest_args =
-      ["--accept-license", "--accept-gdpr", "--format=json"] ++
+      ["--accept-license", "--accept-gdpr", "--format=jsonl"] ++
         if(server_id && server_id != "", do: ["-s", to_string(server_id)], else: [])
 
     {bin, prefix} = speedtest_command()
@@ -206,6 +243,8 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
       System.get_env("TIMEOUT_BIN") ||
       if(System.find_executable("timeout"), do: "timeout", else: nil)
   end
+
+  # ── Result mapping ───────────────────────────────────────────────
 
   defp map_ookla_result(result) do
     %{
