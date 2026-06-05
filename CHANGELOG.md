@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.0](https://github.com/v1nvn/baudflow/compare/v0.2.4...v0.3.0) (2026-06-05)
+
+
+
+
+### Features:
+
+* live speedtest visualization by v1nvn
+
 ## [v0.2.4](https://github.com/v1nvn/baudflow/compare/v0.2.3...v0.2.4) (2026-06-05)
 
 
