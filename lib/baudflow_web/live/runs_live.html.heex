@@ -17,22 +17,20 @@
   <%!-- Status Filter --%>
   <div class="glass-card">
     <div class="p-3 sm:p-4">
-      <.form for={%{}} id="runs-filter-form" phx-change="filter">
+      <.form for={@form} id="runs-filter-form" phx-change="filter">
         <div class="flex flex-wrap items-end gap-3">
-          <div>
-            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-              Status
-            </label>
-            <select
-              name="status"
-              class="bf-select !w-32 !text-sm"
-            >
-              <option value="" selected={@status == ""}>All</option>
-              <option value="success" selected={@status == "success"}>Success</option>
-              <option value="failure" selected={@status == "failure"}>Failed</option>
-              <option value="timeout" selected={@status == "timeout"}>Timeout</option>
-            </select>
-          </div>
+          <.input
+            field={@form[:status]}
+            type="select"
+            label="Status"
+            class="bf-select !w-32 !text-sm"
+            options={[
+              {"All", ""},
+              {"Success", "success"},
+              {"Failed", "failure"},
+              {"Timeout", "timeout"}
+            ]}
+          />
         </div>
       </.form>
     </div>

@@ -79,19 +79,40 @@ defmodule Baudflow.Measurements do
 
   @doc "Update healthy and benchmarks fields on a measurement."
   def update_health(measurement, healthy, benchmarks) do
-    measurement
-    |> Ecto.Changeset.change(healthy: healthy, benchmarks: benchmarks)
-    |> Repo.update!()
+    Measurement.health_changeset(measurement, %{healthy: healthy, benchmarks: benchmarks})
+    |> Repo.update()
+  end
+
+  @doc """
+  Delete all measurements strictly older than `cutoff` timestamp.
+  Returns the number of deleted rows.
+  """
+  def prune_older_than(cutoff) do
+    {count, _} =
+      Repo.delete_all(
+        from(m in Measurement,
+          where: m.timestamp < ^cutoff
+        )
+      )
+
+    count
   end
 
   @doc "Compute 7-day and 30-day average download Mbps, excluding manual entries."
   def window_averages do
-    now = DateTime.utc_now()
-
     %{
-      avg_7d: average_download_since(DateTime.add(now, -7 * 24 * 3600, :second)),
-      avg_30d: average_download_since(DateTime.add(now, -30 * 24 * 3600, :second))
+      avg_7d: rolling_average(7),
+      avg_30d: rolling_average(30)
     }
+  end
+
+  @doc """
+  Average download Mbps over the last `days` days, excluding manual entries.
+  Returns `nil` when there are no qualifying measurements.
+  """
+  def rolling_average(days) do
+    since = DateTime.add(DateTime.utc_now(), -days * 24 * 3600, :second)
+    average_download_since(since)
   end
 
   defp average_download_since(since) do

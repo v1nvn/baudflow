@@ -91,6 +91,24 @@ defmodule BaudflowWeb.HistoryLiveTest do
     end
   end
 
+  describe "invalid page param" do
+    test "falls back to page 1 for non-numeric ?page= instead of crashing", %{conn: conn} do
+      # Pre-fix this raised ArgumentError in String.to_integer/1; the success
+      # of live/2 (returning {:ok, _}) is itself the regression assertion.
+      {:ok, _lv, html} = live(conn, ~p"/history?page=abc")
+
+      assert html =~ "Speed Test History"
+      assert html =~ "No measurements found"
+    end
+
+    test "clamps negative ?page= to page 1 instead of crashing", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/history?page=-5")
+
+      assert html =~ "Speed Test History"
+      assert html =~ "No measurements found"
+    end
+  end
+
   describe "filtering by date range" do
     test "filters measurements by date_from", %{conn: conn} do
       old_ts = ~U[2025-01-15 10:00:00Z]

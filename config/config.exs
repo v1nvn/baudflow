@@ -11,8 +11,22 @@ config :baudflow,
   ecto_repos: [Baudflow.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-# Oban - queues declared in runtime.exs (prod/test branches); crontab wired at integration.
+# Oban base config: repo for all envs. Queues + crontab are identical in dev and
+# prod, so they live here once (guarded out of :test, where Oban runs in
+# testing: :manual and needs neither). runtime.exs adds only env-driven wiring.
 config :baudflow, Oban, repo: Baudflow.Repo
+
+if config_env() != :test do
+  config :baudflow, Oban,
+    queues: [scheduler: 1, speedtest: 1, notifications: 1, default: 1],
+    plugins: [
+      {Oban.Plugins.Cron,
+       crontab: [
+         {"* * * * *", Baudflow.Measurements.SchedulerWorker},
+         {"0 3 * * *", Baudflow.Measurements.CleanupWorker}
+       ]}
+    ]
+end
 
 # Configure the endpoint
 config :baudflow, BaudflowWeb.Endpoint,

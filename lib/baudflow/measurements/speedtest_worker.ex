@@ -17,7 +17,7 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
   is stored as the measurement.
 
   Timeout is enforced by the OS `timeout` coreutil (exit 124) when
-  available, otherwise by a receive timeout on the Port (125 s).
+  available, otherwise by a receive timeout on the Port (SLA + 5 s grace).
   """
   use Oban.Worker, queue: :speedtest, max_attempts: 2
 
@@ -26,7 +26,13 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
   alias Baudflow.Measurements.NotificationWorker
   alias Baudflow.Runs
 
-  @port_timeout_ms 125_000
+  # The speedtest SLA, in seconds. This is the single source of truth for every
+  # timeout value: the OS `timeout` wrapper kills the CLI at this mark, the Port
+  # receive fallback fires after it plus the grace window, and every user-facing
+  # "timed out" message reads from it. Do not hardcode 120 elsewhere.
+  @timeout_seconds 120
+  @port_grace_seconds 5
+  @port_timeout_ms (@timeout_seconds + @port_grace_seconds) * 1000
 
   @doc """
   Returns `true` if the speedtest command is available.
@@ -40,6 +46,9 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
     System.find_executable(bin) != nil
   end
 
+  @doc "Worst-case speedtest runtime in milliseconds (SLA + port-receive grace)."
+  def timeout_ms, do: @port_timeout_ms
+
   @impl true
   def perform(%Oban.Job{id: job_id, args: args}) do
     started_at = DateTime.utc_now() |> DateTime.truncate(:second)
@@ -50,7 +59,16 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
           handle_success(result, args, started_at, job_id)
 
         {:error, :timeout} ->
-          Runs.fail_run(started_at, "speedtest timed out after 120s", job_id, "timeout")
+          reason = "Timed out after #{@timeout_seconds}s"
+
+          Runs.fail_run(
+            started_at,
+            "speedtest timed out after #{@timeout_seconds}s",
+            job_id,
+            "timeout"
+          )
+
+          broadcast_failure(reason)
           {:error, :timeout}
 
         {:error, exit_code, output} ->
@@ -61,7 +79,9 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
             "failure"
           )
 
-          {:error, "speedtest CLI exited with code #{exit_code}"}
+          reason = "Speedtest CLI exited with code #{exit_code}"
+          broadcast_failure(reason)
+          {:error, reason}
 
         {:error, reason} when is_binary(reason) ->
           Runs.fail_run(started_at, reason, job_id, "failure")
@@ -214,7 +234,7 @@ defmodule Baudflow.Measurements.SpeedtestWorker do
     all_args = prefix ++ speedtest_args
 
     if wrapper != nil do
-      %{bin: wrapper, args: ["120", bin | all_args]}
+      %{bin: wrapper, args: ["#{@timeout_seconds}", bin | all_args]}
     else
       %{bin: bin, args: all_args}
     end

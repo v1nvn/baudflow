@@ -135,8 +135,10 @@ defmodule BaudflowWeb.DashboardLive do
       |> SpeedtestWorker.new(unique: [period: 300])
       |> Oban.insert()
 
-      # Auto-reset loading state after 2 minutes (speedtest timeout)
-      Process.send_after(self(), :test_timeout, 120_000)
+      # Safety net only — every outcome broadcasts {:test_failed,_} or
+      # {:result,_} before this. Fire after the worker's worst-case runtime
+      # (its own SLA) plus a margin so the net never preempts a real event.
+      Process.send_after(self(), :test_timeout, SpeedtestWorker.timeout_ms() + 10_000)
 
       {:noreply, assign(socket, :test_running, true)}
     else

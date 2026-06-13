@@ -73,15 +73,7 @@ config :logger, :default_formatter, format: "[$level] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
-config :baudflow, Oban,
-  queues: [scheduler: 1, speedtest: 1, notifications: 1, default: 1],
-  plugins: [
-    {Oban.Plugins.Cron,
-     crontab: [
-       {"* * * * *", Baudflow.Measurements.SchedulerWorker},
-       {"0 3 * * *", Baudflow.Measurements.CleanupWorker}
-     ]}
-  ]
+# (Oban queues + crontab are configured once in config/config.exs.)
 
 config :phoenix, :stacktrace_depth, 20
 

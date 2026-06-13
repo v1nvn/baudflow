@@ -52,6 +52,33 @@ defmodule Baudflow.MeasurementsTest do
     end
   end
 
+  describe "update_health/3" do
+    test "updates healthy and benchmarks and returns {:ok, measurement}" do
+      {:ok, m} = Measurements.create_measurement(valid_attrs())
+
+      assert {:ok, updated} =
+               Measurements.update_health(m, true, %{"download" => %{passed: true}})
+
+      assert updated.healthy == true
+      assert updated.benchmarks == %{"download" => %{passed: true}}
+    end
+
+    test "accepts nil healthy and benchmarks" do
+      {:ok, m} = Measurements.create_measurement(valid_attrs())
+
+      assert {:ok, updated} = Measurements.update_health(m, nil, nil)
+      assert updated.healthy == nil
+      assert updated.benchmarks == nil
+    end
+
+    test "returns {:error, changeset} rather than raising on an invalid healthy value" do
+      {:ok, m} = Measurements.create_measurement(valid_attrs())
+
+      assert {:error, changeset} = Measurements.update_health(m, "not-a-boolean", nil)
+      assert "is invalid" in errors_on(changeset).healthy
+    end
+  end
+
   describe "get_measurement!/1" do
     test "returns the measurement with given id" do
       {:ok, m} = Measurements.create_measurement(valid_attrs())

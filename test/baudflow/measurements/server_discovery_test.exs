@@ -3,36 +3,6 @@ defmodule Baudflow.Measurements.ServerDiscoveryTest do
 
   alias Baudflow.Measurements.ServerDiscovery
 
-  describe "parse_server_list/1" do
-    test "returns empty list for nil" do
-      assert ServerDiscovery.parse_server_list(nil) == []
-    end
-
-    test "returns empty list for empty string" do
-      assert ServerDiscovery.parse_server_list("") == []
-    end
-
-    test "parses a single server ID" do
-      assert ServerDiscovery.parse_server_list("12345") == [12_345]
-    end
-
-    test "parses comma-separated server IDs" do
-      assert ServerDiscovery.parse_server_list("12345, 67890, 11111") == [12_345, 67_890, 11_111]
-    end
-
-    test "handles extra whitespace" do
-      assert ServerDiscovery.parse_server_list("  12345 ,  67890  ") == [12_345, 67_890]
-    end
-
-    test "handles trailing commas" do
-      assert ServerDiscovery.parse_server_list("12345,") == [12_345]
-    end
-
-    test "handles multiple commas" do
-      assert ServerDiscovery.parse_server_list("12345,,67890") == [12_345, 67_890]
-    end
-  end
-
   describe "filter_blocked/2" do
     test "returns all servers when no blocked IDs" do
       servers = [%{id: 1, name: "A"}, %{id: 2, name: "B"}]

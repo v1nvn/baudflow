@@ -68,7 +68,14 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
       try do
         Application.put_env(:baudflow, :speedtest_bin, failing_bin)
 
+        Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
+
         assert {:error, _} = perform_job(SpeedtestWorker, %{"server_id" => nil})
+
+        # Every failure path must emit a terminal broadcast so the UI
+        # never depends on a client-side timer.
+        assert_receive {:test_failed, reason}
+        assert reason =~ "exited with code"
 
         run =
           Baudflow.Repo.one(
@@ -99,7 +106,14 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
       try do
         Application.put_env(:baudflow, :speedtest_bin, timeout_bin)
 
+        Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
+
         assert {:error, :timeout} = perform_job(SpeedtestWorker, %{"server_id" => nil})
+
+        # The timeout path must emit a terminal broadcast so the UI
+        # never depends on a client-side timer.
+        assert_receive {:test_failed, reason}
+        assert reason =~ "Timed out"
 
         run =
           Baudflow.Repo.one(

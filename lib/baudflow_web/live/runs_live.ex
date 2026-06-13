@@ -13,7 +13,7 @@ defmodule BaudflowWeb.RunsLive do
 
   @impl true
   def handle_params(params, _url, socket) do
-    page = String.to_integer(params["page"] || "1")
+    page = parse_page(params["page"])
     per_page = 20
     status = params["status"] || ""
 
@@ -28,7 +28,8 @@ defmodule BaudflowWeb.RunsLive do
      |> assign(:total_pages, max(1, ceil(total / per_page)))
      |> assign(:status, status)
      |> assign(:status_counts, status_counts)
-     |> assign(:total_runs, total)}
+     |> assign(:total_runs, total)
+     |> assign(:form, to_form(%{"status" => status}))}
   end
 
   @impl true
@@ -37,6 +38,15 @@ defmodule BaudflowWeb.RunsLive do
       if status != "", do: %{"status" => status}, else: %{}
 
     {:noreply, push_patch(socket, to: ~p"/runs?#{params}")}
+  end
+
+  defp parse_page(nil), do: 1
+
+  defp parse_page(str) when is_binary(str) do
+    case Integer.parse(str) do
+      {n, _} when n >= 1 -> n
+      _ -> 1
+    end
   end
 
   defp pagination_path(page, status) do

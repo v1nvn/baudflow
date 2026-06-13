@@ -10,7 +10,7 @@ defmodule BaudflowWeb.HistoryLive do
 
   @impl true
   def handle_params(params, _url, socket) do
-    page = String.to_integer(params["page"] || "1")
+    page = parse_page(params["page"])
     per_page = 20
 
     filters = %{
@@ -42,7 +42,8 @@ defmodule BaudflowWeb.HistoryLive do
      |> assign(:filters, filters)
      |> assign(:sort_by, sort_by)
      |> assign(:sort_dir, sort_dir)
-     |> assign(:server_names, Measurements.list_server_names())}
+     |> assign(:server_names, Measurements.list_server_names())
+     |> assign(:form, to_form(filters, as: :filters))}
   end
 
   @impl true
@@ -84,6 +85,15 @@ defmodule BaudflowWeb.HistoryLive do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, _key, ""), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp parse_page(nil), do: 1
+
+  defp parse_page(str) when is_binary(str) do
+    case Integer.parse(str) do
+      {n, _} when n >= 1 -> n
+      _ -> 1
+    end
+  end
 
   defp pagination_path(page, filters, sort_by, sort_dir) do
     params =

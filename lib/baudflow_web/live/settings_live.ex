@@ -11,7 +11,7 @@ defmodule BaudflowWeb.SettingsLive do
      socket
      |> assign(:page_title, "Settings")
      |> assign(:active_page, :settings)
-     |> assign_settings(settings)}
+     |> assign_form(settings)}
   end
 
   @impl true
@@ -27,7 +27,7 @@ defmodule BaudflowWeb.SettingsLive do
 
       {:noreply,
        socket
-       |> assign_settings(params)
+       |> assign_form(params)
        |> put_flash(:info, "Settings saved - schedule takes effect within 1 minute")}
     else
       {:noreply,
@@ -35,18 +35,11 @@ defmodule BaudflowWeb.SettingsLive do
     end
   end
 
-  defp assign_settings(socket, settings) do
-    socket
-    |> assign(:schedule_cron, settings["schedule_cron"])
-    |> assign(:preferred_servers, settings["preferred_servers"])
-    |> assign(:blocked_servers, settings["blocked_servers"])
-    |> assign(:retention_days, settings["retention_days"])
-    |> assign(:degradation_threshold, settings["degradation_threshold"])
-    |> assign(:dashboard_points, settings["dashboard_points"])
-    |> assign(:threshold_enabled, settings["threshold_enabled"])
-    |> assign(:threshold_download, settings["threshold_download"])
-    |> assign(:threshold_upload, settings["threshold_upload"])
-    |> assign(:threshold_ping, settings["threshold_ping"])
+  # Settings are a key-value string store, not a schema. Build a form from the
+  # plain map with `as: :settings` so fields submit under the "settings[key]"
+  # namespace and render through the shared `<.input>` component.
+  defp assign_form(socket, settings) do
+    assign(socket, :form, to_form(settings, as: :settings))
   end
 
   defp valid_cron?(cron) when is_binary(cron) do

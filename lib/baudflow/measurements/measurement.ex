@@ -127,4 +127,11 @@ defmodule Baudflow.Measurements.Measurement do
     |> validate_required([:timestamp, :ping_latency, :download_bandwidth, :upload_bandwidth])
     |> unique_constraint(:result_id)
   end
+
+  @doc "Changeset for a health/benchmark evaluation update."
+  def health_changeset(measurement, attrs) do
+    measurement
+    |> cast(attrs, [:healthy, :benchmarks])
+    |> validate_inclusion(:healthy, [true, false, nil])
+  end
 end

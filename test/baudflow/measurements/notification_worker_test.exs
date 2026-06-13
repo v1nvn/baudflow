@@ -9,14 +9,17 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
   setup do
     Settings.update_all(%{"degradation_threshold" => "0.5"})
 
-    # Point ntfy at a URL that will fail fast (no server), so :httpc returns
-    # quickly with a connection-refused error. The worker must not crash.
-    Application.put_env(:baudflow, :ntfy_url, "http://127.0.0.1:1")
+    # Route ntfy posts through a Req.Test plug stub instead of a real server.
+    # Tests set the per-request behavior with Req.Test.stub/2. A pointlessly
+    # invalid URL ensures no real network call ever escapes if a stub is missed.
+    Application.put_env(:baudflow, :ntfy_url, "http://ntfy.test")
     Application.put_env(:baudflow, :ntfy_topic, "baudflow-test")
+    Application.put_env(:baudflow, :ntfy_plug, {Req.Test, __MODULE__})
 
     on_exit(fn ->
       Application.delete_env(:baudflow, :ntfy_url)
       Application.delete_env(:baudflow, :ntfy_topic)
+      Application.delete_env(:baudflow, :ntfy_plug)
     end)
 
     :ok
@@ -41,6 +44,20 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
     m
   end
 
+  # A successful stub: ntfy accepts the alert.
+  defp stub_success do
+    Req.Test.stub(__MODULE__, fn conn ->
+      Plug.Conn.send_resp(conn, 200, "")
+    end)
+  end
+
+  # A failure stub: ntfy returns an error status. The worker must not crash.
+  defp stub_failure do
+    Req.Test.stub(__MODULE__, fn conn ->
+      Plug.Conn.send_resp(conn, 503, "unavailable")
+    end)
+  end
+
   describe "perform/1 - no alert (above threshold)" do
     test "does not crash and returns :ok when measurement is above threshold" do
       now = DateTime.utc_now()
@@ -63,14 +80,14 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
           result_id: "current-ok"
         })
 
-      # The worker should succeed without attempting an alert (the :httpc call
-      # to 127.0.0.1:1 would fail, but we never reach it because 80 > 50).
+      # No stub is set, but we never reach send_ntfy because 80 > 50.
       assert :ok = perform_job(NotificationWorker, %{"measurement_id" => current.id})
     end
   end
 
   describe "perform/1 - alert triggered (below threshold)" do
-    test "does not crash even when :httpc fails (ntfy unreachable)" do
+    test "succeeds when ntfy accepts the post" do
+      stub_success()
       now = DateTime.utc_now()
 
       # Seed 7-day average: 100 Mbps
@@ -91,9 +108,62 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
           result_id: "current-low"
         })
 
-      # The :httpc call to 127.0.0.1:1 will fail, but the worker catches it
-      # and still returns :ok - a hung/unreachable ntfy must not crash the worker.
       assert :ok = perform_job(NotificationWorker, %{"measurement_id" => current.id})
+    end
+
+    test "does not crash when ntfy returns an error status" do
+      stub_failure()
+      now = DateTime.utc_now()
+
+      for i <- 1..7 do
+        ts = DateTime.add(now, -(i * 3600), :second)
+
+        insert_measurement!(%{
+          timestamp: ts,
+          download_bandwidth: round(100.0 / 0.000008),
+          result_id: "avg-#{i}"
+        })
+      end
+
+      current =
+        insert_measurement!(%{
+          download_bandwidth: round(20.0 / 0.000008),
+          result_id: "current-low-err"
+        })
+
+      # ntfy returns 503, but the worker swallows it and still returns :ok -
+      # a degraded ntfy must not crash the worker.
+      assert :ok = perform_job(NotificationWorker, %{"measurement_id" => current.id})
+    end
+  end
+
+  describe "send_ntfy/3" do
+    test "returns :ok on a successful post and forwards ntfy headers/body" do
+      stub_success()
+
+      Application.put_env(:baudflow, :ntfy_url, "http://ntfy.test")
+      Application.put_env(:baudflow, :ntfy_topic, "topic-xyz")
+
+      Req.Test.stub(__MODULE__, fn conn ->
+        # The full URL path is url/topic, and ntfy expects the alert text in the body.
+        assert conn.method == "POST"
+        assert conn.request_path == "/topic-xyz"
+        assert Plug.Conn.get_req_header(conn, "title") == ["Baudflow Alert"]
+        assert Plug.Conn.get_req_header(conn, "priority") == ["high"]
+        body = Req.Test.raw_body(conn)
+        assert String.contains?(body, "degradation")
+
+        Plug.Conn.send_resp(conn, 200, "")
+      end)
+
+      assert :ok =
+               NotificationWorker.send_ntfy("http://ntfy.test", "topic-xyz", "Speed degradation!")
+    end
+
+    test "returns :error (without raising) when ntfy returns a failure status" do
+      stub_failure()
+
+      assert :error = NotificationWorker.send_ntfy("http://ntfy.test", "baudflow-test", "boom")
     end
   end
 
@@ -134,9 +204,13 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
     end
   end
 
-  describe "seven_day_avg/0" do
+  describe "perform/1 - 7-day average is sourced from the Measurements context" do
+    # NotificationWorker no longer computes the average itself; it calls
+    # Measurements.rolling_average(7). The query semantics (exclude manual,
+    # last 7 days only) are covered in measurements_test.exs. These tests
+    # confirm the worker still behaves correctly given those averages.
     test "returns nil when no measurements exist" do
-      assert NotificationWorker.seven_day_avg() == nil
+      assert Measurements.rolling_average(7) == nil
     end
 
     test "computes average excluding manual entries" do
@@ -161,7 +235,7 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
         result_id: "manual-avg"
       })
 
-      avg = NotificationWorker.seven_day_avg()
+      avg = Measurements.rolling_average(7)
       assert avg != nil
       # Should be ~100 Mbps (only the two scheduled entries)
       assert_in_delta avg, 100.0, 1.0
@@ -184,7 +258,7 @@ defmodule Baudflow.Measurements.NotificationWorkerTest do
         result_id: "recent-avg"
       })
 
-      avg = NotificationWorker.seven_day_avg()
+      avg = Measurements.rolling_average(7)
       assert avg != nil
       assert_in_delta avg, 100.0, 1.0
     end

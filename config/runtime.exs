@@ -41,15 +41,7 @@ if config_env() == :prod do
     # pool_count: 4,
     socket_options: maybe_ipv6
 
-  config :baudflow, Oban,
-    queues: [scheduler: 1, speedtest: 1, notifications: 1, default: 1],
-    plugins: [
-      {Oban.Plugins.Cron,
-       crontab: [
-         {"* * * * *", Baudflow.Measurements.SchedulerWorker},
-         {"0 3 * * *", Baudflow.Measurements.CleanupWorker}
-       ]}
-    ]
+  # Oban queues + crontab are configured once in config/config.exs.
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

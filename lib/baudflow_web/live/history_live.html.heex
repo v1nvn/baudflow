@@ -17,62 +17,41 @@
   <%!-- Filter Bar --%>
   <div class="glass-card">
     <div class="p-3 sm:p-4">
-      <.form for={%{}} id="filter-form" phx-submit="filter">
+      <.form for={@form} id="filter-form" phx-submit="filter">
         <div class="flex flex-wrap items-end gap-3">
-          <div>
-            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-              From
-            </label>
-            <input
-              type="date"
-              name="filters[date_from]"
-              value={@filters["date_from"]}
-              class="bf-input !w-36"
-            />
-          </div>
+          <.input
+            field={@form[:date_from]}
+            type="date"
+            label="From"
+            class="bf-input !w-36"
+          />
 
-          <div>
-            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-              To
-            </label>
-            <input
-              type="date"
-              name="filters[date_to]"
-              value={@filters["date_to"]}
-              class="bf-input !w-36"
-            />
-          </div>
+          <.input
+            field={@form[:date_to]}
+            type="date"
+            label="To"
+            class="bf-input !w-36"
+          />
 
-          <div>
-            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-              Health
-            </label>
-            <select
-              name="filters[healthy]"
-              class="bf-select !w-32 !text-sm"
-            >
-              <option value="" selected={@filters["healthy"] == ""}>All</option>
-              <option value="healthy" selected={@filters["healthy"] == "healthy"}>Healthy</option>
-              <option value="unhealthy" selected={@filters["healthy"] == "unhealthy"}>
-                Unhealthy
-              </option>
-            </select>
-          </div>
+          <.input
+            field={@form[:healthy]}
+            type="select"
+            label="Health"
+            class="bf-select !w-32 !text-sm"
+            options={[
+              {"All", ""},
+              {"Healthy", "healthy"},
+              {"Unhealthy", "unhealthy"}
+            ]}
+          />
 
-          <div>
-            <label class="block text-xs font-medium tracking-wider text-text-ghost uppercase mb-1.5">
-              Server
-            </label>
-            <select
-              name="filters[server]"
-              class="bf-select !w-40 !text-sm"
-            >
-              <option value="" selected={@filters["server"] == ""}>All Servers</option>
-              <%= for name <- @server_names do %>
-                <option value={name} selected={@filters["server"] == name}>{name}</option>
-              <% end %>
-            </select>
-          </div>
+          <.input
+            field={@form[:server]}
+            type="select"
+            label="Server"
+            class="bf-select !w-40 !text-sm"
+            options={[{"All Servers", ""} | Enum.map(@server_names, fn name -> {name, name} end)]}
+          />
 
           <div class="flex items-center gap-2 pb-0.5">
             <button type="submit" class="bf-btn-primary !py-1.5">

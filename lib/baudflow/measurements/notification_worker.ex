@@ -4,18 +4,17 @@ defmodule Baudflow.Measurements.NotificationWorker do
 
   Compares the measurement's `download_mbps` against the 7-day rolling average
   (excluding manual entries). If the value falls below `avg * threshold`, sends
-  an alert via ntfy using `:httpc` with hard timeouts.
+  an alert via ntfy using `Req` with hard timeouts.
 
-  The actual HTTP call is isolated in `send_ntfy/1` so tests can override it
-  via `Mox` or by asserting the function was reached without hitting a real server.
+  The HTTP call is isolated in `send_ntfy/3` so tests can stub it with
+  `Req.Test` (configured via the `:baudflow, :ntfy_plug` app env) without
+  hitting a real server.
   """
   use Oban.Worker, queue: :notifications, max_attempts: 3
 
-  import Ecto.Query
+  require Logger
 
   alias Baudflow.Measurements
-  alias Baudflow.Measurements.Measurement
-  alias Baudflow.Repo
   alias Baudflow.Settings
 
   @impl true
@@ -24,7 +23,7 @@ defmodule Baudflow.Measurements.NotificationWorker do
 
     threshold = Settings.get_float("degradation_threshold", 0.5)
 
-    avg_download = seven_day_avg()
+    avg_download = Measurements.rolling_average(7)
 
     if avg_download && measurement.download_mbps < avg_download * threshold do
       send_alert(measurement, avg_download)
@@ -36,20 +35,6 @@ defmodule Baudflow.Measurements.NotificationWorker do
     end
 
     :ok
-  end
-
-  @doc """
-  Computes the 7-day average download Mbps, excluding manual entries.
-  Returns `nil` when there are no qualifying measurements.
-  """
-  def seven_day_avg do
-    seven_days_ago = DateTime.add(DateTime.utc_now(), -7 * 24 * 3600, :second)
-
-    Repo.one(
-      from m in Measurement,
-        where: m.timestamp > ^seven_days_ago and m.source != "manual",
-        select: avg(m.download_mbps)
-    )
   end
 
   defp send_alert(measurement, avg_download) do
@@ -89,23 +74,45 @@ defmodule Baudflow.Measurements.NotificationWorker do
   end
 
   @doc """
-  Sends a notification to ntfy via `:httpc`. Isolated as a public function so
-  tests can assert whether it was reached (by overriding with a test helper or
-  checking side effects) without requiring a running ntfy server.
+  Sends a notification to ntfy via `Req`. Isolated as a public function so
+  tests can assert it was reached (by configuring a `Req.Test` plug via the
+  `:baudflow, :ntfy_plug` app env) without requiring a running ntfy server.
 
-  Uses hard timeouts: `timeout: 5_000`, `connect_timeout: 2_000` - a hung ntfy
-  must not block the worker's queue slot indefinitely.
+  Uses hard timeouts: `receive_timeout: 5_000`, `connect_options: [timeout: 2_000]` -
+  a hung ntfy must not block the worker's queue slot indefinitely.
+
+  Returns `:ok` on a successful post, `:error` otherwise. A failure never
+  raises - the calling Oban job must not crash on an unreachable ntfy.
   """
   def send_ntfy(url, topic, message) do
-    # Ensure :inets is running (idempotent) so :httpc is available.
-    Application.ensure_all_started(:inets)
+    options =
+      [
+        url: "#{url}/#{topic}",
+        method: :post,
+        body: message,
+        headers: [{"Title", "Baudflow Alert"}, {"Priority", "high"}],
+        receive_timeout: 5_000,
+        connect_options: [timeout: 2_000]
+      ] ++ plug_option()
 
-    :httpc.request(
-      :post,
-      {~c"#{url}/#{topic}", [{~c"Title", ~c"Baudflow Alert"}, {~c"Priority", ~c"high"}],
-       ~c"text/plain", ~c"#{message}"},
-      [timeout: 5_000, connect_timeout: 2_000],
-      []
-    )
+    case Req.post(options) do
+      {:ok, %Req.Response{status: status}} when status < 400 ->
+        :ok
+
+      {:ok, %Req.Response{status: status}} ->
+        Logger.warning("ntfy post returned non-success status: #{status}")
+        :error
+
+      {:error, exception} ->
+        Logger.warning("ntfy post failed: #{Exception.message(exception)}")
+        :error
+    end
+  end
+
+  defp plug_option do
+    case Application.get_env(:baudflow, :ntfy_plug) do
+      nil -> []
+      plug -> [plug: plug]
+    end
   end
 end

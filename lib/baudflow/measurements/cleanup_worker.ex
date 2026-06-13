@@ -8,10 +8,7 @@ defmodule Baudflow.Measurements.CleanupWorker do
   """
   use Oban.Worker, queue: :default, max_attempts: 1
 
-  import Ecto.Query
-
-  alias Baudflow.Measurements.Measurement
-  alias Baudflow.Repo
+  alias Baudflow.Measurements
   alias Baudflow.Settings
 
   @impl true
@@ -20,11 +17,7 @@ defmodule Baudflow.Measurements.CleanupWorker do
 
     cutoff = DateTime.add(DateTime.utc_now(), -retention_days * 24 * 3600, :second)
 
-    {count, _} =
-      Repo.delete_all(
-        from m in Measurement,
-          where: m.timestamp < ^cutoff
-      )
+    count = Measurements.prune_older_than(cutoff)
 
     {:ok, pruned: count}
   end

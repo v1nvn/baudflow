@@ -105,6 +105,24 @@ defmodule BaudflowWeb.RunsLiveTest do
     end
   end
 
+  describe "invalid page param" do
+    test "falls back to page 1 for non-numeric ?page= instead of crashing", %{conn: conn} do
+      # Pre-fix this raised ArgumentError in String.to_integer/1; the success
+      # of live/2 (returning {:ok, _}) is itself the regression assertion.
+      {:ok, _lv, html} = live(conn, ~p"/runs?page=abc")
+
+      assert html =~ "Run History"
+      assert html =~ "No runs recorded yet"
+    end
+
+    test "clamps negative ?page= to page 1 instead of crashing", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/runs?page=-5")
+
+      assert html =~ "Run History"
+      assert html =~ "No runs recorded yet"
+    end
+  end
+
   # --- Helpers ---
 
   defp valid_measurement_attrs(overrides) do

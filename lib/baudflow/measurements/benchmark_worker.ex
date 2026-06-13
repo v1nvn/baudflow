@@ -11,6 +11,8 @@ defmodule Baudflow.Measurements.BenchmarkWorker do
   """
   use Oban.Worker, queue: :default, max_attempts: 1
 
+  require Logger
+
   alias Baudflow.Measurements
   alias Baudflow.Settings
 
@@ -27,13 +29,21 @@ defmodule Baudflow.Measurements.BenchmarkWorker do
         {nil, nil}
       end
 
-    Measurements.update_health(measurement, healthy, benchmarks)
+    case Measurements.update_health(measurement, healthy, benchmarks) do
+      {:ok, _measurement} ->
+        if healthy == false do
+          broadcast_unhealthy(measurement.id)
+        end
 
-    if healthy == false do
-      broadcast_unhealthy(measurement.id)
+        :ok
+
+      {:error, changeset} ->
+        Logger.warning(
+          "Failed to update health for measurement #{measurement.id}: #{inspect(changeset.errors)}"
+        )
+
+        :ok
     end
-
-    :ok
   end
 
   defp evaluate(measurement) do

@@ -67,23 +67,6 @@ defmodule Baudflow.Measurements.ServerDiscovery do
     end)
   end
 
-  @doc """
-  Parse a comma-separated string of server IDs into a list of integers.
-
-  Handles nil, empty strings, and whitespace gracefully.
-  """
-  @spec parse_server_list(String.t() | nil) :: [integer()]
-  def parse_server_list(nil), do: []
-  def parse_server_list(""), do: []
-
-  def parse_server_list(str) when is_binary(str) do
-    str
-    |> String.split(",")
-    |> Enum.map(&String.trim/1)
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.map(&String.to_integer/1)
-  end
-
   defp normalize_server(data) when is_map(data) do
     %{
       id: to_integer(data["id"]),
