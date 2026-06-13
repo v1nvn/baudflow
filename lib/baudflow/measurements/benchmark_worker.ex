@@ -17,13 +17,12 @@ defmodule Baudflow.Measurements.BenchmarkWorker do
   @impl true
   def perform(%Oban.Job{args: %{"measurement_id" => id}}) do
     measurement = Measurements.get_measurement!(id)
-    settings = Settings.get_all()
 
-    enabled = settings["threshold_enabled"] == "true"
+    enabled = Settings.get_boolean("threshold_enabled")
 
     {healthy, benchmarks} =
       if enabled do
-        evaluate(measurement, settings)
+        evaluate(measurement)
       else
         {nil, nil}
       end
@@ -37,10 +36,10 @@ defmodule Baudflow.Measurements.BenchmarkWorker do
     :ok
   end
 
-  defp evaluate(measurement, settings) do
-    download_threshold = parse_float(settings["threshold_download"])
-    upload_threshold = parse_float(settings["threshold_upload"])
-    ping_threshold = parse_float(settings["threshold_ping"])
+  defp evaluate(measurement) do
+    download_threshold = Settings.get_float("threshold_download", 0.0)
+    upload_threshold = Settings.get_float("threshold_upload", 0.0)
+    ping_threshold = Settings.get_float("threshold_ping", 0.0)
 
     checks = []
 
@@ -106,18 +105,6 @@ defmodule Baudflow.Measurements.BenchmarkWorker do
       {all_passed, benchmarks}
     end
   end
-
-  defp parse_float(nil), do: 0.0
-  defp parse_float(""), do: 0.0
-
-  defp parse_float(val) when is_binary(val) do
-    case Float.parse(val) do
-      {f, _} -> f
-      :error -> 0.0
-    end
-  end
-
-  defp parse_float(val) when is_number(val), do: val / 1.0
 
   defp broadcast_unhealthy(measurement_id) do
     Phoenix.PubSub.broadcast(

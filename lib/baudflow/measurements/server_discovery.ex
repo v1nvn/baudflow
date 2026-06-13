@@ -39,9 +39,8 @@ defmodule Baudflow.Measurements.ServerDiscovery do
   """
   @spec select_server() :: integer() | nil
   def select_server do
-    settings = Baudflow.Settings.get_all()
-    preferred = parse_server_list(settings["preferred_servers"])
-    blocked = parse_server_list(settings["blocked_servers"])
+    preferred = Baudflow.Settings.get_integer_list("preferred_servers")
+    blocked = Baudflow.Settings.get_integer_list("blocked_servers")
 
     if preferred != [] do
       Enum.random(preferred)

@@ -40,6 +40,45 @@ defmodule Baudflow.Settings do
     Map.merge(@default_settings, stored)
   end
 
+  # --- Typed accessors --------------------------------------------------------
+
+  @doc "Get a setting as an integer. Returns `default` (or nil) when missing or unparseable."
+  @spec get_integer(String.t(), integer() | nil) :: integer() | nil
+  def get_integer(key, default \\ nil) do
+    key |> get() |> parse_integer(default)
+  end
+
+  @doc """
+  Get a setting as a float. Handles integer-looking strings (e.g. `"1"` → `1.0`).
+  Returns `default` (or nil) when missing or unparseable.
+  """
+  @spec get_float(String.t(), float() | nil) :: float() | nil
+  def get_float(key, default \\ nil) do
+    key |> get() |> parse_float(default)
+  end
+
+  @doc "Get a setting as a boolean. Returns `true` only when the stored value is `\"true\"`."
+  @spec get_boolean(String.t()) :: boolean()
+  def get_boolean(key) do
+    get(key) == "true"
+  end
+
+  @doc """
+  Get a comma-separated setting as a list of integers.
+  Returns `[]` when missing, empty, or entirely unparseable.
+  Unparseable entries are silently skipped.
+  """
+  @spec get_integer_list(String.t()) :: [integer()]
+  def get_integer_list(key) do
+    case get(key) do
+      nil -> []
+      "" -> []
+      str -> parse_csv_integers(str)
+    end
+  end
+
+  # --- Update -----------------------------------------------------------------
+
   @doc "Update all settings from a map. Upserts each key-value pair. Returns :ok."
   @spec update_all(%{String.t() => String.t()}) :: :ok
   def update_all(settings) when is_map(settings) do
@@ -53,5 +92,43 @@ defmodule Baudflow.Settings do
     end)
 
     :ok
+  end
+
+  # --- Private helpers --------------------------------------------------------
+
+  defp parse_integer(nil, default), do: default
+  defp parse_integer("", default), do: default
+
+  defp parse_integer(raw, default) when is_binary(raw) do
+    case Integer.parse(raw) do
+      {int, ""} -> int
+      {int, _rest} -> int
+      :error -> default
+    end
+  end
+
+  defp parse_float(nil, default), do: default
+  defp parse_float("", default), do: default
+
+  defp parse_float(raw, default) when is_binary(raw) do
+    case Float.parse(raw) do
+      {f, _} -> f
+      :error -> default
+    end
+  end
+
+  defp parse_csv_integers(str) do
+    str
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.flat_map(&parse_single_integer/1)
+  end
+
+  defp parse_single_integer(entry) do
+    case Integer.parse(entry) do
+      {int, ""} -> [int]
+      _ -> []
+    end
   end
 end

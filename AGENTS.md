@@ -1,156 +1,126 @@
-This is a network speed monitoring dashboard built with Phoenix v1.8 + LiveView.
+# AGENTS.md
 
-## Project guidelines
+## Context
 
-- DO run `mix precommit` when done with all changes and fix any pending issues
-- DO use the included `Req` library for HTTP requests - avoid `:httpoison`, `:tesla`, and `:httpc`
-- DON'T add new dependencies unless explicitly asked
+Baudflow — network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban background jobs, Postgres. A cron-driven Oban job runs the Ookla `speedtest` CLI, streams per-phase progress to the browser over PubSub, stores the result, evaluates health thresholds, and alerts on degradation.
 
-## Phoenix v1.8
+**Data flow:** `SchedulerWorker` (every minute, checks the DB-stored cron) → enqueues `SpeedtestWorker` → runs the CLI, broadcasts progress, inserts a `Measurement`, enqueues `BenchmarkWorker` (health thresholds) + `NotificationWorker` (degradation alert). LiveViews subscribe to the `"measurements"` PubSub topic for real-time updates. `CleanupWorker` prunes by retention nightly.
 
-- DO wrap all LiveView template content in `<Layouts.app flash={@flash} ...>`
-- DON'T call `<.flash_group>` outside of `layouts.ex`
-- DO use the `<.icon name="hero-...">` component for icons - never use `Heroicons` modules
-- DO use the imported `<.input>` component for form inputs from `core_components.ex`
-- DON'T forget that overriding `<.input>` class replaces all defaults - you must fully style it
+## Build & Test
 
-## JS and CSS
+- `mix precommit` — the gate to run when done with changes (compile warnings-as-errors, unused-dep check, format, test). **Never format or lint by hand — always run this.**
+- `mix check` — full local gate: lint + tests in a throwaway Postgres (testcontainers). `mix lint` is the no-DB static gate (format check, deps.audit, credo --strict, sobelow, dialyzer).
+- `mix test test/path_test.exs` for targeted runs, `mix test --failed` to rerun failures.
+- Tests use the fake CLI at `test/support/fake_speedtest` (deterministic output) and testcontainers for Postgres — no local speedtest binary or PG install needed.
 
-- DO use Tailwind CSS v4 with the `@import "tailwindcss" source(none)` syntax already in `app.css`
-- DON'T use `@apply` in raw CSS
-- DON'T use daisyUI - write custom Tailwind components
-- DON'T reference external vendor scripts/links in layouts - import everything into `app.js`/`app.css`
-- DON'T write inline `<script>` tags in templates - use colocated hooks or external `phx-hook`
-- DO build polished UIs with micro-interactions, smooth transitions, and thoughtful hover/loading states
+## Code Organization
 
-## Elixir
+- `lib/baudflow/{measurements,runs,settings}/` — each is a **context** owning one domain and all of its DB access. The top-level `measurements.ex` / `runs.ex` / `settings.ex` are the public API; sibling files are schemas and Oban workers.
+- `lib/baudflow_web/live/` — one LiveView per page (`*Live`), template in a colocated `.html.heex`. `components/` for shared HEEx and layouts.
+- `config/` — `runtime.exs` (prod, env-driven) and `dev.exs` carry the Oban queues + crontab; `test.exs` keeps Oban `testing: :manual`.
 
-- DO use `Enum.at/2`, pattern matching, or `List` for index-based list access - bracket syntax doesn't work
-- DO rebind the result of `if`/`case`/`cond` to a variable - never rebind inside the expression body
-- DON'T nest multiple modules in one file - causes cyclic dependency errors
-- DO access struct fields with dot notation (`struct.field`), not bracket syntax (`struct[:field]`)
-- DON'T use `String.to_atom/1` on user input - memory leak risk
-- DO end predicate function names with `?` - reserve `is_` prefix for guards
-- DO pass `timeout: :infinity` to `Task.async_stream/3` in most cases
-- DON'T use `else if` or `elseif` - use `cond` or `case` for multiple conditionals
+## Layering & contexts
 
-## Mix
+**DO:**
+- Route **all** database access through a context module. `import Ecto.Query` and `Repo` calls live only in `lib/baudflow/{measurements,runs,settings}/*.ex` context files.
+- Have workers and LiveViews call context functions (`Measurements.list_since/2`, `Measurements.prune_older_than/1`) — never build queries inline.
+- Keep each query in exactly one place. Rolling averages, retention pruning, neighbor lookups, etc. are context functions reused by every caller.
 
-- DO use `mix test test/my_test.exs` for targeted test runs and `mix test --failed` for previously failed tests
-- DON'T use `mix deps.clean --all` unless you have a very good reason
+**DON'T:**
+- Don't call `Repo.*` or write `from m in Measurement` outside a context. A worker that needs data adds a context function instead.
+- Don't duplicate a query because it's "just one line" — duplicated queries drift out of sync.
 
-## Testing
+## Settings
 
-- DO use `start_supervised!/1` to start processes in tests - guarantees cleanup
-- DON'T use `Process.sleep/1` - use `Process.monitor/1` and assert on `{:DOWN, ...}` instead
-- DO use `_ = :sys.get_state/1` to synchronize before the next call instead of sleeping
+**DO:**
+- Read and write all runtime-tunable config through the `Settings` context (`get/1`, `get_all/0`, `update_all/1`). Store every value as a **string** in the DB.
+- Do type coercion **in the `Settings` context** — typed accessors that return `integer`/`float`/`boolean` with a safe fallback, so callers receive ready-to-use values.
+- Add a default to the `Settings` defaults map for every new key — `get/1` must always return something usable.
 
-## Ecto
+**DON'T:**
+- Don't read `Application.get_env` for user-tunable values — that's for deploy-time wiring (binary paths, ntfy URL), not settings.
+- Don't scatter `String.to_integer/2`, `String.to_float/1`, or bespoke parsers across workers and LiveViews. (`String.to_float/1` also raises on integer-looking input — a bad setting must never crash a queue.)
 
-- DO preload associations in queries when they'll be accessed in templates
-- DO use `:string` type for all text columns, including `:text`
-- DO use `Ecto.Changeset.get_field/2` to access changeset fields
-- DON'T list programmatically-set fields (like `user_id`) in `cast` calls - set them explicitly on the struct
-- DO use `mix ecto.gen.migration` to generate migrations so timestamps and conventions are correct
-- DON'T pass `:allow_nil` to `validate_number/2` - it's not supported and unnecessary
+## Background jobs (Oban)
 
-## Phoenix HTML & HEEx
+**DO:**
+- Use the four existing queues only: `:scheduler`, `:speedtest`, `:notifications`, `:default`.
+- Put `unique: [fields: [:worker, :args], period: ...]` on speedtest jobs to prevent duplicate runs in the same window.
+- Go through `SpeedtestWorker` to run a test — it owns CLI resolution, timeout wrapping, NDJSON parsing, and result insertion.
+- Broadcast on the single `"measurements"` topic via `Phoenix.PubSub.broadcast(Baudflow.PubSub, "measurements", msg)`. Keep the message shapes stable: `{:speedtest_progress, type, data}`, `{:result, measurement}`, `{:test_failed, reason}`, `{:benchmarked, id, healthy?}`.
+- Emit a terminal event for **every** outcome — success and *every* failure path (timeout, non-zero exit, parse/changeset error). The UI reacts to broadcasts; it must never depend on a client-side timer to learn a test finished.
 
-- DO use `~H` or `.html.heex` files - never `~E`
-- DO use `Phoenix.Component.form/1` and `inputs_for/1` - never the outdated `Phoenix.HTML` versions
-- DO use `to_form/2` to build forms and access fields as `@form[:field]` - never access changesets in templates
-- DO add unique DOM IDs to forms, buttons, and key elements for test targeting
-- DO use HEEx list syntax `[...]` for class attributes with conditional classes
-- DO use `<%= for item <- @collection do %>` - never `<% Enum.each %>`
-- DO use `<%!-- comment --%>` for template comments
-- DO use `{...}` for attribute interpolation and `<%= ... %>` for tag body interpolation only
-- DO annotate `<pre>`/`<code>` blocks with `phx-no-curly-interpolation` when showing literal curly braces
+**DON'T:**
+- Don't invoke the speedtest binary directly from anywhere but `SpeedtestWorker`.
+- Don't invent new queues or PubSub topics without a clear reason.
+- Don't switch Oban test mode to `:inline` or `:disabled`.
 
-## LiveView
+## Speedtest CLI
 
-- DO use `<.link navigate={...}>` and `<.link patch={...}>` - never deprecated `live_redirect`/`live_patch`
-- DO use `push_navigate`/`push_patch` in LiveViews - never deprecated `live_redirect`/`live_patch`
-- DON'T use LiveComponents unless you have a strong, specific need
-- DO name LiveViews with a `Live` suffix (e.g. `DashboardLive`)
+**DO:**
+- Resolve the binary at **runtime** via `Application.get_env(:baudflow, :speedtest_bin)`, falling back to `SPEEDTEST_BIN`, then `"speedtest"`. It may be a bare name or a multi-word wrapper (`docker exec … speedtest`).
+- Gate any CLI-dependent feature behind `SpeedtestWorker.binary_available?()` — never assume the binary exists.
+- Handle both NDJSON (`--format=jsonl`) streaming lines and the final result line; skip non-JSON banner/blank lines.
+- Keep the timeout value consistent across the OS `timeout` wrapper, the port-receive fallback, and any user-facing message.
 
-### Streams
+## Schemas & Ecto
 
-- DO use LiveView streams for all collections - never assign raw lists
-- DO set `phx-update="stream"` and a DOM id on the parent element, consume via `@streams.stream_name`
-- DO refetch and re-stream with `reset: true` when filtering - streams aren't enumerable
-- DO track counts with a separate assign - streams don't support counting or empty states
-- DO use `stream_insert/3` when an assign change should update a streamed item's rendered content
-- DON'T use deprecated `phx-update="append"` or `phx-update="prepend"`
+**DO:**
+- Give each schema one `changeset/2` (cast → validate → constraints) as the single construction path. Mutations go through a changeset, not ad-hoc `Repo.update!` on a raw struct.
+- `@derive {Jason.Encoder, only: [...]}` on any schema serialized to JSON, and keep that list in step with the fields the client needs.
+- Store the full raw Ookla JSON in `raw_result` — never drop fields when mapping.
+- Use `:bigint` for byte counts, `:float` for Mbps/latency/jitter, `:string` for all text. Generate migrations with `mix ecto.gen.migration`.
 
-### JS interop
+**DON'T:**
+- Don't use `String.to_atom/1` on external/CLI/user input (memory leak risk).
+- Don't list programmatically-set fields (e.g. `measurement_id`) in `cast` — set them on the struct.
 
-- DO set `phx-update="ignore"` alongside `phx-hook` when the hook manages its own DOM
-- DO provide a unique DOM id alongside `phx-hook`
-- DO use colocated hooks (`:type={Phoenix.LiveView.ColocatedHook}`) with `.` prefix names for inline scripts
-- DO define external hooks in `assets/js/` and register them in the `LiveSocket` constructor
-- DO return or rebind the socket on `push_event/3` calls
+## Web & LiveView
 
-### LiveView tests
+**DO:**
+- Name LiveViews `*Live`. In `mount`, set `:active_page` and `:page_title`, and subscribe to `"measurements"` when the view needs real-time data.
+- Drive filtering/pagination through `push_patch` with URL query params handled in `handle_params` — same-page state lives in the URL. Refetch collections from the context on each `handle_params`; track total counts as a separate assign. (Bounded, server-paginated result sets — plain list assigns, deliberately not streams.)
+- Stream chart data to the client with `push_event("append_point", ...)` / `push_event("chart_data", ...)`.
+- Wrap template content in `<Layouts.app flash={@flash} ...>`, use `<.input>` / `<.icon name="hero-...">` from `core_components`, and build forms with `to_form/2` + `<.form for={@form} id="...">`. Give forms, buttons, and key elements unique DOM ids for test targeting.
 
-- DO use `element/2`, `has_element/2`, and `LazyHTML` selectors - never test against raw HTML strings
-- DO reference DOM IDs from templates in tests
-- DO test for element presence over text content - text changes, structure is stable
-- DO use `LazyHTML.from_fragment` and `LazyHTML.filter` for debug output when selectors fail
+**DON'T:**
+- Don't write inline `<script>` tags or reference external vendor scripts — use colocated or external `phx-hook`, and import everything through `app.js`/`app.css`.
+- Don't use daisyUI or `@apply` in raw CSS; write custom Tailwind v4 components.
+- Don't reach for `LiveComponent`s without a strong, specific need.
 
-### Forms
+## Frontend / charts
 
-- DO use `to_form/2` from a changeset and pass `@form` to `<.form>` - never pass changesets to templates
-- DO give every form an explicit, unique DOM ID (e.g. `id="settings-form"`)
-- DON'T use `<.form let={f} ...>` - always use `<.form for={@form} ...>` and access fields as `@form[:field]`
+**Color theme — Tron Legacy:** Dark-mode only. The UI uses a Tron Legacy neon palette: near-black surfaces with cold blue undertones (HSL-based), electric neon accents (cyan, green, amber, red). All color tokens are HSL in `@theme {}` — surfaces step systematically in lightness (4.5% → 10.5% → 16% → 23% → 31.5%). Chart dataset colors in `chartColors()` use matching HSL neon values. There is no theme toggle — the app is dark-only.
 
-## Baudflow-specific
+**DO:**
+- Define all chart hooks in `assets/js/app.js` — no separate JS entry points.
+- Use `makeChartOptions()` for shared chart config (responsive sizing, grid styling, tooltips). All charts use `maintainAspectRatio: false` for proper container filling.
+- Hero chart (SpeedChart): `borderWidth: 2`, subtle fill, `tension: 0.25`. Secondary charts: `borderWidth: 1.5`, no fill on overlapping datasets, `tension: 0.2`.
+- Build polished UIs — micro-interactions, smooth transitions, thoughtful hover/loading states.
 
-### Oban workers
+## Tests
 
-- DO use the four existing queues: `:scheduler`, `:speedtest`, `:notifications`, `:default` - don't invent new ones without reason
-- DO use `unique: [fields: [:worker, :args], period: 3600]` on speedtest jobs to prevent duplicates
-- DO keep `testing: :manual` for Oban in test config - don't switch to `:inline` or `:disabled`
-- DON'T invoke the speedtest binary directly - always go through `SpeedtestWorker` which handles timeout wrapping and output parsing
-- DO broadcast results via `Phoenix.PubSub.broadcast(Baudflow.PubSub, "measurements", msg)` - don't create new topic names
+**DO:**
+- `DataCase` for context tests, `ConnCase` for controller/LiveView tests.
+- Keep tests deterministic: the fake speedtest binary for CLI output, fixed timestamps, `start_supervised!/1` for processes.
+- Target elements by DOM id with `element/2` / `has_element/2`; assert on structure, not raw HTML strings.
 
-### Settings
+**DON'T:**
+- Don't use `Process.sleep/1` — monitor processes or use `:sys.get_state/1` to synchronize.
+- Don't add dependencies unless explicitly asked; use the included `Req` for HTTP.
 
-- DO use the `Settings` context (`get/1`, `get_all/0`, `update_all/1`) for all runtime configuration - don't read `Application.get_env` for user-tunable values
-- DO store settings as strings in the DB - the context layer handles type coercion
-- DON'T add new settings without also adding a sensible default in the Settings defaults map
+## HTTP
 
-### Measurements schema
+**DO:** Use `Req` for every outbound HTTP call (Ookla server discovery, ntfy alerts).
 
-- DO use `@derive {Jason.Encoder, only: [...]}` on schemas that get serialized to JSON
-- DO store the raw Ookla JSON in `raw_result` - don't drop fields when parsing
-- DO use `:bigint` for byte counts and `:float` for Mbps/latency - match existing field types
+**DON'T:** Don't use `:httpc`, `:httpoison`, or `:tesla`.
 
-### LiveView conventions
+## Docker & CI
 
-- DO set `:active_page` and `:page_title` assigns on every LiveView mount
-- DO subscribe to `Baudflow.PubSub` `"measurements"` topic in mount when the LiveView needs real-time updates
-- DO use `push_patch` with URL query params for filtering/pagination - don't `push_navigate` for same-page state changes
-- DO use `push_event("append_point", ...)` for streaming chart data to the client
+**DO:** Build multi-platform images (AMD64 + ARM64) for the GitHub Container Registry.
 
-### Chart.js integration
+**DON'T:** Don't change the CI pipeline without understanding the branch-protection and image-build gating.
 
-- DO define all chart hooks in `assets/js/app.js` - don't create separate JS entry points
-- DO use the existing color palette: download=cyan/blue, upload=green, latency=yellow, jitter=red, averages=purple/pink
-- DO handle theme changes in charts by listening to the theme toggle event
+## Scope
 
-### Speedtest CLI
-
-- DO use `Application.get_env(:baudflow, :speedtest_bin)` for the binary path - it supports multi-word wrapper commands
-- DO use `binary_available?()` to gate features that depend on the CLI - don't assume the binary exists
-- DO handle both pretty-printed JSON and NDJSON output from the speedtest CLI
-
-### Tests
-
-- DO use testcontainers (Docker) for Postgres in CI - configured via `mix check`
-- DO use the fake speedtest binary at `test/support/fake_speedtest` for deterministic test output
-- DO use `DataCase` for context tests and `ConnCase` for controller/LiveView tests
-
-### Docker & CI
-
-- DO build multi-platform images (AMD64 + ARM64) for GitHub Container Registry
-- DON'T modify the CI pipeline without understanding the branch protection and image build gating
+- Make minimal, focused changes. Don't create files, add features beyond what was asked, or add comments/docstrings to code you didn't change.

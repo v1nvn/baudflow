@@ -88,9 +88,8 @@ defmodule BaudflowWeb.DashboardLive do
 
   @impl true
   def handle_event("load_servers", _params, socket) do
-    settings = Baudflow.Settings.get_all()
-    preferred = ServerDiscovery.parse_server_list(settings["preferred_servers"])
-    blocked = ServerDiscovery.parse_server_list(settings["blocked_servers"])
+    preferred = Baudflow.Settings.get_integer_list("preferred_servers")
+    blocked = Baudflow.Settings.get_integer_list("blocked_servers")
 
     discovered = ServerDiscovery.list_available_servers()
     allowed = ServerDiscovery.filter_blocked(discovered, blocked)
@@ -161,11 +160,7 @@ defmodule BaudflowWeb.DashboardLive do
   defp time_range_to_datetime(_), do: DateTime.add(DateTime.utc_now(), -7 * 24 * 3600, :second)
 
   defp chart_points do
-    case Baudflow.Settings.get("dashboard_points") do
-      nil -> 500
-      "" -> 500
-      v -> String.to_integer(v)
-    end
+    Baudflow.Settings.get_integer("dashboard_points", 500)
   end
 
   defp push_chart_data(socket, measurements, averages) do

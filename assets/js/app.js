@@ -30,117 +30,67 @@ import Chart from "chart.js/auto"
 import "chartjs-adapter-date-fns"
 import topbar from "../vendor/topbar"
 
-// --- Theme-aware chart color system ---
+// --- Chart color system (Tron Legacy neon palette) ---
 
 function chartColors() {
-  const theme = document.documentElement.dataset.theme
-  const isDark = theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-
-  if (isDark) {
-    return {
-      download: { border: "rgb(56, 189, 248)", bg: "rgba(56, 189, 248, 0.15)" },
-      upload:   { border: "rgb(52, 211, 153)", bg: "rgba(52, 211, 153, 0.15)" },
-      latency:  { border: "rgb(251, 191, 36)", bg: "rgba(251, 191, 36, 0.15)" },
-      error:    { border: "rgb(251, 113, 133)", bg: "rgba(251, 113, 133, 0.15)" },
-      avg7:     { border: "rgba(167, 139, 250, 0.8)" },
-      avg30:    { border: "rgba(244, 114, 182, 0.8)" },
-      cyan:     { border: "rgb(103, 232, 249)", bg: "rgba(103, 232, 249, 0.15)" },
-      orange:   { border: "rgb(251, 146, 60)", bg: "rgba(251, 146, 60, 0.15)" },
-    }
-  } else {
-    return {
-      download: { border: "rgb(37, 99, 235)", bg: "rgba(37, 99, 235, 0.1)" },
-      upload:   { border: "rgb(22, 163, 74)", bg: "rgba(22, 163, 74, 0.1)" },
-      latency:  { border: "rgb(202, 138, 4)", bg: "rgba(202, 138, 4, 0.1)" },
-      error:    { border: "rgb(220, 38, 38)", bg: "rgba(220, 38, 38, 0.1)" },
-      avg7:     { border: "rgba(124, 58, 237, 0.7)" },
-      avg30:    { border: "rgba(190, 24, 93, 0.7)" },
-      cyan:     { border: "rgb(8, 145, 178)", bg: "rgba(8, 145, 178, 0.1)" },
-      orange:   { border: "rgb(194, 65, 12)", bg: "rgba(194, 65, 12, 0.1)" },
-    }
-  }
-}
-
-// Returns theme-aware grid, tick, and title colors for chart scales.
-function chartGridColors() {
-  const theme = document.documentElement.dataset.theme
-  const isDark = theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
   return {
-    grid: { color: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" },
-    ticks: { color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.5)" },
-    title: { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.7)" }
+    download: { border: "hsl(186, 100%, 50%)",  bg: "hsla(186, 100%, 50%, 0.08)" },   // neon cyan
+    upload:   { border: "hsl(153, 100%, 50%)",  bg: "hsla(153, 100%, 50%, 0.08)" },   // neon green
+    latency:  { border: "hsl(40, 100%, 50%)",   bg: "hsla(40, 100%, 50%, 0.08)" },    // electric amber
+    error:    { border: "hsl(345, 100%, 60%)",  bg: "hsla(345, 100%, 60%, 0.08)" },   // neon red
+    avg7:     { border: "hsl(198, 100%, 60%)" },                                      // neon blue
+    avg30:    { border: "hsl(340, 85%, 65%)" },                                        // neon pink
+    cyan:     { border: "hsl(186, 80%, 50%)",   bg: "hsla(186, 80%, 50%, 0.08)" },    // teal
+    orange:   { border: "hsl(25, 100%, 55%)",   bg: "hsla(25, 100%, 55%, 0.08)" },    // neon orange
   }
 }
 
-// Applies the current theme colors to a chart instance.
-function applyThemeToChart(chart) {
-  const c = chartColors()
-  const g = chartGridColors()
-  // Walk every dataset and re-apply colors based on the dataset label.
-  chart.data.datasets.forEach(ds => {
-    const label = (ds.label || "").toLowerCase()
-    if (label.includes("download (mbps)")) {
-      ds.borderColor = c.download.border
-      ds.backgroundColor = c.download.bg
-    } else if (label.includes("upload (mbps)")) {
-      ds.borderColor = c.upload.border
-      ds.backgroundColor = c.upload.bg
-    } else if (label.includes("latency")) {
-      ds.borderColor = c.latency.border
-      ds.backgroundColor = c.latency.bg
-    } else if (label.includes("jitter")) {
-      ds.borderColor = c.error.border
-      ds.backgroundColor = c.error.bg
-    } else if (label.includes("7d")) {
-      ds.borderColor = c.avg7.border
-    } else if (label.includes("30d")) {
-      ds.borderColor = c.avg30.border
-    } else if (label.includes("low")) {
-      ds.borderColor = c.cyan.border
-      ds.backgroundColor = c.cyan.bg
-    } else if (label.includes("high")) {
-      ds.borderColor = c.orange.border
-      ds.backgroundColor = c.orange.bg
-    } else if (label.includes("packet loss")) {
-      ds.borderColor = c.error.border
-      ds.backgroundColor = c.error.bg
-    } else if (label.includes("download jitter")) {
-      ds.borderColor = c.download.border
-      ds.backgroundColor = c.download.bg
-    } else if (label.includes("upload jitter")) {
-      ds.borderColor = c.upload.border
-      ds.backgroundColor = c.upload.bg
-    } else if (label.includes("ping jitter")) {
-      ds.borderColor = c.error.border
-      ds.backgroundColor = c.error.bg
-    } else if (label.includes("download duration")) {
-      ds.borderColor = c.download.border
-      ds.backgroundColor = c.download.bg
-    } else if (label.includes("upload duration")) {
-      ds.borderColor = c.upload.border
-      ds.backgroundColor = c.upload.bg
-    }
-  })
-  // Re-apply scale grid/tick colors
-  if (chart.options.scales) {
-    for (const scale of Object.values(chart.options.scales)) {
-      if (scale.grid) scale.grid.color = g.grid.color
-      if (scale.ticks) scale.ticks.color = g.ticks.color
-      if (scale.title) scale.title.color = g.title.color
-    }
+// Grid, tick, and title colors for chart scales.
+function chartGridColors() {
+  return {
+    grid:  { color: "hsla(224, 30%, 90%, 0.05)" },
+    ticks: { color: "hsla(224, 20%, 60%, 0.6)" },
+    title: { color: "hsla(224, 20%, 60%, 0.8)" }
   }
-  chart.update("none")
 }
 
-// Attach a theme-change listener that updates the chart live when the user toggles themes.
-function watchTheme(chart) {
-  const handler = () => {
-    // Small delay to let the data-theme attribute update
-    setTimeout(() => applyThemeToChart(chart), 50)
+// Shared chart options — industrial monitoring aesthetic.
+function makeChartOptions(g, yTitle, yExtra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 300, easing: "easeOutQuart" },
+    interaction: { mode: "index", intersect: false },
+    scales: {
+      x: {
+        type: "time",
+        time: { unit: "hour" },
+        grid: { color: g.grid.color, drawBorder: false },
+        ticks: { color: g.ticks.color, font: { size: 10 }, maxRotation: 0, maxTicksLimit: 8 },
+        border: { display: false }
+      },
+      y: {
+        title: { display: true, text: yTitle, color: g.title.color, font: { size: 10 } },
+        grid: { color: g.grid.color, drawBorder: false },
+        ticks: { color: g.ticks.color, font: { size: 10 }, maxTicksLimit: 6 },
+        border: { display: false },
+        ...yExtra
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.82)",
+        titleFont: { size: 11, weight: "500" },
+        bodyFont: { size: 11 },
+        padding: { top: 8, bottom: 8, left: 10, right: 10 },
+        cornerRadius: 6,
+        boxWidth: 8,
+        boxHeight: 2,
+        boxPadding: 4
+      }
+    }
   }
-  window.addEventListener("phx:set-theme", handler)
-  // Also watch for prefers-color-scheme changes (system theme)
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", handler)
 }
 
 // --- Chart.js hooks ---
@@ -162,45 +112,48 @@ chartHooks.SpeedChart = {
             data: [],
             borderColor: c.download.border,
             backgroundColor: c.download.bg,
+            borderWidth: 2,
             fill: true,
-            tension: 0.3
+            tension: 0.25,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHoverBorderWidth: 2,
           },
           {
             label: "Upload (Mbps)",
             data: [],
             borderColor: c.upload.border,
             backgroundColor: c.upload.bg,
+            borderWidth: 2,
             fill: true,
-            tension: 0.3
+            tension: 0.25,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHoverBorderWidth: 2,
           },
           {
             label: "7d Avg",
             data: [],
             borderColor: c.avg7.border,
-            borderDash: [6, 3],
+            borderWidth: 1,
+            borderDash: [4, 4],
             pointRadius: 0,
-            fill: false
+            pointHoverRadius: 0,
+            fill: false,
           },
           {
             label: "30d Avg",
             data: [],
             borderColor: c.avg30.border,
-            borderDash: [6, 3],
+            borderWidth: 1,
+            borderDash: [4, 4],
             pointRadius: 0,
-            fill: false
+            pointHoverRadius: 0,
+            fill: false,
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: {
-          x: { type: "time", time: { unit: "hour" }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } },
-          y: { title: { display: true, text: "Mbps", color: g.title.color }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } }
-        },
-        plugins: {
-          tooltip: { mode: "index", intersect: false }
-        }
-      }
+      options: makeChartOptions(g, "Mbps")
     })
 
     this.handleEvent("chart_data", ({results, averages}) => {
@@ -232,8 +185,6 @@ chartHooks.SpeedChart = {
 
       this.chart.update()
     })
-
-    watchTheme(this.chart)
   }
 }
 
@@ -252,26 +203,26 @@ chartHooks.PingChart = {
             data: [],
             borderColor: c.latency.border,
             backgroundColor: c.latency.bg,
+            borderWidth: 1.5,
             fill: true,
-            tension: 0.3
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           },
           {
             label: "Jitter (ms)",
             data: [],
             borderColor: c.error.border,
             backgroundColor: c.error.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: {
-          x: { type: "time", time: { unit: "hour" }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } },
-          y: { title: { display: true, text: "ms", color: g.title.color }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } }
-        }
-      }
+      options: makeChartOptions(g, "ms")
     })
 
     this.handleEvent("chart_data", ({results}) => {
@@ -288,8 +239,6 @@ chartHooks.PingChart = {
       this.chart.data.datasets[1].data.push(point.ping_jitter)
       this.chart.update()
     })
-
-    watchTheme(this.chart)
   }
 }
 
@@ -308,37 +257,37 @@ chartHooks.JitterChart = {
             data: [],
             borderColor: c.download.border,
             backgroundColor: c.download.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           },
           {
             label: "Upload Jitter (ms)",
             data: [],
             borderColor: c.upload.border,
             backgroundColor: c.upload.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           },
           {
             label: "Ping Jitter (ms)",
             data: [],
             borderColor: c.error.border,
             backgroundColor: c.error.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: {
-          x: { type: "time", time: { unit: "hour" }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } },
-          y: { title: { display: true, text: "ms", color: g.title.color }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } }
-        },
-        plugins: {
-          tooltip: { mode: "index", intersect: false }
-        }
-      }
+      options: makeChartOptions(g, "ms")
     })
 
     this.handleEvent("chart_data", ({results}) => {
@@ -357,8 +306,6 @@ chartHooks.JitterChart = {
       this.chart.data.datasets[2].data.push(point.ping_jitter)
       this.chart.update()
     })
-
-    watchTheme(this.chart)
   }
 }
 
@@ -377,37 +324,37 @@ chartHooks.PingDetailChart = {
             data: [],
             borderColor: c.latency.border,
             backgroundColor: c.latency.bg,
+            borderWidth: 1.5,
             fill: true,
-            tension: 0.3
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           },
           {
             label: "Low (ms)",
             data: [],
             borderColor: c.cyan.border,
             backgroundColor: c.cyan.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           },
           {
             label: "High (ms)",
             data: [],
             borderColor: c.orange.border,
             backgroundColor: c.orange.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: {
-          x: { type: "time", time: { unit: "hour" }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } },
-          y: { title: { display: true, text: "ms", color: g.title.color }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } }
-        },
-        plugins: {
-          tooltip: { mode: "index", intersect: false }
-        }
-      }
+      options: makeChartOptions(g, "ms")
     })
 
     this.handleEvent("chart_data", ({results}) => {
@@ -426,8 +373,6 @@ chartHooks.PingDetailChart = {
       this.chart.data.datasets[2].data.push(point.ping_high)
       this.chart.update()
     })
-
-    watchTheme(this.chart)
   }
 }
 
@@ -446,18 +391,15 @@ chartHooks.PacketLossChart = {
             data: [],
             borderColor: c.error.border,
             backgroundColor: c.error.bg,
+            borderWidth: 1.5,
             fill: true,
-            tension: 0.3
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: {
-          x: { type: "time", time: { unit: "hour" }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } },
-          y: { title: { display: true, text: "%", color: g.title.color }, min: 0, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } }
-        }
-      }
+      options: makeChartOptions(g, "%", { min: 0 })
     })
 
     this.handleEvent("chart_data", ({results}) => {
@@ -472,8 +414,6 @@ chartHooks.PacketLossChart = {
       this.chart.data.datasets[0].data.push(point.packet_loss)
       this.chart.update()
     })
-
-    watchTheme(this.chart)
   }
 }
 
@@ -492,29 +432,26 @@ chartHooks.DurationChart = {
             data: [],
             borderColor: c.download.border,
             backgroundColor: c.download.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           },
           {
             label: "Upload Duration (ms)",
             data: [],
             borderColor: c.upload.border,
             backgroundColor: c.upload.bg,
-            fill: true,
-            tension: 0.3
+            borderWidth: 1.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 3,
           }
         ]
       },
-      options: {
-        responsive: true,
-        scales: {
-          x: { type: "time", time: { unit: "hour" }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } },
-          y: { title: { display: true, text: "ms", color: g.title.color }, grid: { color: g.grid.color }, ticks: { color: g.ticks.color } }
-        },
-        plugins: {
-          tooltip: { mode: "index", intersect: false }
-        }
-      }
+      options: makeChartOptions(g, "ms")
     })
 
     this.handleEvent("chart_data", ({results}) => {
@@ -531,8 +468,6 @@ chartHooks.DurationChart = {
       this.chart.data.datasets[1].data.push(point.upload_elapsed)
       this.chart.update()
     })
-
-    watchTheme(this.chart)
   }
 }
 
@@ -565,11 +500,11 @@ chartHooks.SpeedtestViz = {
     this._resize()
     window.addEventListener("resize", this._onResize = () => this._resize())
 
-    // Phosphor colors per phase
+    // Phosphor colors per phase (Tron neon)
     this.phaseColors = {
-      ping:     { r: 251, g: 191, b: 36 },   // amber
-      download: { r: 34,  g: 211, b: 238 },   // cyan
-      upload:   { r: 52,  g: 211, b: 153 },   // green
+      ping:     { r: 255, g: 170, b: 0 },     // electric amber
+      download: { r: 0,   g: 229, b: 255 },   // neon cyan
+      upload:   { r: 0,   g: 255, b: 136 },   // neon green
     }
 
     // Start the render loop
@@ -736,7 +671,7 @@ chartHooks.SpeedtestViz = {
     ctx.fillRect(0, 0, w, h)
 
     // ── Grid ──
-    const gridColor = "rgba(34, 211, 238, 0.04)"
+    const gridColor = "hsla(186, 100%, 50%, 0.04)"
     ctx.strokeStyle = gridColor
     ctx.lineWidth = 1
 
@@ -761,7 +696,7 @@ chartHooks.SpeedtestViz = {
     }
 
     // ── Center crosshair ──
-    ctx.strokeStyle = "rgba(34, 211, 238, 0.08)"
+    ctx.strokeStyle = "hsla(186, 100%, 50%, 0.08)"
     ctx.beginPath()
     ctx.moveTo(w / 2, 0)
     ctx.lineTo(w / 2, h)
@@ -869,7 +804,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
 })
 
 // Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#6366f1", 0.5: "#8b5cf6", 1: "#6366f1"}, shadowColor: "rgba(99, 102, 241, .3)"})
+topbar.config({barColors: {0: "#00c8ff", 0.5: "#00e5ff", 1: "#00c8ff"}, shadowColor: "hsla(198, 100%, 50%, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 

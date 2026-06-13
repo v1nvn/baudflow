@@ -21,13 +21,11 @@ defmodule BaudflowWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="sticky top-0 z-40 bg-surface-0/90 backdrop-blur-md border-b border-border">
+    <header>
       <div class="flex items-center justify-between h-12 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex-1">
           <.link navigate={~p"/"} class="flex items-center gap-2">
-            <div class="p-1 rounded-md bg-accent">
-              <.icon name="hero-signal" class="size-3.5 text-white" />
-            </div>
+            <img src={~p"/images/logo.svg"} alt="" class="size-5" />
             <span class="text-sm font-bold tracking-tight text-text">Baudflow</span>
           </.link>
         </div>
@@ -92,15 +90,12 @@ defmodule BaudflowWeb.Layouts do
                 <span class="hidden sm:inline">Settings</span>
               </.link>
             </li>
-            <li class="ml-1.5 border-l border-border pl-1.5">
-              <.theme_toggle />
-            </li>
           </ul>
         </div>
       </div>
     </header>
 
-    <main class="px-4 py-8 sm:px-6 lg:px-10 bg-surface-0 min-h-screen">
+    <main class="px-4 pt-2 pb-8 sm:px-6 lg:px-10 bg-surface-0 min-h-screen">
       <div class="mx-auto max-w-5xl space-y-8">
         {render_slot(@inner_block)}
       </div>
@@ -146,41 +141,6 @@ defmodule BaudflowWeb.Layouts do
         Attempting to reconnect
         <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
       </.flash>
-    </div>
-    """
-  end
-
-  @doc """
-  Provides dark vs light theme toggle.
-  See <head> in root.html.heex which applies the theme before page load.
-  """
-  def theme_toggle(assigns) do
-    ~H"""
-    <div class="flex items-center gap-0.5 bg-surface-2 rounded-md p-0.5 border border-border">
-      <button
-        class="flex p-1 cursor-pointer rounded transition-colors [[data-theme=system]_&]:bg-accent [[data-theme=system]_&]:text-white"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="system"
-        title="System theme"
-      >
-        <.icon name="hero-computer-desktop-micro" class="size-3.5 text-text-ghost" />
-      </button>
-      <button
-        class="flex p-1 cursor-pointer rounded transition-colors [[data-theme=light]_&]:bg-accent [[data-theme=light]_&]:text-white"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="light"
-        title="Light theme"
-      >
-        <.icon name="hero-sun-micro" class="size-3.5 text-text-ghost" />
-      </button>
-      <button
-        class="flex p-1 cursor-pointer rounded transition-colors [[data-theme=dark]_&]:bg-accent [[data-theme=dark]_&]:text-white"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="dark"
-        title="Dark theme"
-      >
-        <.icon name="hero-moon-micro" class="size-3.5 text-text-ghost" />
-      </button>
     </div>
     """
   end

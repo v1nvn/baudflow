@@ -22,9 +22,7 @@ defmodule Baudflow.Measurements.NotificationWorker do
   def perform(%Oban.Job{args: %{"measurement_id" => id}}) do
     measurement = Measurements.get_measurement!(id)
 
-    threshold =
-      Settings.get("degradation_threshold")
-      |> String.to_float()
+    threshold = Settings.get_float("degradation_threshold", 0.5)
 
     avg_download = seven_day_avg()
 

@@ -16,9 +16,7 @@ defmodule Baudflow.Measurements.CleanupWorker do
 
   @impl true
   def perform(_job) do
-    retention_days =
-      Settings.get("retention_days")
-      |> String.to_integer()
+    retention_days = Settings.get_integer("retention_days", 365)
 
     cutoff = DateTime.add(DateTime.utc_now(), -retention_days * 24 * 3600, :second)
 
