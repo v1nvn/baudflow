@@ -36,6 +36,9 @@ defmodule Baudflow.Measurements.Measurement do
              :speedtest_version,
              :healthy,
              :benchmarks,
+             :schedule_id,
+             :test_type,
+             :failed,
              :inserted_at
            ]}
 
@@ -78,9 +81,15 @@ defmodule Baudflow.Measurements.Measurement do
     field :benchmarks, :map
     # Raw
     field :raw_result, :map
+    # Pipeline provenance (v2 forward-shape; writers land in slices 0b/0d)
+    field :schedule_id, :id
+    field :test_type, :string, default: "ookla"
+    field :failed, :boolean, default: false
 
     timestamps()
   end
+
+  @type t :: %__MODULE__{}
 
   @doc "Changeset from Ookla CLI JSON output"
   def from_ookla_json(attrs) do
@@ -122,7 +131,10 @@ defmodule Baudflow.Measurements.Measurement do
       :speedtest_version,
       :healthy,
       :benchmarks,
-      :raw_result
+      :raw_result,
+      :schedule_id,
+      :test_type,
+      :failed
     ])
     |> validate_required([:timestamp, :ping_latency, :download_bandwidth, :upload_bandwidth])
     |> unique_constraint(:result_id)

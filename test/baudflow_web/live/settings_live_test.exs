@@ -3,6 +3,7 @@ defmodule BaudflowWeb.SettingsLiveTest do
 
   import Phoenix.LiveViewTest
 
+  alias Baudflow.Scheduling
   alias Baudflow.Settings
 
   describe "mount" do
@@ -60,8 +61,9 @@ defmodule BaudflowWeb.SettingsLiveTest do
         }
       })
 
-      # Verify persisted
-      assert Settings.get("schedule_cron") == "*/30 * * * *"
+      # Verify persisted — cron now lives on the default schedule row, not Settings
+      [schedule] = Scheduling.list_schedules()
+      assert schedule.cron == "*/30 * * * *"
       assert Settings.get("preferred_servers") == "12345, 67890"
       assert Settings.get("blocked_servers") == "54321"
       assert Settings.get("retention_days") == "180"
@@ -94,7 +96,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
       })
 
       # Verify settings were persisted (the real contract)
-      assert Settings.get("schedule_cron") == "0 * * * *"
+      [schedule] = Scheduling.list_schedules()
+      assert schedule.cron == "0 * * * *"
     end
 
     test "re-renders with new values after save", %{conn: conn} do

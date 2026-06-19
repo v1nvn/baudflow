@@ -81,6 +81,7 @@
           {Baudflow.CredoChecks.BanRepoOutsideContexts, []},
           {Baudflow.CredoChecks.BanNonReqHttp, []},
           {Baudflow.CredoChecks.BanBangRepoCalls, []},
+          {Baudflow.CredoChecks.BanBinaryInvocationOutsideRunners, []},
 
           #
           ## Consistency Checks

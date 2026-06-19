@@ -23,7 +23,11 @@ config :baudflow, BaudflowWeb.Endpoint,
 # Don't run any speedtests/cron during tests - enqueue and assert instead.
 config :baudflow, Oban, testing: :manual
 
-# Point SpeedtestWorker at a deterministic fake CLI (see test/support/fake_speedtest)
+# bootstrap/0 seeds the default schedule at boot; skip it in test so the
+# schedules table stays empty and tests control their own schedule state.
+config :baudflow, :bootstrap_on_start, false
+
+# Point the Ookla runner at a deterministic fake CLI (see test/support/fake_speedtest)
 config :baudflow, :speedtest_bin, Path.expand("../test/support/fake_speedtest", __DIR__)
 
 # Print only warnings and errors during test

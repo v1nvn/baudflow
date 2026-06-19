@@ -191,7 +191,7 @@ defmodule BaudflowWeb.DashboardLiveTest do
   end
 
   describe "handle_event run_test" do
-    test "enqueues a SpeedtestWorker job on button click", %{conn: conn} do
+    test "enqueues a RunnerWorker job on button click", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/")
 
       # Consume the initial chart_data push
@@ -201,7 +201,7 @@ defmodule BaudflowWeb.DashboardLiveTest do
       |> element("#run-test-btn")
       |> render_click()
 
-      assert_enqueued(worker: Baudflow.Measurements.SpeedtestWorker)
+      assert_enqueued(worker: Baudflow.TestRunners.RunnerWorker)
     end
 
     test "shows loading state after clicking Run Test Now", %{conn: conn} do
@@ -225,7 +225,7 @@ defmodule BaudflowWeb.DashboardLiveTest do
       |> element("#run-test-btn")
       |> render_click()
 
-      [job] = all_enqueued(worker: Baudflow.Measurements.SpeedtestWorker)
+      [job] = all_enqueued(worker: Baudflow.TestRunners.RunnerWorker)
       assert job.args["source"] == "manual"
     end
 
@@ -238,7 +238,7 @@ defmodule BaudflowWeb.DashboardLiveTest do
       |> element("#run-test-btn")
       |> render_click()
 
-      [job] = all_enqueued(worker: Baudflow.Measurements.SpeedtestWorker)
+      [job] = all_enqueued(worker: Baudflow.TestRunners.RunnerWorker)
       # "auto" selection means server_id is nil in the job args
       assert job.args["server_id"] == nil
     end

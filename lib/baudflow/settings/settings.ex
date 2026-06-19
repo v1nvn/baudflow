@@ -7,7 +7,6 @@ defmodule Baudflow.Settings do
   alias Baudflow.Settings.Setting
 
   @default_settings %{
-    "schedule_cron" => "0 * * * *",
     "server_id" => "",
     "preferred_servers" => "",
     "blocked_servers" => "",

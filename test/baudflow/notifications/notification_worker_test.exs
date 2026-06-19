@@ -1,0 +1,125 @@
+defmodule Baudflow.Notifications.NotificationWorkerTest do
+  # async: false — the capture test's Req.Test stub can be clobbered by a
+  # sibling test stubbing the same owner ({Req.Test, __MODULE__}) concurrently.
+  # Serializing keeps the stub-per-test deterministic.
+  use Baudflow.DataCase, async: false
+  use Oban.Testing, repo: Baudflow.Repo
+
+  alias Baudflow.Measurements
+  alias Baudflow.Notifications.NotificationWorker
+
+  setup do
+    Application.put_env(:baudflow, :ntfy_url, "http://ntfy.test")
+    Application.put_env(:baudflow, :ntfy_topic, "baudflow-test")
+    Application.put_env(:baudflow, :ntfy_plug, {Req.Test, __MODULE__})
+
+    on_exit(fn ->
+      Application.delete_env(:baudflow, :ntfy_url)
+      Application.delete_env(:baudflow, :ntfy_topic)
+      Application.delete_env(:baudflow, :ntfy_plug)
+    end)
+
+    :ok
+  end
+
+  defp stub_success do
+    Req.Test.stub(__MODULE__, fn conn -> Plug.Conn.send_resp(conn, 200, "") end)
+  end
+
+  # Capture the request conn so a test can assert on the rendered body.
+  defp stub_capture do
+    Req.Test.stub(__MODULE__, fn conn ->
+      send(self(), {:ntfy_request, conn})
+      Plug.Conn.send_resp(conn, 200, "")
+    end)
+  end
+
+  defp insert_measurement!(overrides) do
+    defaults = %{
+      timestamp: DateTime.utc_now(),
+      ping_latency: 10.0,
+      download_bandwidth: round(50.0 / 0.000008),
+      upload_bandwidth: round(25.0 / 0.000008),
+      server_name: "TestServer",
+      server_location: "TestCity",
+      source: "scheduled",
+      result_id: Ecto.UUID.generate()
+    }
+
+    {:ok, m} = Measurements.create_measurement(Map.merge(defaults, overrides))
+    m
+  end
+
+  describe "perform/1 - breach" do
+    test "posts an alert to ntfy" do
+      stub_success()
+
+      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id
+               })
+    end
+
+    test "does not crash when ntfy returns an error status" do
+      Req.Test.stub(__MODULE__, fn conn -> Plug.Conn.send_resp(conn, 503, "unavailable") end)
+
+      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id
+               })
+    end
+
+    test "renders the failed threshold in the body" do
+      stub_capture()
+
+      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id
+               })
+
+      assert_received {:ntfy_request, conn}
+      body = Req.Test.raw_body(conn)
+      assert body =~ "breached"
+      assert body =~ "Download"
+    end
+  end
+
+  describe "perform/1 - policy" do
+    # No stub is set here. If policy wrongly fired, Req.Test would raise (no
+    # matching stub), failing the test — a strong assertion of the step-0 policy.
+    test "does not notify on a recovered event (step-0 policy)" do
+      m = insert_measurement!(%{healthy: true})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "recovered",
+                 "measurement_id" => m.id
+               })
+    end
+
+    test "does not notify on a healthy event" do
+      m = insert_measurement!(%{healthy: true})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "healthy",
+                 "measurement_id" => m.id
+               })
+    end
+  end
+
+  defp breach_benchmarks do
+    %{
+      "download" => %{"passed" => false, "value" => 50.0, "threshold" => 100.0, "unit" => "Mbps"}
+    }
+  end
+end

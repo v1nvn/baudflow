@@ -22,7 +22,7 @@ if config_env() != :test do
     plugins: [
       {Oban.Plugins.Cron,
        crontab: [
-         {"* * * * *", Baudflow.Measurements.SchedulerWorker},
+         {"* * * * *", Baudflow.Scheduling.SchedulerWorker},
          {"0 3 * * *", Baudflow.Measurements.CleanupWorker}
        ]}
     ]

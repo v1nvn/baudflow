@@ -49,7 +49,8 @@ defmodule Baudflow.SettingsTest do
     end
 
     test "falls back to default when key is not stored" do
-      assert Settings.get("schedule_cron") == "0 * * * *"
+      # schedule_cron moved to the Schedule row; it has no Settings default now.
+      assert Settings.get("schedule_cron") == nil
       assert Settings.get("retention_days") == "365"
       assert Settings.get("dashboard_points") == "500"
     end

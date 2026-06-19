@@ -10,6 +10,15 @@ defmodule Baudflow.Application do
     children = [
       BaudflowWeb.Telemetry,
       Baudflow.Repo,
+      # Seed the default schedule from the legacy cron setting on boot
+      # (dev/prod). Gated off in test via :bootstrap_on_start so the schedules
+      # table stays empty and tests own their state. :temporary restart — run
+      # once; a seed failure must not crash the supervisor.
+      {Task,
+       fn ->
+         if Application.get_env(:baudflow, :bootstrap_on_start, true),
+           do: Baudflow.Scheduling.bootstrap()
+       end},
       {Phoenix.PubSub, name: Baudflow.PubSub},
       {Oban, Application.fetch_env!(:baudflow, Oban)},
       BaudflowWeb.Endpoint

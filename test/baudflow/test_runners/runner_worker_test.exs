@@ -1,27 +1,30 @@
-defmodule Baudflow.Measurements.SpeedtestWorkerTest do
-  use Baudflow.DataCase, async: true
+defmodule Baudflow.TestRunners.RunnerWorkerTest do
+  # async: false — the failure/timeout sub-tests temporarily flip the global
+  # :speedtest_bin env var to point at a throwaway script. Any concurrent test
+  # that runs Ookla (pipeline_test) or probes binary_available? (dashboard) would
+  # read the flipped value. Serializing this file isolates the flips.
+  use Baudflow.DataCase, async: false
   use Oban.Testing, repo: Baudflow.Repo
 
   alias Baudflow.Measurements
-  alias Baudflow.Measurements.SpeedtestWorker
+  alias Baudflow.TestRunners.RunnerWorker
 
   describe "perform/1 - success" do
     test "stores a measurement and broadcasts on success" do
       Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
 
-      assert :ok = perform_job(SpeedtestWorker, %{"server_id" => nil})
+      assert :ok = perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
       assert_receive {:result, %{download_mbps: mbps}} when mbps > 0
       assert [_] = Measurements.list_recent(limit: 10)
     end
 
     test "records a successful run" do
-      perform_job(SpeedtestWorker, %{"server_id" => nil})
+      perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
       measurements = Measurements.list_recent(limit: 1)
       assert length(measurements) == 1
 
-      # Verify a run was recorded - query directly since we don't have a list function
       measurement = hd(measurements)
 
       run =
@@ -31,20 +34,21 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
       assert run.status == "success"
     end
 
-    test "enqueues a NotificationWorker job" do
-      perform_job(SpeedtestWorker, %{"server_id" => nil})
+    test "stamps the measurement with its test_type" do
+      perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
-      assert_enqueued(worker: Baudflow.Measurements.NotificationWorker)
+      [m] = Measurements.list_recent(limit: 1)
+      assert m.test_type == "ookla"
     end
 
-    test "enqueues a BenchmarkWorker job" do
-      perform_job(SpeedtestWorker, %{"server_id" => nil})
+    test "enqueues a HealthWorker job" do
+      perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
-      assert_enqueued(worker: Baudflow.Measurements.BenchmarkWorker)
+      assert_enqueued(worker: Baudflow.Health.HealthWorker)
     end
 
     test "parses Ookla JSON fields correctly" do
-      perform_job(SpeedtestWorker, %{"server_id" => nil})
+      perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
       [m] = Measurements.list_recent(limit: 1)
       # The fake outputs bandwidth 6384715 → 6384715 * 0.000008 = 51.08
@@ -60,7 +64,6 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
     test "records a failure run when the CLI exits non-zero" do
       original_bin = Application.get_env(:baudflow, :speedtest_bin)
 
-      # Create a failing fake that exits 1
       failing_bin = Path.join(System.tmp_dir!(), "fake_speedtest_fail")
       File.write!(failing_bin, "#!/bin/sh\necho 'boom' >&2\nexit 1\n")
       File.chmod!(failing_bin, 0o755)
@@ -70,7 +73,8 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
 
         Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
 
-        assert {:error, _} = perform_job(SpeedtestWorker, %{"server_id" => nil})
+        assert {:error, _} =
+                 perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
         # Every failure path must emit a terminal broadcast so the UI
         # never depends on a client-side timer.
@@ -98,7 +102,6 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
     test "records a timeout run when the CLI exits 124" do
       original_bin = Application.get_env(:baudflow, :speedtest_bin)
 
-      # Create a fake that exits 124 (simulating OS timeout kill)
       timeout_bin = Path.join(System.tmp_dir!(), "fake_speedtest_timeout")
       File.write!(timeout_bin, "#!/bin/sh\nexit 124\n")
       File.chmod!(timeout_bin, 0o755)
@@ -108,7 +111,8 @@ defmodule Baudflow.Measurements.SpeedtestWorkerTest do
 
         Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
 
-        assert {:error, :timeout} = perform_job(SpeedtestWorker, %{"server_id" => nil})
+        assert {:error, :timeout} =
+                 perform_job(RunnerWorker, %{"server_id" => nil, "test_type" => "ookla"})
 
         # The timeout path must emit a terminal broadcast so the UI
         # never depends on a client-side timer.

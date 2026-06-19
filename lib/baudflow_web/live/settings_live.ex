@@ -1,11 +1,17 @@
 defmodule BaudflowWeb.SettingsLive do
   use BaudflowWeb, :live_view
 
+  alias Baudflow.Scheduling
+  alias Baudflow.Scheduling.Schedule
   alias Baudflow.Settings
 
   @impl true
   def mount(_params, _session, socket) do
-    settings = Settings.get_all()
+    # The cron card edits the default schedule row (scheduling is data), so its
+    # value comes from the schedule, not the legacy key/value setting.
+    settings =
+      Settings.get_all()
+      |> Map.put("schedule_cron", default_schedule_cron())
 
     {:ok,
      socket
@@ -23,11 +29,15 @@ defmodule BaudflowWeb.SettingsLive do
     cron = params["schedule_cron"] || ""
 
     if valid_cron?(cron) do
-      :ok = Settings.update_all(params)
+      :ok = save_schedule_cron(cron)
+
+      # the rest of the card is plain key/value settings
+      rest = Map.delete(params, "schedule_cron")
+      :ok = Settings.update_all(rest)
 
       {:noreply,
        socket
-       |> assign_form(params)
+       |> assign_form(Map.put(rest, "schedule_cron", cron))
        |> put_flash(:info, "Settings saved - schedule takes effect within 1 minute")}
     else
       {:noreply,
@@ -40,6 +50,25 @@ defmodule BaudflowWeb.SettingsLive do
   # namespace and render through the shared `<.input>` component.
   defp assign_form(socket, settings) do
     assign(socket, :form, to_form(settings, as: :settings))
+  end
+
+  defp default_schedule_cron do
+    case Scheduling.list_schedules() do
+      [%Schedule{cron: cron} | _] -> cron
+      [] -> "0 * * * *"
+    end
+  end
+
+  defp save_schedule_cron(cron) do
+    case Scheduling.list_schedules() do
+      [schedule | _] ->
+        {:ok, _} = Scheduling.update(schedule, %{cron: cron})
+        :ok
+
+      [] ->
+        {:ok, _} = Scheduling.create(%{name: "Default", cron: cron, enabled: true})
+        :ok
+    end
   end
 
   defp valid_cron?(cron) when is_binary(cron) do

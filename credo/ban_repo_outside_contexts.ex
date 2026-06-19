@@ -6,17 +6,18 @@ defmodule Baudflow.CredoChecks.BanRepoOutsideContexts do
     base_priority: :high,
     explanations: [
       check: """
-      All database access must go through the three context modules:
+      All database access must go through the context modules:
       lib/baudflow/measurements/measurements.ex, lib/baudflow/runs/runs.ex,
-      lib/baudflow/settings/settings.ex. Workers and LiveViews call context
-      functions instead of importing Ecto.Query or calling Repo directly.
-      (See CLAUDE.md "Layering & contexts".)
+      lib/baudflow/scheduling/scheduling.ex, lib/baudflow/settings/settings.ex.
+      Workers and LiveViews call context functions instead of importing
+      Ecto.Query or calling Repo directly. (See CLAUDE.md "Layering & contexts".)
       """
     ]
 
   @context_files ~w(
     lib/baudflow/measurements/measurements.ex
     lib/baudflow/runs/runs.ex
+    lib/baudflow/scheduling/scheduling.ex
     lib/baudflow/settings/settings.ex
   )
 

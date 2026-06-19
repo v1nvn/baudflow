@@ -3,7 +3,7 @@ defmodule BaudflowWeb.DashboardLive do
 
   alias Baudflow.Measurements
   alias Baudflow.Measurements.ServerDiscovery
-  alias Baudflow.Measurements.SpeedtestWorker
+  alias Baudflow.TestRunners.RunnerWorker
 
   @impl true
   def mount(_params, _session, socket) do
@@ -52,6 +52,19 @@ defmodule BaudflowWeb.DashboardLive do
      socket
      |> assign(:test_running, true)
      |> push_event("speedtest_progress", %{type: type, data: data})}
+  end
+
+  @impl true
+  def handle_info({:health, id, _transition}, socket) do
+    # HealthWorker evaluated the latest measurement post-result; refetch so the
+    # health badge reflects it live (the v1 badge was stale until reload).
+    socket =
+      if(socket.assigns.latest_measurement && socket.assigns.latest_measurement.id == id,
+        do: assign(socket, :latest_measurement, Measurements.get_measurement!(id)),
+        else: socket
+      )
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -120,7 +133,7 @@ defmodule BaudflowWeb.DashboardLive do
 
   @impl true
   def handle_event("run_test", _params, socket) do
-    if SpeedtestWorker.binary_available?() do
+    if RunnerWorker.binary_available?() do
       server_id =
         cond do
           socket.assigns.selected_server_id == "auto" -> nil
@@ -130,15 +143,16 @@ defmodule BaudflowWeb.DashboardLive do
 
       %{
         server_id: server_id,
-        source: "manual"
+        source: "manual",
+        test_type: "ookla"
       }
-      |> SpeedtestWorker.new(unique: [period: 300])
+      |> RunnerWorker.new(unique: [period: 300])
       |> Oban.insert()
 
       # Safety net only — every outcome broadcasts {:test_failed,_} or
       # {:result,_} before this. Fire after the worker's worst-case runtime
       # (its own SLA) plus a margin so the net never preempts a real event.
-      Process.send_after(self(), :test_timeout, SpeedtestWorker.timeout_ms() + 10_000)
+      Process.send_after(self(), :test_timeout, RunnerWorker.timeout_ms() + 10_000)
 
       {:noreply, assign(socket, :test_running, true)}
     else

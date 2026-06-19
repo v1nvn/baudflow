@@ -187,6 +187,32 @@ defmodule Baudflow.MeasurementsTest do
       assert averages.avg_7d == nil
       assert averages.avg_30d == nil
     end
+
+    test "ignores measurements older than the window" do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      # 10 days old — outside the 7d window, would skew the average if included
+      Measurements.create_measurement(
+        valid_attrs(
+          timestamp: DateTime.add(now, -10 * 24 * 3600, :second),
+          download_bandwidth: round(200.0 / 0.000008),
+          source: "scheduled",
+          result_id: "wa-old"
+        )
+      )
+
+      Measurements.create_measurement(
+        valid_attrs(
+          timestamp: DateTime.add(now, -3600, :second),
+          download_bandwidth: round(100.0 / 0.000008),
+          source: "scheduled",
+          result_id: "wa-recent"
+        )
+      )
+
+      averages = Measurements.window_averages()
+      assert_in_delta averages.avg_7d, 100.0, 1.0
+    end
   end
 
   # --- Migration sanity checks ---
