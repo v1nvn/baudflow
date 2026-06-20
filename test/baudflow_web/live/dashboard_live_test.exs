@@ -184,7 +184,8 @@ defmodule BaudflowWeb.DashboardLiveTest do
           upload_jitter: ^upload_jitter,
           packet_loss: ^packet_loss,
           download_elapsed: ^download_elapsed,
-          upload_elapsed: ^upload_elapsed
+          upload_elapsed: ^upload_elapsed,
+          failed: false
         }
       })
     end
@@ -299,6 +300,54 @@ defmodule BaudflowWeb.DashboardLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/")
 
       refute has_element?(lv, "#compliance-card")
+    end
+  end
+
+  describe "chart threshold config" do
+    test "chart_data carries the global thresholds when enabled", %{conn: conn} do
+      Baudflow.Settings.update_all(%{
+        "threshold_enabled" => "true",
+        "threshold_download" => "100",
+        "threshold_upload" => "40"
+      })
+
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      assert_push_event(lv, "chart_data", %{thresholds: thresholds})
+      assert thresholds.download == 100.0
+      assert thresholds.upload == 40.0
+      # A 0 / unset threshold is "none" → nil, so the chart draws no line.
+      assert thresholds.ping == nil
+    end
+
+    test "chart_data thresholds are all nil when thresholds are disabled", %{conn: conn} do
+      # threshold_enabled defaults to "false"
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      assert_push_event(lv, "chart_data", %{thresholds: thresholds})
+      assert thresholds.download == nil
+      assert thresholds.upload == nil
+      assert thresholds.ping == nil
+    end
+  end
+
+  describe "failed latest measurement" do
+    test "renders a muted hero without crashing when the newest test failed", %{conn: conn} do
+      # an older successful test, then a newer failed one (newest → latest)
+      Measurements.create_measurement(
+        valid_attrs(timestamp: ~U[2024-01-01 00:00:00Z], result_id: "ok-1")
+      )
+
+      Measurements.record_failure(%{
+        timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
+        test_type: "ookla"
+      })
+
+      assert {:ok, _lv, html} = live(conn, ~p"/")
+
+      # The hero shows a failure state, not a crashed render or the empty-state.
+      assert html =~ "Last Test Failed"
+      refute html =~ "Run your first speedtest"
     end
   end
 

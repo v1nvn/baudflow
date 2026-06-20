@@ -28,7 +28,12 @@ let colocatedHooks = {}
 try { const m = require("phoenix-colocated/baudflow"); colocatedHooks = m.hooks || {} } catch(_e) {}
 import Chart from "chart.js/auto"
 import "chartjs-adapter-date-fns"
+import annotationPlugin from "chartjs-plugin-annotation"
 import topbar from "../vendor/topbar"
+
+// Register the annotation plugin once, globally, so every chart can draw
+// threshold lines and failure markers via `options.plugins.annotation`.
+Chart.register(annotationPlugin)
 
 // --- Chart color system (Tron Legacy neon palette) ---
 
@@ -79,6 +84,7 @@ function makeChartOptions(g, yTitle, yExtra = {}) {
     },
     plugins: {
       legend: { display: false },
+      annotation: { annotations: {} },
       tooltip: {
         backgroundColor: "rgba(0, 0, 0, 0.82)",
         titleFont: { size: 11, weight: "500" },
@@ -91,6 +97,57 @@ function makeChartOptions(g, yTitle, yExtra = {}) {
       }
     }
   }
+}
+
+// --- Annotation builders (threshold lines + failure markers) ---
+// One `chart_data` payload carries `thresholds`; each chart describes which
+// thresholds it draws via a spec list, and failed points become red vertical
+// bars. Adding a future overlay = one more spec entry or one more field, not a
+// parallel state path.
+
+const FAILURE_COLOR = "hsl(345, 100%, 60%)" // matches chartColors().error.border
+
+function lineAnnotation(yMin, color, label) {
+  const a = {
+    type: "line",
+    yMin: yMin,
+    yMax: yMin,
+    borderColor: color,
+    borderWidth: 1,
+    borderDash: [6, 4]
+  }
+  if (label) {
+    a.label = {
+      content: label,
+      display: true,
+      position: "end",
+      font: { size: 9, weight: "500" },
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      color: color,
+      padding: { top: 2, bottom: 2, left: 4, right: 4 }
+    }
+  }
+  return a
+}
+
+function failureAnnotation(timestamp) {
+  return { type: "line", xMin: timestamp, xMax: timestamp, borderColor: FAILURE_COLOR, borderWidth: 2 }
+}
+
+// specs: [{key, color, label}] — which threshold fields this chart draws.
+// failedTimestamps: [iso] — one red vertical bar each.
+function buildAnnotations(specs, thresholds, failedTimestamps) {
+  const annotations = {}
+  for (const spec of specs) {
+    const v = thresholds ? thresholds[spec.key] : null
+    if (typeof v === "number" && v > 0) {
+      annotations[`threshold-${spec.key}`] = lineAnnotation(v, spec.color, spec.label)
+    }
+  }
+  for (const ts of failedTimestamps) {
+    annotations[`fail-${ts}`] = failureAnnotation(ts)
+  }
+  return annotations
 }
 
 // --- Chart.js hooks ---
@@ -188,7 +245,13 @@ chartHooks.SpeedChart = {
       options: makeChartOptions(g, "Mbps")
     })
 
-    this.handleEvent("chart_data", ({results, averages}) => {
+    // Which global thresholds this chart draws as overlay lines.
+    const speedSpec = [
+      {key: "download", color: c.download.border, label: "DL min"},
+      {key: "upload", color: c.upload.border, label: "UL min"}
+    ]
+
+    this.handleEvent("chart_data", ({results, averages, thresholds}) => {
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.download_mbps)
@@ -199,6 +262,11 @@ chartHooks.SpeedChart = {
         this.chart.data.datasets[2].data = sorted.map(() => averages.avg_7d)
         this.chart.data.datasets[3].data = sorted.map(() => averages.avg_30d)
       }
+
+      // Threshold lines + red failure bars (the chart seam — add a field, not a path)
+      const failed = sorted.filter(r => r.failed).map(r => r.timestamp)
+      this.chart.options.plugins.annotation.annotations =
+        buildAnnotations(speedSpec, thresholds, failed)
 
       this.chart.update()
     })
@@ -214,6 +282,12 @@ chartHooks.SpeedChart = {
       const avg30 = this.chart.data.datasets[3].data[0] ?? null
       this.chart.data.datasets[2].data = Array(len).fill(avg7)
       this.chart.data.datasets[3].data = Array(len).fill(avg30)
+
+      // A just-streamed failure gets a marker too
+      if (point.failed) {
+        this.chart.options.plugins.annotation.annotations[`fail-${point.timestamp}`] =
+          failureAnnotation(point.timestamp)
+      }
 
       this.chart.update()
     })
@@ -257,11 +331,14 @@ chartHooks.PingChart = {
       options: makeChartOptions(g, "ms")
     })
 
-    this.handleEvent("chart_data", ({results}) => {
+    const pingSpec = [{key: "ping", color: c.latency.border, label: "Max ping"}]
+
+    this.handleEvent("chart_data", ({results, thresholds}) => {
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.ping_latency)
       this.chart.data.datasets[1].data = sorted.map(r => r.ping_jitter)
+      this.chart.options.plugins.annotation.annotations = buildAnnotations(pingSpec, thresholds, [])
       this.chart.update()
     })
 
@@ -389,12 +466,16 @@ chartHooks.PingDetailChart = {
       options: makeChartOptions(g, "ms")
     })
 
-    this.handleEvent("chart_data", ({results}) => {
+    const pingDetailSpec = [{key: "ping", color: c.latency.border, label: "Max ping"}]
+
+    this.handleEvent("chart_data", ({results, thresholds}) => {
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.ping_latency)
       this.chart.data.datasets[1].data = sorted.map(r => r.ping_low)
       this.chart.data.datasets[2].data = sorted.map(r => r.ping_high)
+      this.chart.options.plugins.annotation.annotations =
+        buildAnnotations(pingDetailSpec, thresholds, [])
       this.chart.update()
     })
 

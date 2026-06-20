@@ -139,7 +139,7 @@ defmodule Baudflow.Measurements.Measurement do
       :test_type,
       :failed
     ])
-    |> validate_required([:timestamp, :ping_latency])
+    |> validate_required([:timestamp])
     |> unique_constraint(:result_id)
   end
 

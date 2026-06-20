@@ -80,14 +80,17 @@
       <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
           <p class="text-xs font-semibold tracking-[0.15em] uppercase text-text-dim mb-3">
-            <%= if @latest_measurement do %>
-              Download Speed
-            <% else %>
-              No Data
+            <%= cond do %>
+              <% has_speed_data?(@latest_measurement) -> %>
+                Download Speed
+              <% @latest_measurement -> %>
+                Last Test Failed
+              <% true -> %>
+                No Data
             <% end %>
           </p>
           <div class="flex items-baseline gap-2">
-            <%= if @latest_measurement do %>
+            <%= if has_speed_data?(@latest_measurement) do %>
               <span class="speed-hero">
                 {Float.round(@latest_measurement.download_mbps, 1)}
                 <span class="unit">Mbps</span>
@@ -99,7 +102,7 @@
             <% end %>
           </div>
           <div class="flex items-center gap-4 mt-3 text-sm">
-            <%= if @latest_measurement do %>
+            <%= if has_speed_data?(@latest_measurement) do %>
               <span class="text-text-dim">
                 <span class="stat-value font-semibold text-text">
                   {Float.round(@latest_measurement.upload_mbps, 1)}
@@ -125,7 +128,11 @@
                 <.local_time id="latest-time" at={@latest_measurement.timestamp} />
               </span>
             <% else %>
-              <span class="text-text-ghost">Run your first speedtest to see results</span>
+              <%= if @latest_measurement do %>
+                <span class="text-text-ghost">The most recent test produced no result</span>
+              <% else %>
+                <span class="text-text-ghost">Run your first speedtest to see results</span>
+              <% end %>
             <% end %>
           </div>
         </div>

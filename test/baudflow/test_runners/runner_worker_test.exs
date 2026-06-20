@@ -81,6 +81,11 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
         assert_receive {:test_failed, reason}
         assert reason =~ "exited with code"
 
+        # A failure is also recorded as a measurement so it shows on the chart
+        # timeline instead of a silent gap (failed: true, no speeds).
+        assert_receive {:result, %{failed: true, test_type: "ookla"} = failed}
+        assert failed.download_mbps == nil
+
         run =
           Baudflow.Repo.one(
             from r in Baudflow.Runs.Run,
@@ -118,6 +123,9 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
         # never depends on a client-side timer.
         assert_receive {:test_failed, reason}
         assert reason =~ "Timed out"
+
+        # A timeout is a failure — it lands on the timeline as a failed point.
+        assert_receive {:result, %{failed: true, test_type: "ookla"}}
 
         run =
           Baudflow.Repo.one(
@@ -188,6 +196,9 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
         # never depends on a client-side timer.
         assert_receive {:test_failed, reason}
         assert reason =~ "exited with code"
+
+        # A ping failure is recorded as a failed measurement tagged ping.
+        assert_receive {:result, %{failed: true, test_type: "ping"}}
 
         run =
           Baudflow.Repo.one(

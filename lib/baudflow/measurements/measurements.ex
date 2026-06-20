@@ -12,6 +12,26 @@ defmodule Baudflow.Measurements do
     |> Repo.insert()
   end
 
+  @doc """
+  Insert a measurement marking a failed test — no speed/ping data, just a
+  timestamped failure point on the timeline (`failed: true`).
+
+  The runner writes this on every test-failure path so an outage is visible on
+  the chart instead of a silent gap. Speeds stay nil, so `avg()`/`compliance`
+  exclude it; Health is not evaluated (a failed test has no thresholds to check).
+  `test_type` defaults to `"ookla"` and `source` to `"scheduled"`.
+  """
+  def record_failure(attrs) do
+    attrs =
+      attrs
+      |> Map.put_new(:source, "scheduled")
+      |> Map.put_new(:test_type, "ookla")
+      |> Map.put(:failed, true)
+
+    Measurement.from_result(attrs)
+    |> Repo.insert()
+  end
+
   @doc "Get a measurement by ID, raises if not found."
   def get_measurement!(id) do
     Repo.get!(Measurement, id)

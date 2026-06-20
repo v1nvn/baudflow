@@ -2,6 +2,7 @@ defmodule BaudflowWeb.DashboardLive do
   use BaudflowWeb, :live_view
 
   alias Baudflow.Measurements
+  alias Baudflow.Measurements.Measurement
   alias Baudflow.Measurements.ServerDiscovery
   alias Baudflow.Scheduling
   alias Baudflow.TestRunners.RunnerWorker
@@ -15,6 +16,7 @@ defmodule BaudflowWeb.DashboardLive do
     time_range = "7d"
     measurements = fetch_measurements(time_range)
     averages = Measurements.window_averages()
+    thresholds = chart_thresholds()
 
     {:ok,
      socket
@@ -22,6 +24,7 @@ defmodule BaudflowWeb.DashboardLive do
      |> assign(:latest_measurement, List.first(measurements))
      |> assign(:chart_points, chart_points())
      |> assign(:averages, averages)
+     |> assign(:chart_config, %{thresholds: thresholds})
      |> assign(:compliance, compute_compliance(time_range))
      |> assign(:next_run, Scheduling.next_run())
      |> assign(:test_running, false)
@@ -31,7 +34,7 @@ defmodule BaudflowWeb.DashboardLive do
      |> assign(:selected_server_id, "auto")
      |> assign(:available_servers, [])
      |> assign(:servers_loaded, false)
-     |> push_chart_data(measurements, averages)}
+     |> push_chart_data(measurements, averages, thresholds)}
   end
 
   @impl true
@@ -99,6 +102,7 @@ defmodule BaudflowWeb.DashboardLive do
   def handle_event("set_range", %{"range" => range}, socket) do
     measurements = fetch_measurements(range)
     averages = Measurements.window_averages()
+    thresholds = chart_thresholds()
 
     {:noreply,
      socket
@@ -106,9 +110,10 @@ defmodule BaudflowWeb.DashboardLive do
      |> assign(:measurements, measurements)
      |> assign(:latest_measurement, List.first(measurements))
      |> assign(:averages, averages)
+     |> assign(:chart_config, %{thresholds: thresholds})
      |> assign(:compliance, compute_compliance(range))
      |> assign(:next_run, Scheduling.next_run())
-     |> push_chart_data(measurements, averages)}
+     |> push_chart_data(measurements, averages, thresholds)}
   end
 
   @impl true
@@ -202,6 +207,38 @@ defmodule BaudflowWeb.DashboardLive do
     )
   end
 
+  # Global threshold overlay values for the aggregate speed chart. The dashboard
+  # spans all Ookla schedules, so per-schedule thresholds don't map onto one view
+  # — we overlay the global `Settings` thresholds (the values `thresholds_for/1`
+  # falls back to), gated by `threshold_enabled`. A 0/unset value is "none" → nil,
+  # so the chart draws no line for it.
+  defp chart_thresholds do
+    if Baudflow.Settings.get_boolean("threshold_enabled") do
+      %{
+        download: threshold_or_nil("threshold_download"),
+        upload: threshold_or_nil("threshold_upload"),
+        ping: threshold_or_nil("threshold_ping")
+      }
+    else
+      %{download: nil, upload: nil, ping: nil}
+    end
+  end
+
+  defp threshold_or_nil(key) do
+    case Baudflow.Settings.get_float(key, 0.0) do
+      v when is_number(v) and v > 0 -> v
+      _ -> nil
+    end
+  end
+
+  # A failed measurement is a valid "latest" (it's the most recent result) but
+  # carries no download value — the hero renders a muted failure state instead
+  # of crashing on a nil Float.round.
+  defp has_speed_data?(%Measurement{download_mbps: value}) when is_number(value),
+    do: true
+
+  defp has_speed_data?(_), do: false
+
   # Best-effort relative hint for the next-test card (recomputed on each render).
   # The authoritative value is the `<.local_time>` exact time, which is always
   # correct; this just reads as a glanceable "in Nm".
@@ -215,10 +252,11 @@ defmodule BaudflowWeb.DashboardLive do
     end
   end
 
-  defp push_chart_data(socket, measurements, averages) do
+  defp push_chart_data(socket, measurements, averages, thresholds) do
     push_event(socket, "chart_data", %{
       results: serialize_for_chart(measurements),
-      averages: averages
+      averages: averages,
+      thresholds: thresholds
     })
   end
 
@@ -239,7 +277,8 @@ defmodule BaudflowWeb.DashboardLive do
       upload_jitter: m.upload_jitter,
       packet_loss: m.packet_loss,
       download_elapsed: m.download_elapsed,
-      upload_elapsed: m.upload_elapsed
+      upload_elapsed: m.upload_elapsed,
+      failed: m.failed
     }
   end
 end

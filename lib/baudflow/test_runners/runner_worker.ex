@@ -54,19 +54,20 @@ defmodule Baudflow.TestRunners.RunnerWorker do
           handle_success(impl, result, args, started_at, job_id)
 
         {:error, :timeout} ->
-          handle_timeout(impl, started_at, job_id)
+          handle_timeout(impl, args, started_at, job_id)
 
         {:error, {:cli_exit, code, output}} ->
-          handle_cli_exit(code, output, started_at, job_id)
+          handle_cli_exit(code, output, args, started_at, job_id)
 
         {:error, reason} when is_binary(reason) ->
-          handle_error(reason, started_at, job_id)
+          handle_error(reason, args, started_at, job_id)
       end
     rescue
       e ->
         msg = Exception.message(e)
-        broadcast_failure(msg)
         Runs.fail_run(started_at, msg, job_id, "failure")
+        record_failure(started_at, args)
+        broadcast_failure(msg)
         {:error, e}
     end
   end
@@ -95,15 +96,16 @@ defmodule Baudflow.TestRunners.RunnerWorker do
     end
   end
 
-  defp handle_timeout(impl, started_at, job_id) do
+  defp handle_timeout(impl, args, started_at, job_id) do
     seconds = div(impl.timeout_ms(), 1000)
 
     Runs.fail_run(started_at, "speedtest timed out after #{seconds}s", job_id, "timeout")
+    record_failure(started_at, args)
     broadcast_failure("Timed out after #{seconds}s")
     {:error, :timeout}
   end
 
-  defp handle_cli_exit(code, output, started_at, job_id) do
+  defp handle_cli_exit(code, output, args, started_at, job_id) do
     Runs.fail_run(
       started_at,
       "speedtest CLI exited with code #{code}: #{output}",
@@ -111,13 +113,15 @@ defmodule Baudflow.TestRunners.RunnerWorker do
       "failure"
     )
 
+    record_failure(started_at, args)
     reason = "Speedtest CLI exited with code #{code}"
     broadcast_failure(reason)
     {:error, reason}
   end
 
-  defp handle_error(reason, started_at, job_id) do
+  defp handle_error(reason, args, started_at, job_id) do
     Runs.fail_run(started_at, reason, job_id, "failure")
+    record_failure(started_at, args)
     broadcast_failure(reason)
     {:error, reason}
   end
@@ -134,6 +138,23 @@ defmodule Baudflow.TestRunners.RunnerWorker do
 
   defp broadcast_failure(reason) do
     Phoenix.PubSub.broadcast(Baudflow.PubSub, "measurements", {:test_failed, reason})
+  end
+
+  # A failed test is still a timeline event: stamp a failed Measurement (nil
+  # speeds, failed: true) and broadcast it as a result so the chart gets an
+  # outage marker and the hero reflects the failure. The Run keeps the reason.
+  defp record_failure(started_at, args) do
+    attrs = %{
+      timestamp: started_at,
+      test_type: args["test_type"] || "ookla",
+      schedule_id: args["schedule_id"],
+      source: args["source"] || "scheduled"
+    }
+
+    case Measurements.record_failure(attrs) do
+      {:ok, measurement} -> broadcast_result(measurement)
+      {:error, _changeset} -> :ok
+    end
   end
 
   defp impl_for(test_type), do: Map.fetch!(@impls, test_type)

@@ -20,13 +20,20 @@ defmodule Baudflow.MeasurementsTest do
       assert changeset.changes[:upload_mbps] == 40.0
     end
 
-    test "requires only timestamp and ping_latency" do
+    test "requires only timestamp" do
       changeset = Measurement.from_result(%{})
       refute changeset.valid?
 
       errors = Baudflow.DataCase.errors_on(changeset)
       assert "can't be blank" in errors[:timestamp]
-      assert "can't be blank" in errors[:ping_latency]
+      # ping_latency is optional — a failed run carries no ping data, so it must
+      # not be required (successful parses always set it).
+      refute errors[:ping_latency]
+    end
+
+    test "accepts a timestamp-only record (a failed run has no speeds or ping)" do
+      changeset = Measurement.from_result(%{timestamp: ~U[2024-01-01 00:00:00Z]})
+      assert changeset.valid?
     end
 
     test "leaves mbps nil when bandwidth is absent (a ping result)" do
@@ -56,6 +63,36 @@ defmodule Baudflow.MeasurementsTest do
       assert m.download_mbps == 80.0
       assert m.upload_mbps == 40.0
       assert m.result_id == "test-result-1"
+    end
+  end
+
+  describe "record_failure/1" do
+    test "inserts a failed measurement with nil speeds and failed: true" do
+      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      assert {:ok, %Measurement{} = m} =
+               Measurements.record_failure(%{timestamp: ts, test_type: "ookla"})
+
+      assert m.failed == true
+      assert m.timestamp == ts
+      assert m.test_type == "ookla"
+      # No speed/ping data on a failure — averages and compliance exclude nil.
+      assert m.download_mbps == nil
+      assert m.upload_mbps == nil
+      assert m.ping_latency == nil
+    end
+
+    test "defaults test_type to ookla and source to scheduled" do
+      assert {:ok, m} =
+               Measurements.record_failure(%{timestamp: ~U[2024-01-01 00:00:00Z]})
+
+      assert m.test_type == "ookla"
+      assert m.source == "scheduled"
+    end
+
+    test "requires a timestamp" do
+      assert {:error, changeset} = Measurements.record_failure(%{})
+      assert "can't be blank" in errors_on(changeset).timestamp
     end
   end
 
