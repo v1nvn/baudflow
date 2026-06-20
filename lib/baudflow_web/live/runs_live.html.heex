@@ -116,7 +116,7 @@
             <%= for run <- @runs do %>
               <tr class="border-b border-border last:border-0 hover:bg-accent/5 transition-colors duration-150">
                 <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-text">
-                  {Calendar.strftime(run.started_at, "%Y-%m-%d %H:%M")}
+                  <.local_time id={"time-#{run.id}"} at={run.started_at} />
                 </td>
                 <td class="px-4 py-3">
                   <%= if run.completed_at && run.started_at do %>

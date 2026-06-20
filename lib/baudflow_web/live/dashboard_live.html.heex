@@ -122,7 +122,7 @@
               </span>
               <span class="text-border">|</span>
               <span class="text-text-ghost">
-                {Calendar.strftime(@latest_measurement.timestamp, "%b %d, %H:%M UTC")}
+                <.local_time id="latest-time" at={@latest_measurement.timestamp} />
               </span>
             <% else %>
               <span class="text-text-ghost">Run your first speedtest to see results</span>

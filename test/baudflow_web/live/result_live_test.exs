@@ -64,6 +64,26 @@ defmodule BaudflowWeb.ResultLiveTest do
       assert html =~ "History"
     end
 
+    test "renders the timestamp for local-time rendering, not UTC", %{conn: conn} do
+      {:ok, m} =
+        Measurements.create_measurement(
+          valid_attrs(
+            timestamp: ~U[2024-06-15 12:30:00Z],
+            result_id: "result-local-1"
+          )
+        )
+
+      {:ok, _lv, html} = live(conn, ~p"/results/#{m.id}")
+
+      # Server emits the UTC instant in a <time> the LocalTime hook localizes client-side;
+      # the pre-hook fallback body is a human-readable 12-hour timestamp (never raw ISO).
+      assert html =~ ~s(datetime="2024-06-15T12:30:00Z")
+      assert html =~ ~s(phx-hook="LocalTime")
+      assert html =~ ~s(id="result-time")
+      assert html =~ "Jun 15, 2024"
+      refute html =~ "12:30:00 UTC"
+    end
+
     test "returns 404 for nonexistent measurement", %{conn: conn} do
       assert_raise Ecto.NoResultsError, fn ->
         live(conn, ~p"/results/#{System.unique_integer([:positive])}")

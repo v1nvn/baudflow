@@ -59,6 +59,8 @@ defmodule BaudflowWeb.HistoryLiveTest do
 
       {:ok, _lv, html} = live(conn, ~p"/history")
       assert html =~ "Mbps"
+      assert html =~ ~s(phx-hook="LocalTime")
+      refute html =~ " UTC"
     end
 
     test "paginates when measurements exceed per_page (20)", %{conn: conn} do

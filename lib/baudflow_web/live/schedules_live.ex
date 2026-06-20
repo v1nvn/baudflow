@@ -138,13 +138,6 @@ defmodule BaudflowWeb.SchedulesLive do
     end
   end
 
-  defp format_next_run(%Schedule{} = schedule) do
-    case Scheduling.next_run_at(schedule) do
-      nil -> "—"
-      dt -> Calendar.strftime(dt, "%Y-%m-%d %H:%M UTC")
-    end
-  end
-
   # --- Function components ----------------------------------------------------
 
   attr :form, :any, required: true

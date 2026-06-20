@@ -464,6 +464,61 @@ defmodule BaudflowWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders a timestamp in the viewer's local timezone.
+
+  The server emits the UTC instant as the `datetime` attribute with a human-readable
+  UTC fallback body; the `LocalTime` JS hook rewrites the text to the browser's local
+  timezone, which the server cannot know (no user accounts / TZ setting). Hovering
+  shows the original UTC instant.
+
+  LiveView hooks require a unique DOM `id`; pass one (use the record id inside `:for`
+  loops) or a stable id is derived from the instant.
+  """
+  attr :at, :any, required: true, doc: "DateTime to render locally, or nil for `placeholder`."
+
+  attr :format, :string,
+    default: "datetime",
+    doc: "datetime | datetime-seconds (seconds shown only in the result footer)."
+
+  attr :id, :string, default: nil, doc: "unique DOM id; derived from the instant if omitted."
+  attr :placeholder, :string, default: "—", doc: "rendered when `:at` is nil."
+  attr :rest, :global, doc: "attributes forwarded to the <time> element (e.g. class)."
+
+  def local_time(%{at: nil} = assigns) do
+    ~H"""
+    <span>{@placeholder}</span>
+    """
+  end
+
+  def local_time(%{at: %DateTime{}} = assigns) do
+    iso = DateTime.to_iso8601(assigns[:at])
+
+    assigns =
+      assigns
+      |> assign(:iso, iso)
+      |> assign(:id, assigns[:id] || derive_local_time_id(iso, assigns[:format]))
+      |> assign(:fallback, format_local_fallback(assigns[:at], assigns[:format]))
+
+    ~H"""
+    <time id={@id} datetime={@iso} phx-hook="LocalTime" data-format={@format} {@rest}>
+      {@fallback}
+    </time>
+    """
+  end
+
+  defp derive_local_time_id(iso, format) do
+    "local-time-" <> String.replace(iso, ~r/[^0-9A-Za-z]/, "") <> "-" <> format
+  end
+
+  # No-JS / pre-hook fallback. The hook replaces this with the browser-local time;
+  # until then it must read as a human timestamp, never a raw ISO string. 12-hour,
+  # same shape as the JS hook renders (UTC here, since the server can't localize).
+  defp format_local_fallback(dt, "datetime-seconds"),
+    do: Calendar.strftime(dt, "%b %-d, %Y · %-I:%M:%S %p")
+
+  defp format_local_fallback(dt, _), do: Calendar.strftime(dt, "%b %-d, %Y · %-I:%M %p")
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

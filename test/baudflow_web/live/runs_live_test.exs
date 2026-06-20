@@ -29,6 +29,8 @@ defmodule BaudflowWeb.RunsLiveTest do
       assert has_element?(lv, "#runs-table")
       assert html =~ "success"
       assert has_element?(lv, "a[href='/results/#{measurement.id}?ref=runs']")
+      assert html =~ ~s(phx-hook="LocalTime")
+      refute html =~ " UTC"
     end
 
     test "shows failed runs with error message", %{conn: conn} do

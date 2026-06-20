@@ -3,7 +3,7 @@
     <div>
       <p class="text-xs text-text-ghost mb-1">Test Result</p>
       <h1 class="text-xl font-bold text-text">
-        {Calendar.strftime(@measurement.timestamp, "%Y-%m-%d %H:%M")}
+        <.local_time id="result-time" at={@measurement.timestamp} />
       </h1>
     </div>
     <div class="flex items-center gap-2">
@@ -276,7 +276,11 @@
   <div class="border-t border-border pt-2">
     <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-text-ghost">
       <p class="font-mono text-xs">
-        {Calendar.strftime(@measurement.timestamp, "%Y-%m-%d %H:%M:%S UTC")} · {@measurement.source}
+        <.local_time
+          id="result-time-footer"
+          at={@measurement.timestamp}
+          format="datetime-seconds"
+        /> · {@measurement.source}
       </p>
       <%= if @measurement.result_url do %>
         <a

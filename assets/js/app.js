@@ -97,6 +97,38 @@ function makeChartOptions(g, yTitle, yExtra = {}) {
 
 const chartHooks = {}
 
+// --- Local time rendering ---
+// <time datetime="…Z" phx-hook="LocalTime" data-format="…"> elements: the server
+// emits the UTC instant (it can't know the viewer's timezone), and the browser
+// rewrites the text to local time here. No-JS viewers see the raw ISO string.
+
+const LOCAL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const pad2 = n => String(n).padStart(2, "0")
+
+function formatLocal(date, format) {
+  const datePart = `${LOCAL_MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+  let h = date.getHours()
+  const ampm = h >= 12 ? "PM" : "AM"
+  h = h % 12 || 12
+  const mm = pad2(date.getMinutes())
+  const time = format === "datetime-seconds" ? `${h}:${mm}:${pad2(date.getSeconds())} ${ampm}` : `${h}:${mm} ${ampm}`
+  return `${datePart} · ${time}`
+}
+
+function renderLocalTime(el) {
+  const iso = el.getAttribute("datetime")
+  if (!iso) return
+  const date = new Date(iso)
+  if (isNaN(date.getTime())) return
+  el.textContent = formatLocal(date, el.dataset.format)
+  if (!el.title) el.title = date.toUTCString()
+}
+
+chartHooks.LocalTime = {
+  mounted() { renderLocalTime(this.el) },
+  updated() { renderLocalTime(this.el) }
+}
+
 chartHooks.SpeedChart = {
   mounted() {
     const c = chartColors()

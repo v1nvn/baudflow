@@ -51,7 +51,9 @@
             </td>
             <td class="px-4 py-3 text-text-dim">{schedule.server_id || "auto"}</td>
             <td class="px-4 py-3 text-text-dim">{if schedule.enabled, do: "✓", else: "—"}</td>
-            <td class="px-4 py-3 text-text-dim whitespace-nowrap">{format_next_run(schedule)}</td>
+            <td class="px-4 py-3 text-text-dim whitespace-nowrap">
+              <.local_time id={"time-#{schedule.id}"} at={Scheduling.next_run_at(schedule)} />
+            </td>
             <td class="px-4 py-3 text-text-dim">
               {schedule.breach_streak} / {schedule.escalation_level}
             </td>

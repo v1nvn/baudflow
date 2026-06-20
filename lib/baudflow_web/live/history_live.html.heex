@@ -174,7 +174,7 @@
             <%= for m <- @measurements do %>
               <tr class="border-b border-border last:border-0 hover:bg-accent/5 transition-colors duration-150">
                 <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-text">
-                  {Calendar.strftime(m.timestamp, "%Y-%m-%d %H:%M")}
+                  <.local_time id={"time-#{m.id}"} at={m.timestamp} />
                 </td>
                 <td class="px-4 py-3">
                   <span class="stat-value font-semibold text-cyan">
