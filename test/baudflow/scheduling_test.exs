@@ -1,6 +1,7 @@
 defmodule Baudflow.SchedulingTest do
   use Baudflow.DataCase, async: true
 
+  alias Baudflow.Measurements
   alias Baudflow.Scheduling
   alias Baudflow.Scheduling.Schedule
   alias Baudflow.Settings
@@ -18,6 +19,30 @@ defmodule Baudflow.SchedulingTest do
     test "rejects an unparseable cron without raising" do
       assert {:error, changeset} = Scheduling.create(%{name: "Bad", cron: "not a cron"})
       assert "is not a valid cron expression" in errors_on(changeset).cron
+    end
+  end
+
+  describe "delete/1" do
+    test "removes the schedule" do
+      {:ok, schedule} = Scheduling.create(%{name: "Gone", cron: "0 * * * *"})
+      assert {:ok, %Schedule{}} = Scheduling.delete(schedule)
+      refute Enum.any?(Scheduling.list_schedules(), &(&1.id == schedule.id))
+    end
+
+    test "nilifies schedule_id on linked measurements (FK on_delete)" do
+      {:ok, schedule} = Scheduling.create(%{name: "Gone", cron: "0 * * * *"})
+
+      {:ok, measurement} =
+        Measurements.create_measurement(%{
+          timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
+          ping_latency: 5.0,
+          download_bandwidth: 1000,
+          upload_bandwidth: 500,
+          schedule_id: schedule.id
+        })
+
+      assert {:ok, _} = Scheduling.delete(schedule)
+      assert Measurements.get_measurement!(measurement.id).schedule_id == nil
     end
   end
 

@@ -21,6 +21,9 @@ defmodule BaudflowWeb.Router do
     live "/history", HistoryLive
     live "/runs", RunsLive
     live "/results/:id", ResultLive
+    live "/schedules", SchedulesLive, :index
+    live "/schedules/new", SchedulesLive, :new
+    live "/schedules/:id/edit", SchedulesLive, :edit
     live "/settings", SettingsLive
   end
 

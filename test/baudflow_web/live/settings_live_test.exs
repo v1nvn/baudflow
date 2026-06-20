@@ -3,7 +3,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Baudflow.Scheduling
   alias Baudflow.Settings
 
   describe "mount" do
@@ -12,10 +11,10 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert html =~ "Settings"
     end
 
-    test "shows current settings values", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/settings")
-      # Default values should be present
-      assert html =~ "0 * * * *"
+    test "links to the schedules management page", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/settings")
+      assert has_element?(lv, "#manage-schedules-link[href='/schedules']")
+      assert html =~ "Manage schedules"
     end
 
     test "renders threshold fields", %{conn: conn} do
@@ -48,7 +47,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
       |> element("form")
       |> render_submit(%{
         settings: %{
-          "schedule_cron" => "*/30 * * * *",
           "preferred_servers" => "12345, 67890",
           "blocked_servers" => "54321",
           "retention_days" => "180",
@@ -60,9 +58,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
         }
       })
 
-      # Verify persisted — cron now lives on the default schedule row, not Settings
-      [schedule] = Scheduling.list_schedules()
-      assert schedule.cron == "*/30 * * * *"
       assert Settings.get("preferred_servers") == "12345, 67890"
       assert Settings.get("blocked_servers") == "54321"
       assert Settings.get("retention_days") == "180"
@@ -78,23 +73,9 @@ defmodule BaudflowWeb.SettingsLiveTest do
 
       lv
       |> element("form")
-      |> render_submit(%{
-        settings: %{
-          "schedule_cron" => "0 * * * *",
-          "preferred_servers" => "",
-          "blocked_servers" => "",
-          "retention_days" => "365",
-          "dashboard_points" => "500",
-          "threshold_enabled" => "false",
-          "threshold_download" => "0",
-          "threshold_upload" => "0",
-          "threshold_ping" => "0"
-        }
-      })
+      |> render_submit(%{settings: %{"retention_days" => "365"}})
 
-      # Verify settings were persisted (the real contract)
-      [schedule] = Scheduling.list_schedules()
-      assert schedule.cron == "0 * * * *"
+      assert render(lv) =~ "Settings saved"
     end
 
     test "re-renders with new values after save", %{conn: conn} do
@@ -104,21 +85,17 @@ defmodule BaudflowWeb.SettingsLiveTest do
       |> element("form")
       |> render_submit(%{
         settings: %{
-          "schedule_cron" => "0 */2 * * *",
           "preferred_servers" => "99999",
           "blocked_servers" => "11111",
           "retention_days" => "90",
           "dashboard_points" => "100",
-          "threshold_enabled" => "true",
-          "threshold_download" => "50",
-          "threshold_upload" => "25",
-          "threshold_ping" => "30"
+          "threshold_enabled" => "false"
         }
       })
 
       html = render(lv)
-      assert html =~ "0 */2 * * *"
       assert html =~ "99999"
+      assert html =~ "90"
     end
   end
 end

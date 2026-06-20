@@ -34,6 +34,9 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 - Store the full raw result JSON — never drop fields when mapping; `:bigint` for bytes, `:float` for rates.
 - Drive LiveView state through `push_patch` + URL params in `handle_params`; stream charts with `push_event`; give forms and buttons unique DOM ids.
 - Build forms with `to_form/2` + `<.input field={…}>`; preserve DOM ids and submit namespaces when converting raw inputs.
+- Render a CRUD resource as a table (match the `runs`/`history` idiom) with a New/Edit form on its own route via `push_patch` + `live_action` in `handle_params` — not stacked inline forms or a modal (no modal precedent in this app).
+- A nullable boolean with `nil` = "inherit" semantics renders as a tristate `<select>` (a transient param translated in the handler), not a checkbox — a checkbox can't express nil.
+- Parse an int id from a path/event param with `Integer.parse/1` or let `Repo.get` cast the PK — `String.to_integer/1` is credo-banned outside `Settings`.
 - Use `Req` for every outbound HTTP call. Prefer `Req.Test` plugs (app env) for stubs, not Mox.
 - Derive timeouts and magic numbers from module attributes (`@timeout_seconds`) — single source of truth.
 - Keep tests deterministic — fake speedtest binary, fixed timestamps, `start_supervised!/1`, assert by DOM id.
@@ -51,6 +54,7 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 - Don't use bang mutations (`Repo.update!/insert!/delete!`) — failures must return `{:error, changeset}` so workers can log and continue.
 - Don't read `Application.get_env` for user-tunable values (that's for deploy wiring: binary paths, ntfy URL).
 - Don't scatter `String.to_integer`/`to_float` across callers — a bad setting must never crash a queue.
+- Don't call `Schema.changeset/1` (arity-1) — schemas expose one `changeset/2`; a blank form uses `changeset(%Schema{}, %{})`.
 - Don't invoke the speedtest binary outside `SpeedtestWorker`.
 - Don't invent Oban queues, PubSub topics, or behaviours without reason; don't move Oban off `testing: :manual`.
 - Don't `String.to_atom/1` on external input; don't cast programmatically-set fields like `measurement_id`.

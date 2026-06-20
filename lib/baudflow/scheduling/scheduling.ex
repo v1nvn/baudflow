@@ -34,6 +34,10 @@ defmodule Baudflow.Scheduling do
   @spec get_schedule!(term()) :: Schedule.t()
   def get_schedule!(id), do: Repo.get!(Schedule, id)
 
+  @doc "Fetch a schedule by id (nil if missing)."
+  @spec get_schedule(term()) :: Schedule.t() | nil
+  def get_schedule(id), do: Repo.get(Schedule, id)
+
   # --- Writes -----------------------------------------------------------------
 
   @doc "Create a schedule. Cron is validated non-bang; a bad value returns an error, never raises."
@@ -51,6 +55,15 @@ defmodule Baudflow.Scheduling do
     |> Schedule.changeset(attrs)
     |> Repo.update()
   end
+
+  @doc """
+  Delete a schedule. Its measurements' `schedule_id` is nilified by the FK
+  `on_delete: :nilify_all`, so history is retained (HealthWorker falls back to
+  the first schedule when `schedule_id` is nil). Non-bang — returns
+  `{:error, changeset}` on failure, never raises.
+  """
+  @spec delete(Schedule.t()) :: {:ok, Schedule.t()} | {:error, Ecto.Changeset.t()}
+  def delete(%Schedule{} = schedule), do: Repo.delete(schedule)
 
   # --- Scheduling -------------------------------------------------------------
 
