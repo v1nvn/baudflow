@@ -26,16 +26,4 @@ defmodule BaudflowWeb.FormatHelpers do
 
   def format_duration_ms(ms) when is_integer(ms), do: "#{ms} ms"
   def format_duration_ms(_), do: "--"
-
-  @doc "Format raw bandwidth (bytes/sec) into human-readable string."
-  def format_bandwidth(bw) when is_integer(bw) and bw >= 1_000_000 do
-    "#{Float.round(bw / 1_000_000, 2)} MB/s"
-  end
-
-  def format_bandwidth(bw) when is_integer(bw) and bw >= 1_000 do
-    "#{Float.round(bw / 1_000, 2)} KB/s"
-  end
-
-  def format_bandwidth(bw) when is_integer(bw), do: "#{bw} B/s"
-  def format_bandwidth(_), do: "--"
 end

@@ -206,7 +206,10 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <p class="text-xs text-text-ghost">Bandwidth</p>
-            <p class="stat-value text-sm">{format_bandwidth(@measurement.download_bandwidth)}</p>
+            <p class="stat-value text-sm">
+              {Float.round(@measurement.download_mbps, 2)}
+              <span class="text-xs font-normal text-text-ghost">Mbps</span>
+            </p>
           </div>
           <div>
             <p class="text-xs text-text-ghost">Bytes</p>
@@ -233,7 +236,10 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <p class="text-xs text-text-ghost">Bandwidth</p>
-            <p class="stat-value text-sm">{format_bandwidth(@measurement.upload_bandwidth)}</p>
+            <p class="stat-value text-sm">
+              {Float.round(@measurement.upload_mbps, 2)}
+              <span class="text-xs font-normal text-text-ghost">Mbps</span>
+            </p>
           </div>
           <div>
             <p class="text-xs text-text-ghost">Bytes</p>

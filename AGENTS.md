@@ -32,6 +32,7 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 - Broadcast on the single `"measurements"` topic with stable shapes; emit a terminal event for every outcome so the UI never waits on a timer.
 - Give each schema one `changeset/2` as the only construction path; `@derive {Jason.Encoder, only: [...]}` on anything serialized.
 - Store the full raw result JSON — never drop fields when mapping; `:bigint` for bytes, `:float` for rates.
+- Display throughput in bits/sec everywhere; the raw `bandwidth` field is bytes/sec and storage-only — never render it as a rate, or one screen shows the same speed in both bits and bytes.
 - Drive LiveView state through `push_patch` + URL params in `handle_params`; stream charts with `push_event`; give forms and buttons unique DOM ids.
 - Build forms with `to_form/2` + `<.input field={…}>`; preserve DOM ids and submit namespaces when converting raw inputs.
 - Render a CRUD resource as a table (match the `runs`/`history` idiom) with a New/Edit form on its own route via `push_patch` + `live_action` in `handle_params` — not stacked inline forms or a modal (no modal precedent in this app).
@@ -41,6 +42,8 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 - Derive timeouts and magic numbers from module attributes (`@timeout_seconds`) — single source of truth.
 - Keep tests deterministic — fake speedtest binary, fixed timestamps, `start_supervised!/1`, assert by DOM id.
 - Build polished UIs — dark-only Tron neon palette (HSL tokens in `@theme`, chart colors in `chartColors()`).
+- Render user-facing timestamps via `<.local_time>` + the `LocalTime` JS hook (browser-local) — the server can't know the viewer's timezone, so the only `Calendar.strftime` on a datetime lives inside that component as a no-JS fallback.
+- Put a unique DOM `id` on every `phx-hook` element — LiveView won't attach a hook without one (silent no-op), and use the record id inside `:for` loops to stay unique.
 - One level of abstraction per function — orchestration and data-wrangling don't share a body.
 - Give every value exactly one meaning; fix the representation instead of adding a compensating flag.
 - Raw data is sacred, derived views are cheap.
