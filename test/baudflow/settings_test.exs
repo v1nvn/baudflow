@@ -27,6 +27,8 @@ defmodule Baudflow.SettingsTest do
       assert all["retention_days"] == "365"
       assert all["dashboard_points"] == "500"
       assert all["ping_target"] == "1.1.1.1"
+      assert all["promised_download_mbps"] == "0"
+      assert all["promised_upload_mbps"] == "0"
     end
 
     test "upserts on repeated calls" do

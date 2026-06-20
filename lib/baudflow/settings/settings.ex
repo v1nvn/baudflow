@@ -16,7 +16,9 @@ defmodule Baudflow.Settings do
     "threshold_download" => "0",
     "threshold_upload" => "0",
     "threshold_ping" => "0",
-    "ping_target" => "1.1.1.1"
+    "ping_target" => "1.1.1.1",
+    "promised_download_mbps" => "0",
+    "promised_upload_mbps" => "0"
   }
 
   @doc "Get a single setting value by key. Falls back to defaults if not stored."

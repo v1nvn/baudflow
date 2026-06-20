@@ -258,6 +258,50 @@ defmodule BaudflowWeb.DashboardLiveTest do
     end
   end
 
+  describe "next scheduled test card" do
+    test "renders the next run when an enabled schedule exists", %{conn: conn} do
+      {:ok, _} = Baudflow.Scheduling.create(%{name: "Minutely", cron: "* * * * *"})
+
+      {:ok, lv, html} = live(conn, ~p"/")
+
+      assert html =~ "Next Scheduled Test"
+      assert has_element?(lv, "#next-test-card")
+    end
+
+    test "hides the card when no enabled schedules exist", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      refute has_element?(lv, "#next-test-card")
+    end
+  end
+
+  describe "SLA compliance card" do
+    test "renders the compliance percent when a promised speed is configured", %{conn: conn} do
+      Baudflow.Settings.update_all(%{"promised_download_mbps" => "200"})
+
+      # an Ookla-shaped measurement at 500 Mbps (well above the 200 promise)
+      Measurements.create_measurement(
+        valid_attrs(
+          download_bandwidth: round(500.0 / 0.000008),
+          timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
+          result_id: "compliance-1"
+        )
+      )
+
+      {:ok, lv, html} = live(conn, ~p"/")
+
+      assert html =~ "SLA Compliance"
+      assert html =~ "100.0%"
+      assert has_element?(lv, "#compliance-card")
+    end
+
+    test "hides the compliance card when no promised speed is configured", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      refute has_element?(lv, "#compliance-card")
+    end
+  end
+
   # --- Helpers ---
 
   defp valid_attrs(overrides \\ []) do

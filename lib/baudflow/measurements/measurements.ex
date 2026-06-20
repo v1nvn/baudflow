@@ -130,6 +130,53 @@ defmodule Baudflow.Measurements do
     )
   end
 
+  @doc """
+  Share of speed tests (in a window since `since`) that met the promised speeds.
+
+  `promised_download`/`promised_upload` are the ISP-plan numbers from `Settings`
+  (`0` = none). Returns `nil` when neither promise is configured; otherwise
+  `%{meeting: n, total: n, percent: float | nil}`, where `percent` is `nil` only
+  when no speed tests exist in the window. A test counts as compliant when it
+  meets every configured (non-zero) promise; a ping result (nil download) never
+  counts, and a failed speed test with no download number is excluded too.
+  """
+  def compliance(opts \\ []) do
+    since = Keyword.fetch!(opts, :since)
+    promised_download = Keyword.get(opts, :promised_download, 0.0)
+    promised_upload = Keyword.get(opts, :promised_upload, 0.0)
+
+    if promised_download <= 0.0 and promised_upload <= 0.0 do
+      nil
+    else
+      base = from(m in Measurement, where: m.timestamp > ^since and not is_nil(m.download_mbps))
+      total = base |> select([m], count(m.id)) |> Repo.one()
+
+      meeting =
+        base
+        |> maybe_require_download(promised_download)
+        |> maybe_require_upload(promised_upload)
+        |> select([m], count(m.id))
+        |> Repo.one()
+
+      %{meeting: meeting, total: total, percent: percent_of(meeting, total)}
+    end
+  end
+
+  defp maybe_require_download(query, promised) when promised > 0.0 do
+    where(query, [m], m.download_mbps >= ^promised)
+  end
+
+  defp maybe_require_download(query, _promised), do: query
+
+  defp maybe_require_upload(query, promised) when promised > 0.0 do
+    where(query, [m], m.upload_mbps >= ^promised)
+  end
+
+  defp maybe_require_upload(query, _promised), do: query
+
+  defp percent_of(_meeting, 0), do: nil
+  defp percent_of(meeting, total), do: Float.round(meeting / total * 100, 1)
+
   defp apply_filters(query, filters) do
     query
     |> maybe_filter_date_from(filters["date_from"])

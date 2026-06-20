@@ -119,6 +119,40 @@
         </div>
       </div>
       
+<!-- Promised Speeds (SLA) -->
+      <div class="glass-card">
+        <div class="p-4">
+          <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-3">
+            <.icon name="hero-bolt-mini" class="size-4" /> Promised Speeds
+          </h2>
+          <p class="text-xs text-text-ghost mb-3">
+            ISP-plan speeds used to compute SLA compliance on the dashboard.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <.input
+              field={@form[:promised_download_mbps]}
+              type="number"
+              id="promised-download-input"
+              label="Promised Download (Mbps)"
+              class="bf-input"
+              min="0"
+              step="any"
+              placeholder="0 = none"
+            />
+            <.input
+              field={@form[:promised_upload_mbps]}
+              type="number"
+              id="promised-upload-input"
+              label="Promised Upload (Mbps)"
+              class="bf-input"
+              min="0"
+              step="any"
+              placeholder="0 = none"
+            />
+          </div>
+        </div>
+      </div>
+      
 <!-- Thresholds -->
       <div class="glass-card">
         <div class="p-4">

@@ -222,6 +222,76 @@ defmodule Baudflow.MeasurementsTest do
     end
   end
 
+  describe "compliance/1" do
+    test "returns nil when no promised speed is configured" do
+      seed(download_mbps: 500.0)
+
+      assert nil ==
+               Measurements.compliance(
+                 since: days_ago(7),
+                 promised_download: 0.0,
+                 promised_upload: 0.0
+               )
+    end
+
+    test "computes the share of speed tests meeting the download promise" do
+      seed(download_mbps: 500.0)
+      seed(download_mbps: 100.0)
+
+      result =
+        Measurements.compliance(
+          since: days_ago(7),
+          promised_download: 200.0,
+          promised_upload: 0.0
+        )
+
+      assert result.meeting == 1
+      assert result.total == 2
+      assert result.percent == 50.0
+    end
+
+    test "a test must meet every configured promise to count" do
+      # download passes, upload fails → not compliant
+      seed(download_mbps: 500.0, upload_mbps: 10.0)
+      # both pass → compliant
+      seed(download_mbps: 500.0, upload_mbps: 50.0)
+
+      result =
+        Measurements.compliance(
+          since: days_ago(7),
+          promised_download: 200.0,
+          promised_upload: 30.0
+        )
+
+      assert result.meeting == 1
+      assert result.total == 2
+      assert result.percent == 50.0
+    end
+
+    test "ignores tests outside the window and ping results (nil download)" do
+      seed(download_mbps: 500.0)
+      # a ping result carries no download_mbps — never a compliance data point
+      {:ok, _} =
+        Measurements.create_measurement(%{
+          timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
+          ping_latency: 5.0,
+          result_id: "comp-ping"
+        })
+
+      result = Measurements.compliance(since: days_ago(7), promised_download: 200.0)
+
+      assert result.total == 1
+      assert result.meeting == 1
+    end
+
+    test "returns nil percent when no tests exist in the window (promise still configured)" do
+      result = Measurements.compliance(since: days_ago(7), promised_download: 200.0)
+
+      assert result.total == 0
+      assert result.percent == nil
+    end
+  end
+
   # --- Migration sanity checks ---
 
   describe "migration indexes" do
@@ -254,6 +324,26 @@ defmodule Baudflow.MeasurementsTest do
       source: Keyword.get(overrides, :source, "scheduled")
     }
   end
+
+  # Seed a speed test with an explicit mbps (no bandwidth, so from_result keeps
+  # the value) and a unique result_id, timestamped "now" unless overridden.
+  defp seed(overrides) do
+    {:ok, m} =
+      Measurements.create_measurement(%{
+        timestamp:
+          Keyword.get(overrides, :timestamp, DateTime.utc_now() |> DateTime.truncate(:second)),
+        ping_latency: Keyword.get(overrides, :ping_latency, 12.5),
+        download_mbps: Keyword.get(overrides, :download_mbps),
+        upload_mbps: Keyword.get(overrides, :upload_mbps),
+        result_id:
+          Keyword.get(overrides, :result_id, "comp-#{System.unique_integer([:positive])}"),
+        source: Keyword.get(overrides, :source, "scheduled")
+      })
+
+    m
+  end
+
+  defp days_ago(days), do: DateTime.add(DateTime.utc_now(), -days * 24 * 3600, :second)
 
   defp indexes_for(table) do
     result =

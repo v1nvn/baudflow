@@ -130,6 +130,27 @@ defmodule Baudflow.Scheduling do
     %{now | second: 0}
   end
 
+  @doc """
+  The soonest next fire across enabled schedules, or `nil` when none run.
+
+  Returns `%{name: schedule_name, at: datetime}` for the enabled schedule whose
+  `next_run_at/1` is earliest. Read-only — the dashboard "next test" card uses
+  it; never mutates schedule state.
+  """
+  @spec next_run() :: %{name: String.t(), at: DateTime.t()} | nil
+  def next_run do
+    Schedule
+    |> where(enabled: true)
+    |> Repo.all()
+    |> Enum.map(fn schedule -> {schedule.name, next_run_at(schedule)} end)
+    |> Enum.reject(fn {_name, at} -> is_nil(at) end)
+    |> Enum.min_by(fn {_name, at} -> at end, fn -> nil end)
+    |> case do
+      nil -> nil
+      {name, at} -> %{name: name, at: at}
+    end
+  end
+
   # --- Escalation state (atomic) ----------------------------------------------
 
   @doc """

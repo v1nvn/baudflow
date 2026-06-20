@@ -37,6 +37,16 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert has_element?(lv, "#preferred-servers-input")
       assert has_element?(lv, "#blocked-servers-input")
     end
+
+    test "renders promised-speed (SLA) fields", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/settings")
+
+      assert has_element?(lv, "#promised-download-input")
+      assert has_element?(lv, "#promised-upload-input")
+      assert has_element?(lv, "input[name='settings[promised_download_mbps]']")
+      assert has_element?(lv, "input[name='settings[promised_upload_mbps]']")
+      assert html =~ "Promised"
+    end
   end
 
   describe "save" do
@@ -54,7 +64,9 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "threshold_enabled" => "true",
           "threshold_download" => "25",
           "threshold_upload" => "10",
-          "threshold_ping" => "50"
+          "threshold_ping" => "50",
+          "promised_download_mbps" => "500",
+          "promised_upload_mbps" => "100"
         }
       })
 
@@ -66,6 +78,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert Settings.get("threshold_download") == "25"
       assert Settings.get("threshold_upload") == "10"
       assert Settings.get("threshold_ping") == "50"
+      assert Settings.get("promised_download_mbps") == "500"
+      assert Settings.get("promised_upload_mbps") == "100"
     end
 
     test "sets flash after saving", %{conn: conn} do

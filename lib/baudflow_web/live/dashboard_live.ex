@@ -3,6 +3,7 @@ defmodule BaudflowWeb.DashboardLive do
 
   alias Baudflow.Measurements
   alias Baudflow.Measurements.ServerDiscovery
+  alias Baudflow.Scheduling
   alias Baudflow.TestRunners.RunnerWorker
 
   @impl true
@@ -21,6 +22,8 @@ defmodule BaudflowWeb.DashboardLive do
      |> assign(:latest_measurement, List.first(measurements))
      |> assign(:chart_points, chart_points())
      |> assign(:averages, averages)
+     |> assign(:compliance, compute_compliance(time_range))
+     |> assign(:next_run, Scheduling.next_run())
      |> assign(:test_running, false)
      |> assign(:active_page, :dashboard)
      |> assign(:page_title, "Dashboard")
@@ -103,6 +106,8 @@ defmodule BaudflowWeb.DashboardLive do
      |> assign(:measurements, measurements)
      |> assign(:latest_measurement, List.first(measurements))
      |> assign(:averages, averages)
+     |> assign(:compliance, compute_compliance(range))
+     |> assign(:next_run, Scheduling.next_run())
      |> push_chart_data(measurements, averages)}
   end
 
@@ -184,6 +189,30 @@ defmodule BaudflowWeb.DashboardLive do
 
   defp chart_points do
     Baudflow.Settings.get_integer("dashboard_points", 500)
+  end
+
+  # SLA compliance over the visible window, driven by the global promised-speed
+  # settings (0 = none → `Measurements.compliance/1` returns nil and the card
+  # hides). The store never reads Settings; we pass the promises in.
+  defp compute_compliance(time_range) do
+    Measurements.compliance(
+      since: time_range_to_datetime(time_range),
+      promised_download: Baudflow.Settings.get_float("promised_download_mbps", 0.0),
+      promised_upload: Baudflow.Settings.get_float("promised_upload_mbps", 0.0)
+    )
+  end
+
+  # Best-effort relative hint for the next-test card (recomputed on each render).
+  # The authoritative value is the `<.local_time>` exact time, which is always
+  # correct; this just reads as a glanceable "in Nm".
+  defp relative_to_now(%DateTime{} = at) do
+    secs = max(0, DateTime.diff(at, DateTime.utc_now(), :second))
+
+    cond do
+      secs < 60 -> "in #{secs}s"
+      secs < 3600 -> "in #{div(secs, 60)}m"
+      true -> "in #{div(secs, 3600)}h #{rem(div(secs, 60), 60)}m"
+    end
   end
 
   defp push_chart_data(socket, measurements, averages) do

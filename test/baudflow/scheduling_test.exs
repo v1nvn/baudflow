@@ -181,6 +181,28 @@ defmodule Baudflow.SchedulingTest do
     end
   end
 
+  describe "next_run/0" do
+    test "returns the soonest next fire across enabled schedules" do
+      {:ok, _hourly} = Scheduling.create(%{name: "Hourly", cron: "0 * * * *"})
+      {:ok, _minutely} = Scheduling.create(%{name: "Minutely", cron: "* * * * *"})
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      assert %{name: "Minutely", at: at} = Scheduling.next_run()
+      # a * * * * schedule always fires within the coming minute
+      assert DateTime.compare(at, now) == :gt
+      assert DateTime.diff(at, now, :second) <= 60
+    end
+
+    test "ignores disabled schedules" do
+      {:ok, _off} = Scheduling.create(%{name: "Off", cron: "* * * * *", enabled: false})
+      assert nil == Scheduling.next_run()
+    end
+
+    test "returns nil when no enabled schedules exist" do
+      assert nil == Scheduling.next_run()
+    end
+  end
+
   describe "bootstrap/0" do
     test "seeds a default schedule from the legacy setting, idempotently" do
       Settings.update_all(%{"schedule_cron" => "*/15 * * * *"})
