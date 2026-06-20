@@ -142,6 +142,57 @@ defmodule BaudflowWeb.DashboardLiveTest do
       assert has_element?(lv, "button[phx-value-range='24h'][class*='active']")
       refute has_element?(lv, "button[phx-value-range='7d'][class*='active']")
     end
+
+    # #5 — the dashboard range is a per-browser preference stored in localStorage
+    # and replayed via connect_params (see app.js), so the server queries the right
+    # window on first render with no flash.
+
+    test "honors the persisted time range from connect_params on mount", %{conn: conn} do
+      # connect_params carry the localStorage value the client would replay — see
+      # `get_connect_params/1` in mount and app.js `readSavedTimeRange`.
+      {:ok, lv, _html} =
+        conn
+        |> get(~p"/")
+        |> put_connect_params(%{"time_range" => "30d"})
+        |> live()
+
+      assert has_element?(lv, "button[phx-value-range='30d'][class*='active']")
+      refute has_element?(lv, "button[phx-value-range='7d'][class*='active']")
+    end
+
+    test "falls back to 7d when the persisted range is unknown", %{conn: conn} do
+      {:ok, lv, _html} =
+        conn
+        |> get(~p"/")
+        |> put_connect_params(%{"time_range" => "bogus"})
+        |> live()
+
+      assert has_element?(lv, "button[phx-value-range='7d'][class*='active']")
+      refute has_element?(lv, "button[phx-value-range='30d'][class*='active']")
+    end
+
+    test "set_range pushes range_changed so the client can persist it", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      assert_push_event(lv, "chart_data", _)
+
+      lv
+      |> element("button[phx-value-range='24h']")
+      |> render_click()
+
+      assert_push_event(lv, "range_changed", %{range: "24h"})
+    end
+
+    test "ignores an unknown set_range value without desyncing the buttons", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      assert_push_event(lv, "chart_data", _)
+
+      # A bogus range (a tampered DOM value) must leave the selection untouched.
+      render_click(lv, "set_range", %{"range" => "bogus"})
+
+      assert has_element?(lv, "button[phx-value-range='7d'][class*='active']")
+    end
   end
 
   describe "handle_info {:result, measurement}" do

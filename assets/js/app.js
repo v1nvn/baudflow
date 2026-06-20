@@ -154,6 +154,38 @@ function buildAnnotations(specs, thresholds, failedTimestamps) {
 
 const chartHooks = {}
 
+// --- Persisted time-range preference (#5) ---
+// The dashboard range is a per-browser preference: we read it here at socket
+// construction (so the server gets it via connect_params and queries the right
+// window on first render) and write it back from the PersistRange hook when the
+// user picks a range. localStorage can be disabled (private mode), so reads and
+// writes are guarded.
+
+const TIME_RANGE_KEY = "baudflow.time_range"
+const VALID_TIME_RANGES = ["24h", "7d", "30d"]
+const DEFAULT_TIME_RANGE = "7d"
+
+function readSavedTimeRange() {
+  try {
+    const v = localStorage.getItem(TIME_RANGE_KEY)
+    return VALID_TIME_RANGES.includes(v) ? v : DEFAULT_TIME_RANGE
+  } catch (_e) {
+    return DEFAULT_TIME_RANGE
+  }
+}
+
+// Persists the active range to localStorage when the server confirms a change.
+// The server validates the range, so only known values are stored.
+chartHooks.PersistRange = {
+  mounted() {
+    this.handleEvent("range_changed", ({range}) => {
+      if (VALID_TIME_RANGES.includes(range)) {
+        try { localStorage.setItem(TIME_RANGE_KEY, range) } catch (_e) {}
+      }
+    })
+  }
+}
+
 // --- Local time rendering ---
 // <time datetime="…Z" phx-hook="LocalTime" data-format="…"> elements: the server
 // emits the UTC instant (it can't know the viewer's timezone), and the browser
@@ -918,7 +950,7 @@ chartHooks.SpeedtestViz = {
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken},
+  params: {_csrf_token: csrfToken, time_range: readSavedTimeRange()},
   hooks: {...colocatedHooks, ...chartHooks},
 })
 

@@ -7,34 +7,30 @@ defmodule BaudflowWeb.DashboardLive do
   alias Baudflow.Scheduling
   alias Baudflow.TestRunners.RunnerWorker
 
+  # The dashboard range is a per-browser preference (#5). Only a known value is
+  # honored — a stale or tampered string falls back to the default rather than
+  # leaving no button active.
+  @time_ranges ~w(24h 7d 30d)
+  @default_time_range "7d"
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
     end
 
-    time_range = "7d"
-    measurements = fetch_measurements(time_range)
-    averages = Measurements.window_averages()
-    thresholds = chart_thresholds()
+    time_range = persisted_time_range(get_connect_params(socket))
 
     {:ok,
      socket
-     |> assign(:measurements, measurements)
-     |> assign(:latest_measurement, List.first(measurements))
      |> assign(:chart_points, chart_points())
-     |> assign(:averages, averages)
-     |> assign(:chart_config, %{thresholds: thresholds})
-     |> assign(:compliance, compute_compliance(time_range))
-     |> assign(:next_run, Scheduling.next_run())
      |> assign(:test_running, false)
      |> assign(:active_page, :dashboard)
      |> assign(:page_title, "Dashboard")
-     |> assign(:time_range, time_range)
      |> assign(:selected_server_id, "auto")
      |> assign(:available_servers, [])
      |> assign(:servers_loaded, false)
-     |> push_chart_data(measurements, averages, thresholds)}
+     |> load_range(time_range)}
   end
 
   @impl true
@@ -99,22 +95,18 @@ defmodule BaudflowWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("set_range", %{"range" => range}, socket) do
-    measurements = fetch_measurements(range)
-    averages = Measurements.window_averages()
-    thresholds = chart_thresholds()
-
+  def handle_event("set_range", %{"range" => range}, socket) when range in @time_ranges do
+    # Confirm the range back to the client so the PersistRange hook can store it
+    # in localStorage (#5); the server is the single validator of a known range.
     {:noreply,
      socket
-     |> assign(:time_range, range)
-     |> assign(:measurements, measurements)
-     |> assign(:latest_measurement, List.first(measurements))
-     |> assign(:averages, averages)
-     |> assign(:chart_config, %{thresholds: thresholds})
-     |> assign(:compliance, compute_compliance(range))
-     |> assign(:next_run, Scheduling.next_run())
-     |> push_chart_data(measurements, averages, thresholds)}
+     |> load_range(range)
+     |> push_event("range_changed", %{range: range})}
   end
+
+  # A bogus range (a tampered DOM value) must leave the selection untouched
+  # rather than load data under a label that matches no button.
+  def handle_event("set_range", _params, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("load_servers", _params, socket) do
@@ -182,6 +174,34 @@ defmodule BaudflowWeb.DashboardLive do
   defp fetch_measurements(time_range) do
     since = time_range_to_datetime(time_range)
     Measurements.list_since(since, limit: chart_points(), test_type: "ookla")
+  end
+
+  # Time-range-dependent data + assigns shared by mount and set_range. Both fetch
+  # the same window, so this lives in one place — the only difference is how the
+  # range arrived (a persisted connect param vs. a click).
+  defp load_range(socket, time_range) do
+    measurements = fetch_measurements(time_range)
+    averages = Measurements.window_averages()
+    thresholds = chart_thresholds()
+
+    socket
+    |> assign(:time_range, time_range)
+    |> assign(:measurements, measurements)
+    |> assign(:latest_measurement, List.first(measurements))
+    |> assign(:averages, averages)
+    |> assign(:chart_config, %{thresholds: thresholds})
+    |> assign(:compliance, compute_compliance(time_range))
+    |> assign(:next_run, Scheduling.next_run())
+    |> push_chart_data(measurements, averages, thresholds)
+  end
+
+  # The persisted range arrives via connect_params (see app.js). On the
+  # disconnected render connect_params is empty, so the default is used.
+  defp persisted_time_range(connect_params) do
+    case connect_params["time_range"] do
+      range when range in @time_ranges -> range
+      _ -> @default_time_range
+    end
   end
 
   defp time_range_to_datetime("24h"), do: DateTime.add(DateTime.utc_now(), -24 * 3600, :second)

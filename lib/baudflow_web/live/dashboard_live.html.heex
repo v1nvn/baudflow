@@ -139,7 +139,7 @@
         
 <!-- Action Controls -->
         <div class="flex flex-wrap items-center gap-3 lg:pb-1">
-          <div class="seg-control">
+          <div id="range-control" phx-hook="PersistRange" class="seg-control">
             <button
               phx-click="set_range"
               phx-value-range="24h"
