@@ -52,7 +52,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "preferred_servers" => "12345, 67890",
           "blocked_servers" => "54321",
           "retention_days" => "180",
-          "degradation_threshold" => "0.7",
           "dashboard_points" => "200",
           "threshold_enabled" => "true",
           "threshold_download" => "25",
@@ -67,7 +66,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert Settings.get("preferred_servers") == "12345, 67890"
       assert Settings.get("blocked_servers") == "54321"
       assert Settings.get("retention_days") == "180"
-      assert Settings.get("degradation_threshold") == "0.7"
       assert Settings.get("dashboard_points") == "200"
       assert Settings.get("threshold_enabled") == "true"
       assert Settings.get("threshold_download") == "25"
@@ -86,7 +84,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "preferred_servers" => "",
           "blocked_servers" => "",
           "retention_days" => "365",
-          "degradation_threshold" => "0.5",
           "dashboard_points" => "500",
           "threshold_enabled" => "false",
           "threshold_download" => "0",
@@ -111,7 +108,6 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "preferred_servers" => "99999",
           "blocked_servers" => "11111",
           "retention_days" => "90",
-          "degradation_threshold" => "0.3",
           "dashboard_points" => "100",
           "threshold_enabled" => "true",
           "threshold_download" => "50",

@@ -11,7 +11,6 @@ defmodule Baudflow.Settings do
     "preferred_servers" => "",
     "blocked_servers" => "",
     "retention_days" => "365",
-    "degradation_threshold" => "0.5",
     "dashboard_points" => "500",
     "threshold_enabled" => "false",
     "threshold_download" => "0",

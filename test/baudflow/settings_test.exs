@@ -25,7 +25,6 @@ defmodule Baudflow.SettingsTest do
       assert all["preferred_servers"] == ""
       assert all["blocked_servers"] == ""
       assert all["retention_days"] == "365"
-      assert all["degradation_threshold"] == "0.5"
       assert all["dashboard_points"] == "500"
     end
 
@@ -93,24 +92,19 @@ defmodule Baudflow.SettingsTest do
 
   describe "get_float/2" do
     test "parses a stored float string" do
-      Settings.update_all(%{"degradation_threshold" => "0.75"})
-      assert Settings.get_float("degradation_threshold") == 0.75
+      Settings.update_all(%{"server_id" => "0.75"})
+      assert Settings.get_float("server_id") == 0.75
     end
 
     test "parses an integer-looking string without crashing" do
       # String.to_float("1") would raise — this must not
-      Settings.update_all(%{"degradation_threshold" => "1"})
-      assert Settings.get_float("degradation_threshold") == 1.0
+      Settings.update_all(%{"server_id" => "1"})
+      assert Settings.get_float("server_id") == 1.0
     end
 
     test "parses zero as 0.0" do
-      Settings.update_all(%{"degradation_threshold" => "0"})
-      assert Settings.get_float("degradation_threshold") == 0.0
-    end
-
-    test "returns default when key is not stored" do
-      # "degradation_threshold" default is "0.5"
-      assert Settings.get_float("degradation_threshold") == 0.5
+      Settings.update_all(%{"server_id" => "0"})
+      assert Settings.get_float("server_id") == 0.0
     end
 
     test "returns explicit default for unknown key" do

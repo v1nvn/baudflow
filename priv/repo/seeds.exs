@@ -11,5 +11,4 @@
 #   schedule_cron           → "0 * * * *"
 #   server_id               → ""
 #   retention_days          → "365"
-#   degradation_threshold   → "0.5"
 #   dashboard_points        → "500"
