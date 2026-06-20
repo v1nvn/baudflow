@@ -30,6 +30,9 @@ config :baudflow, :bootstrap_on_start, false
 # Point the Ookla runner at a deterministic fake CLI (see test/support/fake_speedtest)
 config :baudflow, :speedtest_bin, Path.expand("../test/support/fake_speedtest", __DIR__)
 
+# Point the Ping runner at a deterministic fake CLI (see test/support/fake_ping)
+config :baudflow, :ping_bin, Path.expand("../test/support/fake_ping", __DIR__)
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

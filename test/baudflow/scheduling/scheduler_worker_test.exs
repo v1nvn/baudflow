@@ -6,8 +6,14 @@ defmodule Baudflow.Scheduling.SchedulerWorkerTest do
   alias Baudflow.Scheduling.SchedulerWorker
 
   describe "perform/1" do
-    test "enqueues a RunnerWorker per due schedule, carrying schedule_id and test_type" do
-      {:ok, schedule} = Scheduling.create(%{name: "Every min", cron: "* * * * *", enabled: true})
+    test "enqueues a RunnerWorker per due schedule, carrying schedule_id, test_type, and target_host" do
+      {:ok, schedule} =
+        Scheduling.create(%{
+          name: "Every min",
+          cron: "* * * * *",
+          enabled: true,
+          target_host: "1.1.1.1"
+        })
 
       assert :ok = perform_job(SchedulerWorker, %{})
 
@@ -15,6 +21,7 @@ defmodule Baudflow.Scheduling.SchedulerWorkerTest do
       assert job.args["schedule_id"] == schedule.id
       assert job.args["test_type"] == "ookla"
       assert job.args["source"] == "scheduled"
+      assert job.args["target_host"] == "1.1.1.1"
     end
 
     test "enqueues nothing when no schedule is due" do

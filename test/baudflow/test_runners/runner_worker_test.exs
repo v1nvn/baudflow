@@ -136,4 +136,73 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
       end
     end
   end
+
+  describe "perform/1 - ping success" do
+    # The Ping runner dispatches through the same pipeline as Ookla — this is
+    # what proves the TestRunner abstraction. A ping result carries latency but
+    # no bandwidth, so download_mbps/upload_mbps stay nil.
+    test "stores a ping measurement with latency and no bandwidth" do
+      Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
+
+      assert :ok =
+               perform_job(RunnerWorker, %{"test_type" => "ping", "target_host" => "example.com"})
+
+      assert_receive {:result, %{test_type: "ping"} = m}
+      assert m.ping_latency == 10.5
+      assert m.ping_low == 9.5
+      assert m.ping_high == 12.0
+      assert m.ping_jitter == 1.2
+      assert m.packet_loss == 0.0
+      assert m.download_mbps == nil
+      assert m.upload_mbps == nil
+      assert m.source == "scheduled"
+    end
+
+    test "enqueues a HealthWorker job for a ping measurement" do
+      perform_job(RunnerWorker, %{"test_type" => "ping", "target_host" => "example.com"})
+
+      assert_enqueued(worker: Baudflow.Health.HealthWorker)
+    end
+  end
+
+  describe "perform/1 - ping failure" do
+    test "records a failure run when ping exits non-zero" do
+      original_bin = Application.get_env(:baudflow, :ping_bin)
+
+      failing_bin = Path.join(System.tmp_dir!(), "fake_ping_fail")
+      File.write!(failing_bin, "#!/bin/sh\necho 'unreachable' >&2\nexit 2\n")
+      File.chmod!(failing_bin, 0o755)
+
+      try do
+        Application.put_env(:baudflow, :ping_bin, failing_bin)
+
+        Phoenix.PubSub.subscribe(Baudflow.PubSub, "measurements")
+
+        assert {:error, _} =
+                 perform_job(RunnerWorker, %{
+                   "test_type" => "ping",
+                   "target_host" => "down.example"
+                 })
+
+        # Every failure path must emit a terminal broadcast so the UI
+        # never depends on a client-side timer.
+        assert_receive {:test_failed, reason}
+        assert reason =~ "exited with code"
+
+        run =
+          Baudflow.Repo.one(
+            from r in Baudflow.Runs.Run,
+              where: r.status == "failure",
+              order_by: [desc: r.id],
+              limit: 1
+          )
+
+        assert run != nil
+        assert run.status == "failure"
+      after
+        Application.put_env(:baudflow, :ping_bin, original_bin)
+        File.rm(failing_bin)
+      end
+    end
+  end
 end

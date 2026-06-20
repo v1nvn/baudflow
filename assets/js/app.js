@@ -760,6 +760,12 @@ chartHooks.SpeedtestViz = {
       maxVal = Math.max(maxVal * 1.15, 10) // at least 10 Mbps scale
     }
 
+    // X mapping: ping is a short phase (a handful of samples in ~1s), so spread
+    // its samples across the full width — otherwise the 120-sample window crushes
+    // them into an invisible leftmost sliver. The longer download/upload phases
+    // keep the windowed sweep (waveform grows left→right as it streams).
+    const span = isPing ? Math.max(this.samples.length, 2) : this.maxSamples
+
     // Draw multiple "afterglow" layers for phosphor effect
     const layers = [
       { alpha: 0.03, width: 12 },
@@ -777,7 +783,7 @@ chartHooks.SpeedtestViz = {
       ctx.lineCap = "round"
 
       for (let i = 0; i < this.samples.length; i++) {
-        const x = (i / (this.maxSamples - 1)) * w
+        const x = (i / (span - 1)) * w
         const val = isPing
           ? (1 - this.samples[i].mbps / maxVal) // inverted for ping
           : this.samples[i].mbps / maxVal
@@ -792,7 +798,7 @@ chartHooks.SpeedtestViz = {
     // ── Phosphor dot at the latest point ──
     if (this.samples.length > 0) {
       const last = this.samples[this.samples.length - 1]
-      const x = ((this.samples.length - 1) / (this.maxSamples - 1)) * w
+      const x = ((this.samples.length - 1) / (span - 1)) * w
       const val = isPing
         ? (1 - last.mbps / maxVal)
         : last.mbps / maxVal

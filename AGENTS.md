@@ -28,6 +28,7 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 - Route all DB access through a context; `import Ecto.Query` and `Repo` live only in context files.
 - Keep each query in exactly one place — averages, retention, neighbor lookups are context functions, not inline.
 - Read and write runtime config through `Settings`, which stores strings and returns typed values with a safe fallback; add a default for every key.
+- Resolve a tunable that has a critical default as **per-row override → global `Settings` fallback** (e.g. `Scheduling.thresholds_for/1`, the ping target `schedule.target_host || Settings.get("ping_target")`); register the global default in `Settings.@default_settings` so resolution never yields nil — one reader, no second source of the default.
 - Run tests through `SpeedtestWorker` — it owns binary resolution, timeout wrapping, NDJSON parsing, and insertion.
 - Broadcast on the single `"measurements"` topic with stable shapes; emit a terminal event for every outcome so the UI never waits on a timer.
 - Give each schema one `changeset/2` as the only construction path; `@derive {Jason.Encoder, only: [...]}` on anything serialized.

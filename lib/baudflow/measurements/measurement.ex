@@ -91,15 +91,18 @@ defmodule Baudflow.Measurements.Measurement do
 
   @type t :: %__MODULE__{}
 
-  @doc "Changeset from Ookla CLI JSON output"
-  def from_ookla_json(attrs) do
-    download_bw = attrs[:download_bandwidth] || 0
-    upload_bw = attrs[:upload_bandwidth] || 0
+  @doc """
+  Build a measurement changeset from a parsed test result (any TestRunner impl).
 
+  Bandwidth is optional — a ping result has none, so its `download_mbps`/
+  `upload_mbps` stay nil (and Postgres `avg()` then excludes it from speed
+  averages). An Ookla result always carries bandwidth, so its mbps is derived.
+  """
+  def from_result(attrs) do
     attrs =
       attrs
-      |> Map.put(:download_mbps, download_bw * 0.000008)
-      |> Map.put(:upload_mbps, upload_bw * 0.000008)
+      |> maybe_put_mbps(:download_bandwidth, :download_mbps)
+      |> maybe_put_mbps(:upload_bandwidth, :upload_mbps)
 
     %__MODULE__{}
     |> cast(attrs, [
@@ -136,8 +139,15 @@ defmodule Baudflow.Measurements.Measurement do
       :test_type,
       :failed
     ])
-    |> validate_required([:timestamp, :ping_latency, :download_bandwidth, :upload_bandwidth])
+    |> validate_required([:timestamp, :ping_latency])
     |> unique_constraint(:result_id)
+  end
+
+  defp maybe_put_mbps(attrs, bandwidth_key, mbps_key) do
+    case attrs[bandwidth_key] do
+      nil -> attrs
+      bandwidth -> Map.put(attrs, mbps_key, bandwidth * 0.000008)
+    end
   end
 
   @doc "Changeset for a health/benchmark evaluation update."

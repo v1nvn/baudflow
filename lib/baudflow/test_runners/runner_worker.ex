@@ -17,8 +17,21 @@ defmodule Baudflow.TestRunners.RunnerWorker do
   alias Baudflow.Measurements
   alias Baudflow.Runs
   alias Baudflow.TestRunners.Ookla
+  alias Baudflow.TestRunners.Ping
 
-  @impls %{"ookla" => Ookla}
+  # Single source of truth for runnable impls AND the schedule-form options —
+  # add a tuple here and both dispatch and the test_type <select> pick it up.
+  @registry [
+    {"ookla", "Speedtest (Ookla)", Ookla},
+    {"ping", "Ping", Ping}
+  ]
+
+  @impls Map.new(@registry, fn {key, _label, mod} -> {key, mod} end)
+
+  @doc "Selectable test types for the schedule form, as {label, value} option tuples."
+  def test_types do
+    Enum.map(@registry, fn {key, label, _mod} -> {label, key} end)
+  end
 
   @doc "Resolve binary-availability for a test type (dashboard manual run)."
   def binary_available?(test_type \\ "ookla") do

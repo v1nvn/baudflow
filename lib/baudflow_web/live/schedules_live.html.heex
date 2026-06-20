@@ -106,11 +106,25 @@
             placeholder="0 * * * *"
           />
           <.input
+            field={f[:test_type]}
+            type="select"
+            label="Test type"
+            class="bf-input"
+            options={@test_types}
+          />
+          <.input
             field={f[:server_id]}
             type="number"
             label="Server ID (blank = auto)"
             class="bf-input"
             min="0"
+          />
+          <.input
+            field={f[:target_host]}
+            type="text"
+            label="Ping target (host)"
+            class="bf-input"
+            placeholder="blank = global default"
           />
         </div>
 

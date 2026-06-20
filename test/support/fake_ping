@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Deterministic fake `ping` CLI for tests.
+# Honors PING_EXIT to simulate failures; default emits a macOS-style summary
+# (round-trip ... stddev) then exits 0. The parser handles both macOS and Linux
+# dialects; this fixture exercises the macOS shape. Args (e.g. -c 5 <host>) are
+# ignored — the output is fixed so assertions are deterministic.
+if [ -n "$PING_EXIT" ]; then echo "ping: unreachable" >&2; exit "$PING_EXIT"; fi
+
+cat <<'PING'
+PING 1.1.1.1 (1.1.1.1): 56 data bytes
+64 bytes from 1.1.1.1: icmp_seq=0 ttl=58 time=10.500 ms
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=58 time=9.500 ms
+--- 1.1.1.1 ping statistics ---
+5 packets transmitted, 5 packets received, 0.0% packet loss
+round-trip min/avg/max/stddev = 9.500/10.500/12.000/1.200 ms
+PING

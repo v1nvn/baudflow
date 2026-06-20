@@ -5,7 +5,7 @@ defmodule Baudflow.MeasurementsTest do
   alias Baudflow.Measurements.Measurement
   alias Ecto.Adapters.SQL
 
-  describe "from_ookla_json/1" do
+  describe "from_result/1" do
     test "computes mbps from bandwidth using factor 0.000008" do
       attrs = %{
         timestamp: ~U[2024-01-01 00:00:00Z],
@@ -14,21 +14,28 @@ defmodule Baudflow.MeasurementsTest do
         upload_bandwidth: 5_000_000
       }
 
-      changeset = Measurement.from_ookla_json(attrs)
+      changeset = Measurement.from_result(attrs)
       assert changeset.valid?
       assert changeset.changes[:download_mbps] == 80.0
       assert changeset.changes[:upload_mbps] == 40.0
     end
 
-    test "requires timestamp, ping_latency, download_bandwidth, upload_bandwidth" do
-      changeset = Measurement.from_ookla_json(%{})
+    test "requires only timestamp and ping_latency" do
+      changeset = Measurement.from_result(%{})
       refute changeset.valid?
 
       errors = Baudflow.DataCase.errors_on(changeset)
       assert "can't be blank" in errors[:timestamp]
       assert "can't be blank" in errors[:ping_latency]
-      assert "can't be blank" in errors[:download_bandwidth]
-      assert "can't be blank" in errors[:upload_bandwidth]
+    end
+
+    test "leaves mbps nil when bandwidth is absent (a ping result)" do
+      changeset =
+        Measurement.from_result(%{timestamp: ~U[2024-01-01 00:00:00Z], ping_latency: 12.5})
+
+      assert changeset.valid?
+      refute Map.has_key?(changeset.changes, :download_mbps)
+      refute Map.has_key?(changeset.changes, :upload_mbps)
     end
 
     test "dedupes on result_id via unique_constraint" do

@@ -32,6 +32,13 @@ defmodule BaudflowWeb.DashboardLive do
   end
 
   @impl true
+  # The dashboard is a speed dashboard: ping (and other non-Ookla) results are
+  # stored but don't append a speed point here. Separate ping charts come later.
+  def handle_info({:result, %{test_type: test_type}}, socket) when test_type != "ookla" do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info({:result, measurement}, socket) do
     {:noreply,
      socket
@@ -164,7 +171,7 @@ defmodule BaudflowWeb.DashboardLive do
 
   defp fetch_measurements(time_range) do
     since = time_range_to_datetime(time_range)
-    Measurements.list_since(since, limit: chart_points())
+    Measurements.list_since(since, limit: chart_points(), test_type: "ookla")
   end
 
   defp time_range_to_datetime("24h"), do: DateTime.add(DateTime.utc_now(), -24 * 3600, :second)

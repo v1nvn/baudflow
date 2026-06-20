@@ -51,8 +51,11 @@ defmodule Baudflow.Health do
     end
   end
 
-  defp maybe_check(acc, _name, threshold, _value, _compare, _unit)
-       when not is_number(threshold) or threshold <= 0,
+  # A check needs both a threshold and a measurement value. Skip when the value
+  # is nil (a ping result has no bandwidth, so its download/upload checks can't
+  # run — and `nil >= threshold` would raise) or when the threshold is unset.
+  defp maybe_check(acc, _name, threshold, value, _compare, _unit)
+       when is_nil(value) or not is_number(threshold) or threshold <= 0,
        do: acc
 
   defp maybe_check(acc, name, threshold, value, compare, unit) do

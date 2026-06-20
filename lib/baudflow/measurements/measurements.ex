@@ -6,9 +6,9 @@ defmodule Baudflow.Measurements do
   alias Baudflow.Measurements.Measurement
   alias Baudflow.Repo
 
-  @doc "Create a measurement from attributes map."
+  @doc "Create a measurement from a parsed test-result attributes map."
   def create_measurement(attrs) do
-    Measurement.from_ookla_json(attrs)
+    Measurement.from_result(attrs)
     |> Repo.insert()
   end
 
@@ -28,15 +28,21 @@ defmodule Baudflow.Measurements do
     |> Repo.all()
   end
 
-  @doc "List measurements since a given datetime, newest first."
+  @doc """
+  List measurements since a given datetime, newest first.
+
+  Pass `test_type:` to scope to one impl — the dashboard uses `"ookla"` so ping
+  results (which carry no speed) don't pollute the speed chart.
+  """
   def list_since(since, opts \\ []) do
     limit = Keyword.get(opts, :limit, 500)
+    test_type = Keyword.get(opts, :test_type)
 
-    from(m in Measurement,
-      where: m.timestamp > ^since,
-      order_by: [desc: m.timestamp],
-      limit: ^limit
-    )
+    Measurement
+    |> maybe_filter_test_type(test_type)
+    |> where([m], m.timestamp > ^since)
+    |> order_by([m], desc: m.timestamp)
+    |> limit(^limit)
     |> Repo.all()
   end
 
@@ -170,6 +176,12 @@ defmodule Baudflow.Measurements do
 
   defp maybe_filter_server(query, server_name) do
     from(m in query, where: m.server_name == ^server_name)
+  end
+
+  defp maybe_filter_test_type(query, nil), do: query
+
+  defp maybe_filter_test_type(query, test_type) do
+    where(query, [m], m.test_type == ^test_type)
   end
 
   defp apply_sort(query, "download", dir) do

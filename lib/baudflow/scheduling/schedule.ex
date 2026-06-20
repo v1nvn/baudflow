@@ -19,6 +19,7 @@ defmodule Baudflow.Scheduling.Schedule do
     field :name, :string
     field :cron, :string
     field :server_id, :integer
+    field :target_host, :string
     field :test_type, :string, default: "ookla"
     field :enabled, :boolean, default: true
     field :escalation_level, :integer, default: 0
@@ -33,7 +34,7 @@ defmodule Baudflow.Scheduling.Schedule do
 
   @type t :: %__MODULE__{}
 
-  @fields ~w(name cron server_id test_type enabled escalation_level breach_streak
+  @fields ~w(name cron server_id target_host test_type enabled escalation_level breach_streak
              threshold_enabled download upload ping)a
 
   @doc "The only construction path for a schedule."

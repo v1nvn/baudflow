@@ -3,10 +3,14 @@ defmodule BaudflowWeb.SchedulesLive do
 
   alias Baudflow.Scheduling
   alias Baudflow.Scheduling.Schedule
+  alias Baudflow.TestRunners.RunnerWorker
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :active_page, :schedules)}
+    {:ok,
+     socket
+     |> assign(:active_page, :schedules)
+     |> assign(:test_types, RunnerWorker.test_types())}
   end
 
   # The table and the create/edit form are the same LiveView at three routes

@@ -78,4 +78,23 @@ defmodule Baudflow.HealthTest do
         Health.evaluate(measurement([]), schedule(download: 25.0, breach_streak: 3))
     end
   end
+
+  describe "evaluate/2 - nil measurement value (a ping result)" do
+    # A ping measurement has no bandwidth: its download_mbps/upload_mbps are nil.
+    # A threshold check needs both a threshold AND a value — a nil value must
+    # skip (not raise `nil >= threshold`), so only the ping check evaluates.
+    test "skips checks whose value is nil, evaluating only checks with a value" do
+      {healthy, benchmarks, transition} =
+        Health.evaluate(
+          measurement(download_mbps: nil, upload_mbps: nil, ping_latency: 15.0),
+          schedule(download: 100.0, ping: 50.0)
+        )
+
+      assert healthy == true
+      assert transition == :healthy
+      refute Map.has_key?(benchmarks, :download)
+      refute Map.has_key?(benchmarks, :upload)
+      assert benchmarks.ping.passed
+    end
+  end
 end

@@ -26,6 +26,7 @@ defmodule Baudflow.SettingsTest do
       assert all["blocked_servers"] == ""
       assert all["retention_days"] == "365"
       assert all["dashboard_points"] == "500"
+      assert all["ping_target"] == "1.1.1.1"
     end
 
     test "upserts on repeated calls" do

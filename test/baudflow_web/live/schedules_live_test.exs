@@ -24,11 +24,31 @@ defmodule BaudflowWeb.SchedulesLiveTest do
   end
 
   describe "new" do
-    test "renders the new-schedule form with the threshold policy select", %{conn: conn} do
+    test "renders the new-schedule form with the threshold policy and test type selects", %{
+      conn: conn
+    } do
       {:ok, lv, html} = live(conn, ~p"/schedules/new")
       assert html =~ "New schedule"
       assert has_element?(lv, "#schedule-form")
       assert has_element?(lv, "select[name='schedule[threshold_policy]']")
+      assert has_element?(lv, "select[name='schedule[test_type]']")
+    end
+
+    test "creates a ping schedule with a per-schedule target host", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/schedules/new")
+
+      lv
+      |> element("#schedule-form")
+      |> render_submit(%{
+        schedule: %{name: "Ping", cron: "* * * * *", test_type: "ping", target_host: "1.1.1.1"}
+      })
+
+      assert_patch(lv, ~p"/schedules")
+
+      [schedule] = Scheduling.list_schedules()
+      assert schedule.test_type == "ping"
+      assert schedule.target_host == "1.1.1.1"
+      assert render(lv) =~ "Schedule created"
     end
 
     test "creates a schedule and returns to the table", %{conn: conn} do

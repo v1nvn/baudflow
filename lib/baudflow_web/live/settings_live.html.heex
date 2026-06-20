@@ -99,6 +99,26 @@
         </div>
       </div>
       
+<!-- Ping -->
+      <div class="glass-card">
+        <div class="p-4">
+          <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-3">
+            <.icon name="hero-signal-mini" class="size-4" /> Ping
+          </h2>
+          <.input
+            field={@form[:ping_target]}
+            type="text"
+            id="ping-target-input"
+            label="Default Ping Target"
+            class="bf-input !max-w-sm"
+            placeholder="1.1.1.1"
+          />
+          <p class="text-xs text-text-ghost mt-1">
+            Host a ping schedule pings when it has no target of its own.
+          </p>
+        </div>
+      </div>
+      
 <!-- Thresholds -->
       <div class="glass-card">
         <div class="p-4">

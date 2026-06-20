@@ -24,6 +24,7 @@ defmodule Baudflow.Scheduling.SchedulerWorker do
       %{
         scheduled_for: scheduled_for_now(),
         server_id: server_id,
+        target_host: schedule.target_host,
         source: "scheduled",
         test_type: schedule.test_type,
         schedule_id: schedule.id
