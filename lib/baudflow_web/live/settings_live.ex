@@ -1,6 +1,7 @@
 defmodule BaudflowWeb.SettingsLive do
   use BaudflowWeb, :live_view
 
+  alias Baudflow.Notifications.Template
   alias Baudflow.Settings
 
   @impl true
@@ -9,6 +10,9 @@ defmodule BaudflowWeb.SettingsLive do
      socket
      |> assign(:page_title, "Settings")
      |> assign(:active_page, :settings)
+     # The webhook template textarea placeholder is the built-in default — the
+     # single source of truth lives in Template, so the UI never drifts from it.
+     |> assign(:webhook_template_default, Template.default(:webhook))
      |> assign_form(Settings.get_all())}
   end
 

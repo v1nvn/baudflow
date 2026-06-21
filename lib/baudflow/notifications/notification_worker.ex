@@ -4,16 +4,19 @@ defmodule Baudflow.Notifications.NotificationWorker do
 
       event → policy (notify?) → template (render) → channel (fan out)
 
-  The policy is the pure `Baudflow.Notifications.Policy` module; this worker
-  reads `Settings` into the config it hands the policy, then — only when the
-  policy says notify — loads the measurement, renders a message, and fans out to
-  each enabled channel. ntfy today; webhook lands in #24; EEx templates in #26.
+  The policy is the pure `Baudflow.Notifications.Policy` module; this worker reads
+  `Settings` into the config it hands the policy, then — only when the policy says
+  notify — loads the measurement, builds the Payload, and fans out to each channel.
+  Rendering is the `Template` module's job (#26): one renderer per channel, so ntfy
+  and webhook (#24) add a template, never a parallel render path here. Each channel
+  owns its own transport config and enable gate (ntfy via app env; webhook via a
+  `Settings` URL — blank means disabled).
   """
 
   use Oban.Worker, queue: :notifications, max_attempts: 3
 
   alias Baudflow.Measurements
-  alias Baudflow.Notifications.{Event, Ntfy, Payload, Policy}
+  alias Baudflow.Notifications.{Event, Ntfy, Payload, Policy, Template, Webhook}
   alias Baudflow.Settings
 
   @impl true
@@ -24,7 +27,7 @@ defmodule Baudflow.Notifications.NotificationWorker do
     # measurement fetch. Most events (healthy, sub-threshold breaches) skip here.
     if Policy.notify?(event, config()) do
       measurement = Measurements.get_measurement!(event.measurement_id)
-      %Payload{event: event, measurement: measurement} |> render() |> fan_out()
+      %Payload{event: event, measurement: measurement} |> fan_out()
     end
 
     :ok
@@ -36,53 +39,13 @@ defmodule Baudflow.Notifications.NotificationWorker do
     %{breach_notify_streak: max(1, Settings.get_integer("breach_notify_streak", 1))}
   end
 
-  # Hardcoded render — EEx templates land in #26.
-  defp render(%Payload{event: %Event{kind: :breach}, measurement: m}) do
-    """
-    Speed threshold breached!
+  # Fan out to every channel — render per channel via the Template layer, then let
+  # each channel own its enable gate. ntfy always posts (app env); webhook no-ops
+  # when its URL is blank. The worker never branches on channel enable logic.
+  defp fan_out(payload) do
+    payload |> Template.render(:ntfy) |> Ntfy.send()
+    payload |> Template.render(:webhook) |> Webhook.send()
 
-    #{failed_checks(m.benchmarks)}Server: #{m.server_name} (#{m.server_location})
-    """
-  end
-
-  defp render(%Payload{event: %Event{kind: :recovered}, measurement: m}) do
-    """
-    Speed recovered.
-
-    Thresholds are back in spec.
-    Server: #{m.server_name} (#{m.server_location})
-    """
-  end
-
-  # A failed test has no server/speed fields (nil speeds) — render the outage,
-  # not "Server:  ()".
-  defp render(%Payload{event: %Event{kind: :failed}, measurement: _m}) do
-    """
-    Speed test failed.
-
-    The most recent test produced no result.
-    """
-  end
-
-  # benchmarks is JSONB → string keys after the DB round-trip.
-  defp failed_checks(benchmarks) when is_map(benchmarks) do
-    benchmarks
-    |> Enum.filter(fn
-      {_, %{"passed" => p}} -> not p
-      _ -> false
-    end)
-    |> Enum.map_join("", fn {metric, %{"value" => v, "threshold" => t, "unit" => u}} ->
-      "#{String.capitalize(to_string(metric))}: #{fmt(v)} vs #{fmt(t)} #{u}\n"
-    end)
-  end
-
-  defp failed_checks(_), do: ""
-
-  defp fmt(n) when is_number(n), do: Float.round(n / 1, 1)
-  defp fmt(_), do: "?"
-
-  # Fan out to every enabled channel. ntfy today; webhook lands in #24.
-  defp fan_out(message) do
-    Ntfy.send(message)
+    :ok
   end
 end

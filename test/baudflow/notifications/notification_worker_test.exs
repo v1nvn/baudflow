@@ -27,13 +27,18 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     Req.Test.stub(__MODULE__, fn conn -> Plug.Conn.send_resp(conn, 200, "") end)
   end
 
-  # Capture the request conn so a test can assert on the rendered body.
+  # Capture the request conn so a test can assert on the rendered body. Both
+  # channels POST through the same Req.Test owner ({Req.Test, __MODULE__}); tag by
+  # host so a test can tell a webhook POST (webhook.test) from an ntfy POST.
   defp stub_capture do
     Req.Test.stub(__MODULE__, fn conn ->
-      send(self(), {:ntfy_request, conn})
+      send(self(), {request_tag(conn), conn})
       Plug.Conn.send_resp(conn, 200, "")
     end)
   end
+
+  defp request_tag(%Plug.Conn{host: "webhook.test"}), do: :webhook_request
+  defp request_tag(_conn), do: :ntfy_request
 
   defp insert_measurement!(overrides) do
     defaults = %{
@@ -189,6 +194,56 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
                })
 
       refute_received {:ntfy_request, _}
+    end
+  end
+
+  describe "perform/1 - webhook channel (#24)" do
+    # webhook_plug routes the webhook POST through the same Req.Test owner as ntfy;
+    # the webhook_url setting is per-test (enabled vs disabled).
+    setup do
+      Application.put_env(:baudflow, :webhook_plug, {Req.Test, __MODULE__})
+
+      on_exit(fn ->
+        Application.delete_env(:baudflow, :webhook_plug)
+      end)
+
+      :ok
+    end
+
+    test "posts an alert to the webhook when a url is configured" do
+      Settings.update_all(%{"webhook_url" => "http://webhook.test/hook"})
+      stub_capture()
+
+      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id,
+                 "streak" => 1
+               })
+
+      assert_received {:webhook_request, conn}
+      body = Req.Test.raw_body(conn)
+      assert body =~ ~s|"event"|
+      assert body =~ "breach"
+    end
+
+    test "does not post to the webhook when no url is configured" do
+      stub_capture()
+
+      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id,
+                 "streak" => 1
+               })
+
+      # ntfy still fires (no regression); webhook stays silent with a blank URL.
+      assert_received {:ntfy_request, _}
+      refute_received {:webhook_request, _}
     end
   end
 

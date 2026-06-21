@@ -21,7 +21,11 @@ defmodule Baudflow.Settings do
     "promised_upload_mbps" => "0",
     # #21: consecutive breaches before a breach alert fires. 1 = notify on the
     # first breach (the step-0 behavior).
-    "breach_notify_streak" => "1"
+    "breach_notify_streak" => "1",
+    # #24/#26: webhook transport. A blank URL disables the channel (one "off"
+    # representation); a blank template means "use the built-in Template default".
+    "webhook_url" => "",
+    "webhook_template" => ""
   }
 
   @doc "Get a single setting value by key. Falls back to defaults if not stored."

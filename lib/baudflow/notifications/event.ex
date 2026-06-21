@@ -4,8 +4,9 @@ defmodule Baudflow.Notifications.Event do
 
   `kind` is one of `:healthy | :breach | :recovered | :failed`. Constructed ONLY
   in `Baudflow.Health` (the single state owner) — every other module reads
-  events, never builds them. The companion credo rule (batch 4) enforces that
-  once webhooks arrive.
+  events, never builds them. (A companion credo rule banning construction outside
+  `Health` was deferred from step 9 — Health is already the sole author by
+  inspection; revisit the ratchet separately.)
 
   `streak` is the breach streak snapshotted at construction (a `:breach` event
   carries the value just written, so the policy can gate on it without rereading

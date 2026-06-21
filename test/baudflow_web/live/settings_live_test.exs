@@ -55,6 +55,16 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert has_element?(lv, "input[name='settings[breach_notify_streak]']")
       assert html =~ "Consecutive"
     end
+
+    test "renders the webhook fields (#24, #26)", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/settings")
+
+      assert has_element?(lv, "#webhook-url-input")
+      assert has_element?(lv, "input[name='settings[webhook_url]']")
+      assert has_element?(lv, "#webhook-template-input")
+      assert has_element?(lv, "textarea[name='settings[webhook_template]']")
+      assert html =~ "Webhooks"
+    end
   end
 
   describe "save" do
@@ -75,7 +85,9 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "threshold_ping" => "50",
           "promised_download_mbps" => "500",
           "promised_upload_mbps" => "100",
-          "breach_notify_streak" => "3"
+          "breach_notify_streak" => "3",
+          "webhook_url" => "https://example.com/hook",
+          "webhook_template" => "{\"event\":\"<%= @event.kind %>\"}"
         }
       })
 
@@ -90,6 +102,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert Settings.get("promised_download_mbps") == "500"
       assert Settings.get("promised_upload_mbps") == "100"
       assert Settings.get("breach_notify_streak") == "3"
+      assert Settings.get("webhook_url") == "https://example.com/hook"
+      assert Settings.get("webhook_template") == "{\"event\":\"<%= @event.kind %>\"}"
     end
 
     test "sets flash after saving", %{conn: conn} do
