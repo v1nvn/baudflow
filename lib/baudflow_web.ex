@@ -83,6 +83,8 @@ defmodule BaudflowWeb do
       import BaudflowWeb.CoreComponents
       # Display formatting helpers
       import BaudflowWeb.FormatHelpers
+      # Health heatmap tile + legend
+      import BaudflowWeb.HeatCalendar
 
       # Common modules used in templates
       alias BaudflowWeb.Layouts

@@ -21,6 +21,23 @@ defmodule BaudflowWeb.DashboardLiveTest do
       })
     end
 
+    test "pushes the current-month heatmap tile on mount", %{conn: conn} do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      {:ok, m} =
+        Measurements.create_measurement(valid_attrs(timestamp: now, result_id: "hm-dash-1"))
+
+      Measurements.update_health(m, true, nil)
+
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      today = Date.to_iso8601(DateTime.to_date(now))
+
+      assert_push_event(lv, "heatmap_tile:heatmap-dashboard", %{cells: cells})
+
+      assert Enum.any?(cells, &(&1.d == today and &1.v == "healthy"))
+    end
+
     test "pushes chart_data with existing measurements", %{conn: conn} do
       {:ok, m} =
         Measurements.create_measurement(

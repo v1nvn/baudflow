@@ -29,11 +29,12 @@ try { const m = require("phoenix-colocated/baudflow"); colocatedHooks = m.hooks 
 import Chart from "chart.js/auto"
 import "chartjs-adapter-date-fns"
 import annotationPlugin from "chartjs-plugin-annotation"
+import { MatrixController, MatrixElement } from "chartjs-chart-matrix"
 import topbar from "../vendor/topbar"
 
-// Register the annotation plugin once, globally, so every chart can draw
-// threshold lines and failure markers via `options.plugins.annotation`.
-Chart.register(annotationPlugin)
+// Register plugins once, globally. Annotation draws threshold lines / failure
+// markers; the matrix controller is the health-heatmap tile renderer.
+Chart.register(annotationPlugin, MatrixController, MatrixElement)
 
 // --- Chart color system (Tron Legacy neon palette) ---
 
@@ -614,6 +615,137 @@ chartHooks.DurationChart = {
       this.chart.update()
     })
   }
+}
+
+// ── HeatmapMatrix: health calendar tile (chartjs-chart-matrix) ────────
+// One instance per tile — the dashboard's current month, each month on the
+// /heatmap wall grid, and the /heatmap/embed tile. The view computes cell
+// coordinates in Elixir (HeatCalendar) and pushes `heatmap_tile:<id>`; this
+// just plots them. Cells are discrete health states mapped to the Tron neon
+// palette (ordinal, not numeric intensity): green healthy, amber breach, red
+// failed, ghost-gray unknown, faint outline for days with no data.
+
+const heatmapStatusColors = {
+  healthy: "#3a9d7a",
+  breach: "#c29438",
+  failed: "#c75566",
+  unknown: "#2c3852",
+}
+
+const heatmapStatusLabels = {
+  healthy: "Healthy",
+  breach: "Threshold breach",
+  failed: "Failed",
+  unknown: "No verdict",
+  empty: "No data",
+}
+
+const heatmapWeekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+chartHooks.HeatmapMatrix = {
+  mounted() {
+    this.chart = null
+    this.handleEvent(`heatmap_tile:${this.el.id}`, (payload) => this.paint(payload))
+  },
+
+  paint(payload) {
+    if (this.chart) {
+      this.chart.destroy()
+      this.chart = null
+    }
+
+    const rows = Math.max(parseInt(this.el.dataset.weeks || "6", 10), payload.weeks || 0)
+    const cells = payload.cells || []
+    const yLabels = Array.from({ length: rows }, (_, i) => String(i))
+    // Palette + labels come from the canvas `data-colors`/`data-labels` (set by
+    // HeatCalendar in Elixir, the single source of truth); the JS maps are only
+    // fallbacks.
+    const palette = { ...heatmapStatusColors, ...JSON.parse(this.el.dataset.colors || "{}") }
+    const labels = { ...heatmapStatusLabels, ...JSON.parse(this.el.dataset.labels || "{}") }
+
+    this.chart = new Chart(this.el.getContext("2d"), {
+      type: "matrix",
+      data: {
+        datasets: [
+          {
+            data: cells,
+            backgroundColor(arg) {
+              const raw = heatmapRaw(arg)
+              return raw ? palette[raw.v] || "transparent" : "transparent"
+            },
+            borderColor(arg) {
+              const raw = heatmapRaw(arg)
+              return raw && raw.v === "empty" ? "hsla(224, 30%, 45%, 0.35)" : "transparent"
+            },
+            borderWidth: 1,
+            borderRadius: 2,
+            width: ({ chart }) =>
+              chart.chartArea ? chart.chartArea.width / 7 - 3 : 0,
+            height: ({ chart }) =>
+              chart.chartArea ? chart.chartArea.height / rows - 3 : 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        // Calendar aspect (7 weekday columns × `rows` week rows) so the chart
+        // area matches the cell grid exactly — square slots, since the cell
+        // width/height callbacks divide the area by 7 and `rows`.
+        aspectRatio: 7 / rows,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            callbacks: {
+              title: () => "",
+              label(ctx) {
+                const raw = ctx.raw || {}
+                return `${raw.d} — ${labels[raw.v] || "No data"}`
+              },
+            },
+          },
+        },
+        scales: {
+          // `offset: true` gives each category its own full slot with the cell
+          // centered inside it, so the edge columns/rows sit wholly within the
+          // chart area instead of straddling the boundary and being clipped.
+          x: {
+            type: "category",
+            labels: heatmapWeekdayLabels,
+            offset: true,
+            display: false,
+            grid: { display: false },
+          },
+          y: {
+            type: "category",
+            labels: yLabels,
+            offset: true,
+            reverse: true,
+            display: false,
+            grid: { display: false },
+          },
+        },
+      },
+    })
+  },
+
+  destroyed() {
+    if (this.chart) this.chart.destroy()
+  },
+}
+
+// Scriptable-option context for a matrix cell: Chart.js passes `{raw}` (the
+// data point) in most paths; the `dataset.dataIndex` fallback covers element
+// callbacks that hand back a context without `raw`.
+function heatmapRaw(arg) {
+  if (!arg) return null
+  if (arg.raw) return arg.raw
+  if (arg.dataset && Number.isInteger(arg.dataIndex)) {
+    return arg.dataset.data[arg.dataIndex]
+  }
+  return null
 }
 
 // ── SpeedtestViz: CRT oscilloscope diagnostics ────────────────────────

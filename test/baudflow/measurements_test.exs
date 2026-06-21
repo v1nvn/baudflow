@@ -329,6 +329,103 @@ defmodule Baudflow.MeasurementsTest do
     end
   end
 
+  describe "health_buckets/1" do
+    test "counts per health state within a day bucket" do
+      seed_health(~U[2026-06-21 01:00:00Z], true)
+      seed_health(~U[2026-06-21 05:00:00Z], true)
+      seed_health(~U[2026-06-21 09:00:00Z], false)
+      seed_health(~U[2026-06-21 12:00:00Z], nil)
+      {:ok, _failed} = Measurements.record_failure(%{timestamp: ~U[2026-06-21 15:00:00Z]})
+
+      [row] =
+        Measurements.health_buckets(
+          since: ~U[2026-06-20 00:00:00Z],
+          test_type: "ookla"
+        )
+
+      assert row.total == 5
+      assert row.healthy == 2
+      assert row.breach == 1
+      assert row.failed == 1
+      assert row.unknown == 1
+    end
+
+    test "returns [] when nothing matches the window" do
+      assert Measurements.health_buckets(since: DateTime.utc_now()) == []
+    end
+
+    test "test_type filter excludes other runners" do
+      {:ok, _ping} =
+        Measurements.create_measurement(%{
+          timestamp: ~U[2026-06-21 01:00:00Z],
+          ping_latency: 5.0,
+          test_type: "ping",
+          result_id: "hm-ping-1"
+        })
+
+      assert Measurements.health_buckets(
+               since: ~U[2026-06-20 00:00:00Z],
+               test_type: "ookla"
+             ) == []
+    end
+
+    test "since is optional — nil means full history (the wall grid)" do
+      seed_health(~U[2025-01-15 03:00:00Z], true)
+
+      assert length(Measurements.health_buckets(test_type: "ookla")) == 1
+    end
+  end
+
+  describe "bucket_status/1" do
+    test "failed beats breach, healthy, and unknown" do
+      assert Measurements.bucket_status(%{failed: 1, breach: 2, healthy: 3, unknown: 4}) ==
+               :failed
+    end
+
+    test "breach beats healthy and unknown (no failures)" do
+      assert Measurements.bucket_status(%{failed: 0, breach: 1, healthy: 3, unknown: 4}) ==
+               :breach
+    end
+
+    test "healthy beats unknown" do
+      assert Measurements.bucket_status(%{failed: 0, breach: 0, healthy: 1, unknown: 2}) ==
+               :healthy
+    end
+
+    test "only-unknown is :unknown" do
+      assert Measurements.bucket_status(%{failed: 0, breach: 0, healthy: 0, unknown: 2}) ==
+               :unknown
+    end
+  end
+
+  describe "daily_health/1" do
+    test "returns a Date => status map, worst status wins per day" do
+      seed_health(~U[2026-06-21 03:00:00Z], true)
+      seed_health(~U[2026-06-21 09:00:00Z], false)
+
+      assert Measurements.daily_health(since: ~U[2026-06-20 00:00:00Z]) ==
+               %{~D[2026-06-21] => :breach}
+    end
+
+    test "since is optional — omit it to fetch full history" do
+      seed_health(~U[2025-01-15 03:00:00Z], true)
+
+      assert Measurements.daily_health() == %{~D[2025-01-15] => :healthy}
+    end
+
+    test "scopes to ookla by default (ping excluded)" do
+      {:ok, _ping} =
+        Measurements.create_measurement(%{
+          timestamp: ~U[2026-06-21 01:00:00Z],
+          ping_latency: 5.0,
+          test_type: "ping",
+          result_id: "dh-ping-1"
+        })
+
+      assert Measurements.daily_health(since: ~U[2026-06-20 00:00:00Z]) == %{}
+    end
+  end
+
   # --- Migration sanity checks ---
 
   describe "migration indexes" do
@@ -378,6 +475,16 @@ defmodule Baudflow.MeasurementsTest do
       })
 
     m
+  end
+
+  # Seed a speed test at `ts` and stamp its persisted health (`nil` = unknown).
+  defp seed_health(ts, healthy) do
+    seed(timestamp: ts, download_mbps: 100.0) |> set_healthy(healthy)
+  end
+
+  defp set_healthy(measurement, value) do
+    {:ok, updated} = Measurements.update_health(measurement, value, nil)
+    updated
   end
 
   defp days_ago(days), do: DateTime.add(DateTime.utc_now(), -days * 24 * 3600, :second)

@@ -1,0 +1,30 @@
+<Layouts.app flash={@flash} active_page={@active_page}>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-bold text-text">Health Heatmap</h1>
+      <p class="text-sm text-text-dim mt-1">
+        Daily speed-test health, one calendar tile per month
+      </p>
+    </div>
+    <.link
+      navigate={~p"/heatmap/embed"}
+      target="_blank"
+      rel="noopener"
+      class="bf-btn-ghost !py-1.5 text-xs"
+    >
+      <.icon name="hero-code-bracket-mini" class="size-4" /> Embed view
+    </.link>
+  </div>
+
+  <p :if={!@has_data} class="text-sm text-text-ghost">
+    No speed tests recorded yet — cells fill in as tests run.
+  </p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div :for={tile <- @tiles} class="glass-card p-3">
+      <.heat_tile tile={tile} />
+    </div>
+  </div>
+
+  <.heat_legend />
+</Layouts.app>

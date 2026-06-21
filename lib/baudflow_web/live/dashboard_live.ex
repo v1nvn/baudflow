@@ -6,6 +6,7 @@ defmodule BaudflowWeb.DashboardLive do
   alias Baudflow.Measurements.ServerDiscovery
   alias Baudflow.Scheduling
   alias Baudflow.TestRunners.RunnerWorker
+  alias BaudflowWeb.HeatCalendar
 
   # The dashboard range is a per-browser preference (#5). Only a known value is
   # honored — a stale or tampered string falls back to the default rather than
@@ -52,7 +53,8 @@ defmodule BaudflowWeb.DashboardLive do
        |> Enum.take(socket.assigns.chart_points)
      )
      |> push_event("append_point", %{point: serialize_point(measurement)})
-     |> push_event("speedtest_complete", %{})}
+     |> push_event("speedtest_complete", %{})
+     |> assign_heatmap()}
   end
 
   @impl true
@@ -67,11 +69,17 @@ defmodule BaudflowWeb.DashboardLive do
   def handle_info({:health, id, _transition}, socket) do
     # HealthWorker evaluated the latest measurement post-result; refetch so the
     # health badge reflects it live (the v1 badge was stale until reload).
+    measurement = Measurements.get_measurement!(id)
+
     socket =
       if(socket.assigns.latest_measurement && socket.assigns.latest_measurement.id == id,
-        do: assign(socket, :latest_measurement, Measurements.get_measurement!(id)),
+        do: assign(socket, :latest_measurement, measurement),
         else: socket
       )
+
+    # The heatmap reflects ookla tests only, so a ping's health eval can't change
+    # a cell — skip the month recompute for non-ookla measurements.
+    socket = if measurement.test_type == "ookla", do: assign_heatmap(socket), else: socket
 
     {:noreply, socket}
   end
@@ -193,6 +201,7 @@ defmodule BaudflowWeb.DashboardLive do
     |> assign(:compliance, compute_compliance(time_range))
     |> assign(:next_run, Scheduling.next_run())
     |> push_chart_data(measurements, averages, thresholds)
+    |> assign_heatmap()
   end
 
   # The persisted range arrives via connect_params (see app.js). On the
@@ -278,6 +287,22 @@ defmodule BaudflowWeb.DashboardLive do
       averages: averages,
       thresholds: thresholds
     })
+  end
+
+  # The current-month health heatmap on the dashboard — independent of the
+  # speed-chart time range (the calendar spans a month, not the visible window).
+  # Recomputed on mount/range change and on each ookla result or health eval so
+  # the latest day colors in live (a ping's health eval is skipped — it can't
+  # change a cell). The full all-months grid lives at /heatmap.
+  defp assign_heatmap(socket) do
+    today = Date.utc_today()
+    since = HeatCalendar.month_start(today)
+    status_by_date = Measurements.daily_health(since: since, test_type: "ookla")
+    tile = HeatCalendar.month_matrix(today.year, today.month, status_by_date, "heatmap-dashboard")
+
+    socket
+    |> assign(:heatmap_tile, tile)
+    |> push_event("heatmap_tile:heatmap-dashboard", %{cells: tile.cells, weeks: tile.weeks})
   end
 
   defp serialize_for_chart(measurements) do

@@ -19,6 +19,8 @@ defmodule BaudflowWeb.Router do
 
     live "/", DashboardLive
     live "/history", HistoryLive
+    live "/heatmap", HeatmapLive
+    live "/heatmap/embed", HeatmapEmbedLive
     live "/runs", RunsLive
     live "/results/:id", ResultLive
     live "/schedules", SchedulesLive, :index

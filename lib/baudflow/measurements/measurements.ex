@@ -182,6 +182,113 @@ defmodule Baudflow.Measurements do
     end
   end
 
+  @doc """
+  Bucket measurements by UTC day, returning per-day health counts.
+
+  Opts:
+
+    * `:since`     — optional `DateTime`; when set, only days with
+      `timestamp > since`. Omit (or `nil`) for the full history — the heatmap
+      wall grid fetches every month that has data this way.
+    * `:test_type` — scope to one runner (the heatmap passes `"ookla"`).
+
+  Buckets are UTC `date_trunc('day', ...)` boundaries (a v1 simplification — the
+  grouping is offset from the viewer's local evening; cell tooltips render the
+  absolute UTC date, which stays correct). Returns a list ascending by `bucket`:
+
+      %{bucket: DateTime, total: n, healthy: n, breach: n, failed: n, unknown: n}
+
+  `total = healthy + breach + failed + unknown`. A row counts as `failed` when
+  `failed == true` (it carries `healthy: nil`); otherwise `healthy` decides, with
+  `nil` = `unknown`. `[]` when nothing matches.
+  """
+  def health_buckets(opts \\ []) do
+    since = Keyword.get(opts, :since)
+    test_type = Keyword.get(opts, :test_type)
+
+    # Compute the day bucket once in a subquery so the outer GROUP BY groups by a
+    # concrete column rather than repeating the `date_trunc` expression.
+    bucketed =
+      from(m in Measurement)
+      |> maybe_filter_test_type(test_type)
+      |> maybe_since(since)
+      |> select([m], %{
+        bucket: type(fragment("date_trunc('day', ?)", m.timestamp), :utc_datetime),
+        healthy: m.healthy,
+        failed: m.failed
+      })
+
+    rows =
+      from(b in subquery(bucketed))
+      |> group_by([b], [b.bucket, b.healthy, b.failed])
+      |> order_by([b], b.bucket)
+      |> select([b], %{bucket: b.bucket, healthy: b.healthy, failed: b.failed, n: count()})
+      |> Repo.all()
+
+    pivot_buckets(rows)
+  end
+
+  @doc """
+  Worst health status of a bucket row from `health_buckets/1`, in priority order
+  `failed > breach > healthy > unknown`. A real bucket always has `total >= 1`,
+  so this never returns `:empty` for queried data — `:empty` is the caller's
+  default for a calendar cell with no bucket. Pure; the only caller is
+  `daily_health/1`, which reduces a day's counts to this one status.
+  """
+  def bucket_status(%{failed: n}) when n > 0, do: :failed
+  def bucket_status(%{breach: n}) when n > 0, do: :breach
+  def bucket_status(%{healthy: n}) when n > 0, do: :healthy
+  def bucket_status(%{unknown: n}) when n > 0, do: :unknown
+  def bucket_status(_), do: :empty
+
+  @doc """
+  Daily health map for the heatmap tiles: `%{Date => status}` over the window,
+  where `status` is the worst health of the day from `bucket_status/1`. `:since`
+  is optional (omit/`nil` for full history — the wall grid uses that); scoped to
+  `test_type: "ookla"` by default. Calendar shaping (weekday/week coordinates)
+  is the view's job — this only answers "what color is this day?" so all three
+  consumers (dashboard, wall grid, embed) share one lookup. A day with no bucket
+  is simply absent from the map; the view treats absence as "no data" cell.
+  """
+  def daily_health(opts \\ []) do
+    since = Keyword.get(opts, :since)
+    test_type = Keyword.get(opts, :test_type, "ookla")
+
+    health_buckets(since: since, test_type: test_type)
+    |> Map.new(fn row ->
+      {DateTime.to_date(row.bucket), bucket_status(row)}
+    end)
+  end
+
+  # `since: nil` means no lower bound — the wall grid fetches full history. A
+  # dedicated clause keeps the unbounded query off the `where` plan entirely.
+  defp maybe_since(query, nil), do: query
+
+  defp maybe_since(query, %DateTime{} = since),
+    do: where(query, [m], m.timestamp > ^since)
+
+  # (bucket, healthy, failed, count) rows → one map per bucket with health-state
+  # counts. `failed` takes precedence over `healthy` (a failed row is healthy: nil).
+  defp pivot_buckets(rows) do
+    rows
+    |> Enum.group_by(& &1.bucket)
+    |> Enum.map(fn {bucket, group} ->
+      counts =
+        Enum.reduce(group, %{healthy: 0, breach: 0, failed: 0, unknown: 0}, fn row, acc ->
+          cond do
+            row.failed -> %{acc | failed: acc.failed + row.n}
+            row.healthy == true -> %{acc | healthy: acc.healthy + row.n}
+            row.healthy == false -> %{acc | breach: acc.breach + row.n}
+            true -> %{acc | unknown: acc.unknown + row.n}
+          end
+        end)
+
+      total = counts.healthy + counts.breach + counts.failed + counts.unknown
+      Map.merge(counts, %{bucket: bucket, total: total})
+    end)
+    |> Enum.sort_by(& &1.bucket, DateTime)
+  end
+
   defp maybe_require_download(query, promised) when promised > 0.0 do
     where(query, [m], m.download_mbps >= ^promised)
   end

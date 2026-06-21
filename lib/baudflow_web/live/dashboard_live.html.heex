@@ -210,9 +210,44 @@
     </section>
   <% end %>
 
-  <%= if @compliance || @next_run do %>
-    <!-- Stat cards: SLA compliance + next scheduled test -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+  <%= if @measurements != [] || @compliance || @next_run do %>
+    <!-- Stat cards: health heatmap + next scheduled test (+ compliance) -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+      <div :if={@measurements != []} id="heatmap-card" class="glass-card">
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="size-2 rounded-full bg-cyan"></span>
+            <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+              Health Heatmap
+            </span>
+            <span class="ml-auto text-[10px] text-text-ghost">
+              this month · UTC days
+            </span>
+          </div>
+          <.heat_tile tile={@heatmap_tile} compact />
+          <div class="mt-2">
+            <.heat_legend compact />
+          </div>
+        </div>
+      </div>
+
+      <div :if={@next_run} id="next-test-card" class="glass-card">
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="size-2 rounded-full bg-cyan"></span>
+            <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
+              Next Scheduled Test
+            </span>
+          </div>
+          <div class="text-text font-semibold">
+            <.local_time id="next-test-time" at={@next_run.at} />
+          </div>
+          <p class="text-xs text-text-ghost mt-1.5">
+            {@next_run.name} schedule · {relative_to_now(@next_run.at)}
+          </p>
+        </div>
+      </div>
+
       <div :if={@compliance} id="compliance-card" class="glass-card">
         <div class="p-4">
           <div class="flex items-center gap-2 mb-2">
@@ -235,23 +270,6 @@
             last {@time_range} · {@compliance.total} {if @compliance.total == 1,
               do: "test",
               else: "tests"}
-          </p>
-        </div>
-      </div>
-
-      <div :if={@next_run} id="next-test-card" class="glass-card">
-        <div class="p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="size-2 rounded-full bg-cyan"></span>
-            <span class="text-xs font-semibold text-text-dim uppercase tracking-wider">
-              Next Scheduled Test
-            </span>
-          </div>
-          <div class="text-text font-semibold">
-            <.local_time id="next-test-time" at={@next_run.at} />
-          </div>
-          <p class="text-xs text-text-ghost mt-1.5">
-            {@next_run.name} schedule · {relative_to_now(@next_run.at)}
           </p>
         </div>
       </div>
