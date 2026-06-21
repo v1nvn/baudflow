@@ -5,6 +5,41 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.0](https://github.com/v1nvn/baudflow/compare/v0.3.1...v0.4.0) (2026-06-21)
+
+
+
+
+### Features:
+
+* update CI workflows and Dockerfile versions by v1nvn
+
+* add heatmap by v1nvn
+
+* implement webhook notification channel and template rendering by v1nvn
+
+* add escalated cron field and adaptive cadence handling by v1nvn
+
+* implement breach notification policy by v1nvn
+
+* implement persisted time-range preference for dashboard by v1nvn
+
+* add chart annotations for thresholds and failures, update measurement handling by v1nvn
+
+* add SLA compliance by v1nvn
+
+* add ping test runner by v1nvn
+
+* multiple schedules by v1nvn
+
+### Bug Fixes:
+
+* bps consistency by v1nvn
+
+* local time rendering for timestamps by v1nvn
+
+* inconsistencies by v1nvn
+
 ## [v0.3.1](https://github.com/v1nvn/baudflow/compare/v0.3.0...v0.3.1) (2026-06-13)
 
 
