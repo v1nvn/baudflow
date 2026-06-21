@@ -69,19 +69,26 @@ defmodule BaudflowWeb.DashboardLive do
   def handle_info({:health, id, _transition}, socket) do
     # HealthWorker evaluated the latest measurement post-result; refetch so the
     # health badge reflects it live (the v1 badge was stale until reload).
-    measurement = Measurements.get_measurement!(id)
+    # A :health broadcast can reference a measurement already pruned by
+    # CleanupWorker (or a stray id under test sandbox isolation) — bail rather
+    # than crash the LiveView.
+    case Measurements.get_measurement(id) do
+      nil ->
+        {:noreply, socket}
 
-    socket =
-      if(socket.assigns.latest_measurement && socket.assigns.latest_measurement.id == id,
-        do: assign(socket, :latest_measurement, measurement),
-        else: socket
-      )
+      measurement ->
+        socket =
+          if(socket.assigns.latest_measurement && socket.assigns.latest_measurement.id == id,
+            do: assign(socket, :latest_measurement, measurement),
+            else: socket
+          )
 
-    # The heatmap reflects ookla tests only, so a ping's health eval can't change
-    # a cell — skip the month recompute for non-ookla measurements.
-    socket = if measurement.test_type == "ookla", do: assign_heatmap(socket), else: socket
+        # The heatmap reflects ookla tests only, so a ping's health eval can't change
+        # a cell — skip the month recompute for non-ookla measurements.
+        socket = if measurement.test_type == "ookla", do: assign_heatmap(socket), else: socket
 
-    {:noreply, socket}
+        {:noreply, socket}
+    end
   end
 
   @impl true

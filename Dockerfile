@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM hexpm/elixir:1.18.2-erlang-27.3-debian-bookworm-20250224-slim AS builder
+FROM hexpm/elixir:1.20-erlang-29.0.1-debian-trixie-20260610-slim AS builder
 
 # nodejs + npm are needed so esbuild can resolve the chart.js / date-fns imports
 # from node_modules. (esbuild itself is a standalone binary, but it bundles FROM
@@ -47,7 +47,7 @@ COPY rel rel
 RUN mix release
 
 # ---- Runtime stage ----
-FROM debian:bookworm-slim AS final
+FROM debian:trixie-slim AS final
 
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libstdc++6 openssl libncurses6 ca-certificates curl \

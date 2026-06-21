@@ -5,7 +5,8 @@
 #   just dev            - local dev server
 #   just docker-up      - build & run in Docker
 #   just docker-rebuild - rebuild after code changes
-#   just precommit      - quality gate before pushing
+#   just check          - full CI gate before pushing (lint + tests)
+#   just precommit      - fast loop gate (not CI-equivalent)
 
 set dotenv-load
 
@@ -76,14 +77,25 @@ db-reset:
 
 # ── Quality ────────────────────────────────────────────────────────────
 
-# Run test suite
-test:
-    mix test
+# Run the test suite (args forwarded: `just test test/foo.exs`, `just test --failed`)
+test *ARGS:
+    mix test {{ARGS}}
 
-# Pre-commit quality gate (compile + format + test)
+# Full CI gate locally: `mix lint` (dev) + tests in a throwaway Postgres
+# (testcontainers, MIX_ENV=test) — the two steps ci.yml runs. Run before pushing.
+check:
+    mix lint
+    MIX_ENV=test mix testcontainers.run --database postgres test
+
+# Fast loop gate (compile warnings, deps.unlock --unused, format, test). NOT CI-equivalent:
+# it skips the static gate (format-check, credo, sobelow, dialyzer) — pair with `just lint`.
 precommit: (db-up)
     mix precommit
 
-# Full lint (format, audit, credo, sobelow, dialyzer)
+# No-DB static gate (format-check, deps.audit, warnings-as-errors, credo --strict, sobelow, dialyzer)
 lint:
     mix lint
+
+# Apply the formatter (writes) — fixer for `just lint`'s format-check. `just format` (all) or `just format path.ex`.
+format *ARGS:
+    mix format {{ARGS}}

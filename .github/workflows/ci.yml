@@ -4,12 +4,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.18.2"
-          otp-version: "27.3"
-      - uses: actions/cache@v4
+          elixir-version: "1.20.1"
+          otp-version: "29.0.1"
+      - uses: actions/cache@v5
         with:
           path: |
             deps

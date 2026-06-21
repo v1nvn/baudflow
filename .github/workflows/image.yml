@@ -8,7 +8,7 @@ on:
 # creates the tag after CI passes on main.
 jobs:
   build:
-    uses: docker/github-builder/.github/workflows/build.yml@v1.10.0
+    uses: docker/github-builder/.github/workflows/build.yml@v1.12.0
     permissions:
       contents: read
       id-token: write

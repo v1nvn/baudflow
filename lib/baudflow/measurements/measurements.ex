@@ -37,6 +37,11 @@ defmodule Baudflow.Measurements do
     Repo.get!(Measurement, id)
   end
 
+  @doc "Get a measurement by ID, returns nil if not found."
+  def get_measurement(id) do
+    Repo.get(Measurement, id)
+  end
+
   @doc "List recent measurements, newest first, limited to `limit`."
   def list_recent(opts \\ []) do
     limit = Keyword.get(opts, :limit, 20)
@@ -273,20 +278,22 @@ defmodule Baudflow.Measurements do
     rows
     |> Enum.group_by(& &1.bucket)
     |> Enum.map(fn {bucket, group} ->
-      counts =
-        Enum.reduce(group, %{healthy: 0, breach: 0, failed: 0, unknown: 0}, fn row, acc ->
-          cond do
-            row.failed -> %{acc | failed: acc.failed + row.n}
-            row.healthy == true -> %{acc | healthy: acc.healthy + row.n}
-            row.healthy == false -> %{acc | breach: acc.breach + row.n}
-            true -> %{acc | unknown: acc.unknown + row.n}
-          end
-        end)
-
+      counts = count_states(group)
       total = counts.healthy + counts.breach + counts.failed + counts.unknown
       Map.merge(counts, %{bucket: bucket, total: total})
     end)
     |> Enum.sort_by(& &1.bucket, DateTime)
+  end
+
+  defp count_states(group) do
+    Enum.reduce(group, %{healthy: 0, breach: 0, failed: 0, unknown: 0}, fn row, acc ->
+      cond do
+        row.failed -> %{acc | failed: acc.failed + row.n}
+        row.healthy == true -> %{acc | healthy: acc.healthy + row.n}
+        row.healthy == false -> %{acc | breach: acc.breach + row.n}
+        true -> %{acc | unknown: acc.unknown + row.n}
+      end
+    end)
   end
 
   defp maybe_require_download(query, promised) when promised > 0.0 do
