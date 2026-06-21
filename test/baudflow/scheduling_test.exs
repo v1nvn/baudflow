@@ -20,6 +20,29 @@ defmodule Baudflow.SchedulingTest do
       assert {:error, changeset} = Scheduling.create(%{name: "Bad", cron: "not a cron"})
       assert "is not a valid cron expression" in errors_on(changeset).cron
     end
+
+    test "accepts a valid escalated cron and normalizes blank to nil" do
+      assert {:ok, schedule} =
+               Scheduling.create(%{
+                 name: "Hourly",
+                 cron: "0 * * * *",
+                 escalated_cron: "*/5 * * * *"
+               })
+
+      assert schedule.escalated_cron == "*/5 * * * *"
+
+      assert {:ok, cleared} =
+               Scheduling.create(%{name: "Other", cron: "0 * * * *", escalated_cron: ""})
+
+      assert cleared.escalated_cron == nil
+    end
+
+    test "rejects an unparseable escalated cron without raising" do
+      assert {:error, changeset} =
+               Scheduling.create(%{name: "Bad", cron: "0 * * * *", escalated_cron: "nope"})
+
+      assert "is not a valid cron expression" in errors_on(changeset).escalated_cron
+    end
   end
 
   describe "delete/1" do
@@ -204,6 +227,70 @@ defmodule Baudflow.SchedulingTest do
 
     test "returns nil when no enabled schedules exist" do
       assert nil == Scheduling.next_run()
+    end
+  end
+
+  describe "adaptive cadence (#13)" do
+    test "active_cron/1 returns the base cron when not escalated" do
+      {:ok, schedule} =
+        Scheduling.create(%{name: "S", cron: "0 * * * *", escalated_cron: "* * * * *"})
+
+      # escalation_level defaults to 0 → base cadence, even with an escalated cron set.
+      assert Scheduling.active_cron(schedule) == "0 * * * *"
+    end
+
+    test "active_cron/1 returns the escalated cron when escalated" do
+      {:ok, schedule} =
+        Scheduling.create(%{name: "S", cron: "0 * * * *", escalated_cron: "*/2 * * * *"})
+
+      {:ok, 1} = Scheduling.escalate(schedule)
+      escalated = Scheduling.get_schedule!(schedule.id)
+
+      assert Scheduling.active_cron(escalated) == "*/2 * * * *"
+    end
+
+    test "active_cron/1 falls back to the base cron when escalated but no escalated cron is set" do
+      {:ok, schedule} = Scheduling.create(%{name: "S", cron: "0 * * * *"})
+      {:ok, 1} = Scheduling.escalate(schedule)
+      escalated = Scheduling.get_schedule!(schedule.id)
+
+      # escalation_level is maintained but inert without a configured speedup.
+      assert Scheduling.active_cron(escalated) == "0 * * * *"
+    end
+
+    test "due_now/0 fires on the escalated cron while a schedule is escalated" do
+      # base cron deliberately does NOT match the current minute.
+      distinct_minute = rem(DateTime.utc_now().minute + 5, 60)
+
+      {:ok, schedule} =
+        Scheduling.create(%{
+          name: "Escalatable",
+          cron: "#{distinct_minute} * * * *",
+          escalated_cron: "* * * * *",
+          enabled: true
+        })
+
+      refute "Escalatable" in Enum.map(Scheduling.due_now(), & &1.name)
+
+      {:ok, 1} = Scheduling.escalate(schedule)
+
+      # Escalated to minutely → now due even though the base (hourly) cron isn't.
+      assert "Escalatable" in Enum.map(Scheduling.due_now(), & &1.name)
+    end
+
+    test "next_run_at/1 reflects the escalated cadence while escalated" do
+      {:ok, schedule} =
+        Scheduling.create(%{name: "S", cron: "0 * * * *", escalated_cron: "* * * * *"})
+
+      {:ok, 1} = Scheduling.escalate(schedule)
+      escalated = Scheduling.get_schedule!(schedule.id)
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      next = Scheduling.next_run_at(escalated)
+
+      # Minutely cadence fires within the coming minute, not up to an hour out.
+      assert DateTime.compare(next, now) == :gt
+      assert DateTime.diff(next, now, :second) <= 60
     end
   end
 

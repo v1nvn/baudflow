@@ -47,7 +47,7 @@
           <tr :for={schedule <- @schedules} id={"schedule-row-#{schedule.id}"}>
             <td class="px-4 py-3 font-medium text-text">{schedule.name}</td>
             <td class="px-4 py-3 font-mono text-xs text-text-dim whitespace-nowrap">
-              {schedule.cron}
+              {Scheduling.active_cron(schedule)}
             </td>
             <td class="px-4 py-3 text-text-dim">{schedule.server_id || "auto"}</td>
             <td class="px-4 py-3 text-text-dim">{if schedule.enabled, do: "✓", else: "—"}</td>
@@ -104,6 +104,13 @@
             label="Cron (5 fields)"
             class="bf-input"
             placeholder="0 * * * *"
+          />
+          <.input
+            field={f[:escalated_cron]}
+            type="text"
+            label="Escalated cron (blank = none)"
+            class="bf-input"
+            placeholder="blank = no adaptive speedup"
           />
           <.input
             field={f[:test_type]}

@@ -18,6 +18,7 @@ defmodule Baudflow.Scheduling.Schedule do
   schema "schedules" do
     field :name, :string
     field :cron, :string
+    field :escalated_cron, :string
     field :server_id, :integer
     field :target_host, :string
     field :test_type, :string, default: "ookla"
@@ -34,15 +35,22 @@ defmodule Baudflow.Scheduling.Schedule do
 
   @type t :: %__MODULE__{}
 
-  @fields ~w(name cron server_id target_host test_type enabled escalation_level breach_streak
-             threshold_enabled download upload ping)a
+  @fields ~w(name cron escalated_cron server_id target_host test_type enabled escalation_level
+             breach_streak threshold_enabled download upload ping)a
 
   @doc "The only construction path for a schedule."
   def changeset(schedule, attrs) do
     schedule
     |> cast(attrs, @fields)
+    # A blank escalated_cron is "no adaptive speedup" — store nil so the single
+    # reader (`Scheduling.active_cron/1`) treats unset as one value, not two.
+    |> update_change(:escalated_cron, fn
+      "" -> nil
+      value -> value
+    end)
     |> validate_required([:name, :cron])
     |> validate_cron(:cron)
+    |> validate_cron(:escalated_cron)
   end
 
   @doc """

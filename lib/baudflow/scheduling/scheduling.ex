@@ -84,7 +84,9 @@ defmodule Baudflow.Scheduling do
     |> Enum.filter(&matches_now?(&1, now))
   end
 
-  defp matches_now?(%Schedule{id: id, name: name, cron: cron}, now) do
+  defp matches_now?(%Schedule{id: id, name: name} = schedule, now) do
+    cron = active_cron(schedule)
+
     case Schedule.parse_cron(cron) do
       {:ok, expression} ->
         DateChecker.matches_date?(expression, now)
@@ -104,8 +106,8 @@ defmodule Baudflow.Scheduling do
   unparseable or fires less often than once a week.
   """
   @spec next_run_at(Schedule.t()) :: DateTime.t() | nil
-  def next_run_at(%Schedule{cron: cron}) do
-    case Schedule.parse_cron(cron) do
+  def next_run_at(%Schedule{} = schedule) do
+    case Schedule.parse_cron(active_cron(schedule)) do
       {:ok, expression} ->
         base = now_truncated_to_minute() |> DateTime.add(60, :second)
         find_next(expression, base, 0)
@@ -150,6 +152,26 @@ defmodule Baudflow.Scheduling do
       {name, at} -> %{name: name, at: at}
     end
   end
+
+  # --- Active cadence (single reader) -----------------------------------------
+
+  @doc """
+  The cron expression in effect right now: the `escalated_cron` when the schedule
+  is escalated (`escalation_level > 0`) and one is configured, else the base
+  `cron`. The single reader for "which cadence runs now" — `due_now/0`,
+  `next_run_at/1` (and so the dashboard "next test" card + the schedules table)
+  all read it, so adaptive testing (#13) is a switch here, not a parallel path.
+
+  `escalation_level` is maintained by `Health` regardless; without an
+  `escalated_cron` the level is inert (falls back to the base cron).
+  """
+  @spec active_cron(Schedule.t()) :: String.t()
+  def active_cron(%Schedule{escalation_level: level, escalated_cron: escalated})
+      when level > 0 and is_binary(escalated) and escalated != "" do
+    escalated
+  end
+
+  def active_cron(%Schedule{cron: cron}), do: cron
 
   # --- Escalation state (atomic) ----------------------------------------------
 

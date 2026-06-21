@@ -21,6 +21,22 @@ defmodule BaudflowWeb.SchedulesLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/schedules")
       assert html =~ "No schedules yet"
     end
+
+    test "shows the active (escalated) cron in the table while a schedule is escalated",
+         %{conn: conn} do
+      {:ok, schedule} =
+        Scheduling.create(%{name: "Hourly", cron: "0 * * * *", escalated_cron: "* * * * *"})
+
+      # Not escalated → the base cron is what's shown and fired.
+      {:ok, _lv, base_html} = live(conn, ~p"/schedules")
+      assert base_html =~ "0 * * * *"
+
+      {:ok, 1} = Scheduling.escalate(schedule)
+
+      {:ok, _lv, escalated_html} = live(conn, ~p"/schedules")
+      # Escalated → the cadence column reflects the escalated cron, not the base.
+      assert escalated_html =~ "* * * * *"
+    end
   end
 
   describe "new" do
@@ -32,6 +48,7 @@ defmodule BaudflowWeb.SchedulesLiveTest do
       assert has_element?(lv, "#schedule-form")
       assert has_element?(lv, "select[name='schedule[threshold_policy]']")
       assert has_element?(lv, "select[name='schedule[test_type]']")
+      assert has_element?(lv, "input[name='schedule[escalated_cron]']")
     end
 
     test "creates a ping schedule with a per-schedule target host", %{conn: conn} do
@@ -75,6 +92,20 @@ defmodule BaudflowWeb.SchedulesLiveTest do
       html = render(lv)
       assert html =~ "is not a valid cron expression"
       assert html =~ "Could not save"
+    end
+
+    test "persists an escalated cron and normalizes blank to nil", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/schedules/new")
+
+      lv
+      |> element("#schedule-form")
+      |> render_submit(%{
+        schedule: %{name: "Hourly", cron: "0 * * * *", escalated_cron: "*/5 * * * *"}
+      })
+
+      assert_patch(lv, ~p"/schedules")
+      assert [%{escalated_cron: "*/5 * * * *"}] = Scheduling.list_schedules()
+      assert render(lv) =~ "Schedule created"
     end
   end
 
