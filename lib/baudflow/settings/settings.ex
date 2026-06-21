@@ -18,7 +18,10 @@ defmodule Baudflow.Settings do
     "threshold_ping" => "0",
     "ping_target" => "1.1.1.1",
     "promised_download_mbps" => "0",
-    "promised_upload_mbps" => "0"
+    "promised_upload_mbps" => "0",
+    # #21: consecutive breaches before a breach alert fires. 1 = notify on the
+    # first breach (the step-0 behavior).
+    "breach_notify_streak" => "1"
   }
 
   @doc "Get a single setting value by key. Falls back to defaults if not stored."

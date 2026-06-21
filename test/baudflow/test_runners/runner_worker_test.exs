@@ -96,6 +96,9 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
 
         assert run != nil
         assert run.status == "failure"
+
+        # A failed test routes through HealthWorker → :failed notification (#23).
+        assert_enqueued(worker: Baudflow.Health.HealthWorker)
       after
         Application.put_env(:baudflow, :speedtest_bin, original_bin)
         File.rm(failing_bin)
@@ -138,6 +141,9 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
         assert run != nil
         assert run.status == "timeout"
         assert run.error =~ "timed out"
+
+        # A timeout routes through HealthWorker → :failed notification (#23).
+        assert_enqueued(worker: Baudflow.Health.HealthWorker)
       after
         Application.put_env(:baudflow, :speedtest_bin, original_bin)
         File.rm(timeout_bin)
@@ -210,6 +216,9 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
 
         assert run != nil
         assert run.status == "failure"
+
+        # A ping failure routes through HealthWorker → :failed notification (#23).
+        assert_enqueued(worker: Baudflow.Health.HealthWorker)
       after
         Application.put_env(:baudflow, :ping_bin, original_bin)
         File.rm(failing_bin)

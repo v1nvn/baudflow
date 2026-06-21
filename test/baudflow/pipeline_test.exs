@@ -79,6 +79,8 @@ defmodule Baudflow.PipelineTest do
     # 5. Notification fires on the breach event.
     [notif_job] = all_enqueued(worker: NotificationWorker)
     assert notif_job.args["kind"] == "breach"
+    # The streak is snapshotted into the event args (default threshold 1 → fires).
+    assert notif_job.args["streak"] == 1
     assert :ok = perform_job(NotificationWorker, notif_job.args)
   end
 end

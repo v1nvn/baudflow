@@ -207,6 +207,28 @@
           </div>
         </div>
       </div>
+      
+<!-- Alerts -->
+      <div class="glass-card">
+        <div class="p-4">
+          <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider mb-3">
+            <.icon name="hero-bell-alert-mini" class="size-4" /> Alerts
+          </h2>
+          <p class="text-xs text-text-ghost mb-3">
+            Control when a breach alert fires. Recovery and test-failure alerts are always on.
+          </p>
+          <.input
+            field={@form[:breach_notify_streak]}
+            type="number"
+            id="breach-notify-streak-input"
+            label="Consecutive breaches before alert"
+            class="bf-input"
+            min="1"
+            step="1"
+            placeholder="1 = first breach"
+          />
+        </div>
+      </div>
     </div>
 
     <div class="flex justify-end pt-4 border-t border-border">

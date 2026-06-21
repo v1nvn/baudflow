@@ -142,7 +142,9 @@ defmodule Baudflow.TestRunners.RunnerWorker do
 
   # A failed test is still a timeline event: stamp a failed Measurement (nil
   # speeds, failed: true) and broadcast it as a result so the chart gets an
-  # outage marker and the hero reflects the failure. The Run keeps the reason.
+  # outage marker and the hero reflects the failure. Enqueue HealthWorker too —
+  # it short-circuits a failed measurement into a :failed notification (#23),
+  # keeping Event construction inside Health. The Run keeps the reason.
   defp record_failure(started_at, args) do
     attrs = %{
       timestamp: started_at,
@@ -152,8 +154,12 @@ defmodule Baudflow.TestRunners.RunnerWorker do
     }
 
     case Measurements.record_failure(attrs) do
-      {:ok, measurement} -> broadcast_result(measurement)
-      {:error, _changeset} -> :ok
+      {:ok, measurement} ->
+        broadcast_result(measurement)
+        enqueue_downstream(measurement.id)
+
+      {:error, _changeset} ->
+        :ok
     end
   end
 

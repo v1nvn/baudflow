@@ -47,6 +47,14 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert has_element?(lv, "input[name='settings[promised_upload_mbps]']")
       assert html =~ "Promised"
     end
+
+    test "renders the consecutive-breach alert field (#21)", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/settings")
+
+      assert has_element?(lv, "#breach-notify-streak-input")
+      assert has_element?(lv, "input[name='settings[breach_notify_streak]']")
+      assert html =~ "Consecutive"
+    end
   end
 
   describe "save" do
@@ -66,7 +74,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "threshold_upload" => "10",
           "threshold_ping" => "50",
           "promised_download_mbps" => "500",
-          "promised_upload_mbps" => "100"
+          "promised_upload_mbps" => "100",
+          "breach_notify_streak" => "3"
         }
       })
 
@@ -80,6 +89,7 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert Settings.get("threshold_ping") == "50"
       assert Settings.get("promised_download_mbps") == "500"
       assert Settings.get("promised_upload_mbps") == "100"
+      assert Settings.get("breach_notify_streak") == "3"
     end
 
     test "sets flash after saving", %{conn: conn} do

@@ -6,10 +6,14 @@ defmodule Baudflow.Notifications.Event do
   in `Baudflow.Health` (the single state owner) — every other module reads
   events, never builds them. The companion credo rule (batch 4) enforces that
   once webhooks arrive.
+
+  `streak` is the breach streak snapshotted at construction (a `:breach` event
+  carries the value just written, so the policy can gate on it without rereading
+  the schedule row across the async Oban boundary). nil for non-breach events.
   """
 
   @enforce_keys [:kind, :measurement_id]
-  defstruct [:kind, :measurement_id, :schedule_id]
+  defstruct [:kind, :measurement_id, :schedule_id, :streak]
 
   @kinds [:healthy, :breach, :recovered, :failed]
   @string_to_kind Enum.into(@kinds, %{}, fn k -> {Atom.to_string(k), k} end)
@@ -18,7 +22,8 @@ defmodule Baudflow.Notifications.Event do
   @type t :: %__MODULE__{
           kind: kind(),
           measurement_id: integer(),
-          schedule_id: integer() | nil
+          schedule_id: integer() | nil,
+          streak: integer() | nil
         }
 
   @doc "The closed set of valid event kinds."
@@ -36,7 +41,8 @@ defmodule Baudflow.Notifications.Event do
     %__MODULE__{
       kind: Map.fetch!(@string_to_kind, kind),
       measurement_id: id,
-      schedule_id: args["schedule_id"]
+      schedule_id: args["schedule_id"],
+      streak: args["streak"]
     }
   end
 end

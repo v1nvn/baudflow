@@ -184,24 +184,34 @@ defmodule Baudflow.Scheduling do
     {:ok, count}
   end
 
-  @doc "Atomically increment the breach streak."
-  @spec increment_breach_streak(Schedule.t()) :: {:ok, non_neg_integer()}
+  @doc """
+  Atomically increment the breach streak; returns `{:ok, new_streak}` — the value
+  just written, so HealthWorker can snapshot it into the breach event. The read
+  back is authoritative (a schedule has a single writer per cron tick, so there is
+  no concurrent inc to race the second read). `nil` if the row was concurrently
+  deleted (no caller acts on a missing schedule).
+  """
+  @spec increment_breach_streak(Schedule.t()) :: {:ok, integer() | nil}
   def increment_breach_streak(%Schedule{id: id}) do
-    {count, _} =
-      from(s in Schedule, where: s.id == ^id)
-      |> Repo.update_all(inc: [breach_streak: 1])
-
-    {:ok, count}
+    {_, _} = from(s in Schedule, where: s.id == ^id) |> Repo.update_all(inc: [breach_streak: 1])
+    {:ok, streak_of(id)}
   end
 
-  @doc "Atomically reset the breach streak to zero."
-  @spec reset_streak(Schedule.t()) :: {:ok, non_neg_integer()}
+  @doc """
+  Atomically reset the breach streak to zero; returns `{:ok, 0}` — the value it
+  set (a reset always writes zero).
+  """
+  @spec reset_streak(Schedule.t()) :: {:ok, 0}
   def reset_streak(%Schedule{id: id}) do
-    {count, _} =
-      from(s in Schedule, where: s.id == ^id)
-      |> Repo.update_all(set: [breach_streak: 0])
+    {_, _} = from(s in Schedule, where: s.id == ^id) |> Repo.update_all(set: [breach_streak: 0])
+    {:ok, 0}
+  end
 
-    {:ok, count}
+  defp streak_of(id) do
+    case Repo.get(Schedule, id) do
+      %Schedule{breach_streak: streak} -> streak
+      nil -> nil
+    end
   end
 
   # --- Thresholds (single reader) ---------------------------------------------

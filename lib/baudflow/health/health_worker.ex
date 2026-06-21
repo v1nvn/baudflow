@@ -19,10 +19,6 @@ defmodule Baudflow.Health.HealthWorker do
   alias Baudflow.Notifications.{Event, NotificationWorker}
   alias Baudflow.Scheduling
 
-  # Transitions that carry enough meaning to reach the notification policy.
-  # `:healthy` and still-breaching (nil) never enqueue.
-  @notifiable_transitions [:breach, :recovered, :failed]
-
   @impl true
   def perform(%Oban.Job{args: %{"measurement_id" => id}}) do
     measurement = Measurements.get_measurement!(id)
@@ -39,14 +35,27 @@ defmodule Baudflow.Health.HealthWorker do
   end
 
   defp evaluate_and_mutate(measurement, schedule) do
+    if measurement.failed do
+      # A failed test carries no values to threshold — it's its own signal. Emit
+      # a :failed event without evaluating thresholds, mutating streak/escalation
+      # (a CLI failure is neither a confirmed breach nor a recovery), or
+      # broadcasting :health (the runner already broadcast {:result, _} for the
+      # UI). This keeps Event construction inside Health.
+      emit_event(:failed, measurement, schedule, nil)
+    else
+      evaluate_thresholds(measurement, schedule)
+    end
+  end
+
+  defp evaluate_thresholds(measurement, schedule) do
     prior_streak = schedule.breach_streak
     {healthy, benchmarks, transition} = Health.evaluate(measurement, schedule)
 
     case Measurements.update_health(measurement, healthy, benchmarks) do
       {:ok, _updated} ->
-        mutate_streak(schedule, healthy, prior_streak)
+        new_streak = mutate_streak(schedule, healthy, prior_streak)
         escalate_on(transition, schedule)
-        notify_on(transition, measurement, schedule)
+        maybe_emit(healthy, transition, measurement, schedule, new_streak)
         broadcast_health(measurement.id, transition)
 
       {:error, changeset} ->
@@ -56,17 +65,20 @@ defmodule Baudflow.Health.HealthWorker do
     end
   end
 
-  # Streak counts consecutive breaches: bump on every unhealthy, reset on the
-  # first healthy after a breach run. Atomic via the Scheduling mutators.
+  # Streak counts consecutive breaches: bump on every unhealthy (returning the
+  # new streak so it can be snapshotted into the event), reset on the first
+  # healthy after a breach run. Atomic via the Scheduling mutators.
   defp mutate_streak(schedule, false, _prior) do
-    {:ok, _} = Scheduling.increment_breach_streak(schedule)
+    {:ok, new_streak} = Scheduling.increment_breach_streak(schedule)
+    new_streak
   end
 
   defp mutate_streak(schedule, true, prior) when prior > 0 do
     {:ok, _} = Scheduling.reset_streak(schedule)
+    0
   end
 
-  defp mutate_streak(_schedule, _healthy, _prior), do: :ok
+  defp mutate_streak(_schedule, _healthy, _prior), do: nil
 
   # Escalation level bumps on the breach transition, drops on recovery. Its
   # frequency effect (`escalated_cron`) is wired in #13; step 0 only maintains it.
@@ -80,19 +92,41 @@ defmodule Baudflow.Health.HealthWorker do
 
   defp escalate_on(_transition, _schedule), do: :ok
 
-  defp notify_on(transition, measurement, schedule) when transition in @notifiable_transitions do
-    %Event{kind: transition, measurement_id: measurement.id, schedule_id: schedule.id}
+  # A breach event fires on EVERY unhealthy result (carrying the streak just
+  # written) so the notification policy can gate on the climbing streak (#21);
+  # recovery fires once on the :recovered transition (#22). :healthy, the
+  # thresholds-off nil, and the steady-healthy case emit nothing.
+  defp maybe_emit(false, _transition, measurement, schedule, streak) do
+    emit_event(:breach, measurement, schedule, streak)
+  end
+
+  defp maybe_emit(true, :recovered, measurement, schedule, _streak) do
+    emit_event(:recovered, measurement, schedule, nil)
+  end
+
+  defp maybe_emit(_healthy, _transition, _measurement, _schedule, _streak), do: :ok
+
+  defp emit_event(kind, measurement, schedule, streak) do
+    %Event{kind: kind, measurement_id: measurement.id, schedule_id: schedule.id, streak: streak}
     |> event_to_args()
     |> NotificationWorker.new()
     |> Oban.insert()
   end
 
-  defp notify_on(_transition, _measurement, _schedule), do: :ok
-
   # Serialize the event to Oban args. Constructed here (the sole Event builder),
   # deserialized via `Event.from_args/1` in the notification worker.
-  defp event_to_args(%Event{kind: kind, measurement_id: measurement_id, schedule_id: schedule_id}) do
-    %{kind: Atom.to_string(kind), measurement_id: measurement_id, schedule_id: schedule_id}
+  defp event_to_args(%Event{
+         kind: kind,
+         measurement_id: measurement_id,
+         schedule_id: schedule_id,
+         streak: streak
+       }) do
+    %{
+      kind: Atom.to_string(kind),
+      measurement_id: measurement_id,
+      schedule_id: schedule_id,
+      streak: streak
+    }
   end
 
   defp broadcast_health(_measurement_id, nil), do: :ok

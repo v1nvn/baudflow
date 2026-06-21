@@ -102,14 +102,18 @@ defmodule Baudflow.SchedulingTest do
   end
 
   describe "increment_breach_streak/1 and reset_streak/1" do
-    test "atomically bumps and clears the streak" do
+    test "atomically bumps and clears the streak, returning the resulting value" do
       {:ok, schedule} = Scheduling.create(%{name: "S", cron: "0 * * * *"})
 
+      # The mutators return the streak value they just wrote (read atomically via
+      # `returning:`), not a row-count — so HealthWorker can snapshot it into the
+      # breach event without a racy second read.
       assert {:ok, 1} = Scheduling.increment_breach_streak(schedule)
-      assert {:ok, 1} = Scheduling.increment_breach_streak(schedule)
-      assert Scheduling.get_schedule!(schedule.id).breach_streak == 2
+      assert {:ok, 2} = Scheduling.increment_breach_streak(schedule)
+      assert {:ok, 3} = Scheduling.increment_breach_streak(schedule)
+      assert Scheduling.get_schedule!(schedule.id).breach_streak == 3
 
-      assert {:ok, 1} = Scheduling.reset_streak(schedule)
+      assert {:ok, 0} = Scheduling.reset_streak(schedule)
       assert Scheduling.get_schedule!(schedule.id).breach_streak == 0
     end
   end

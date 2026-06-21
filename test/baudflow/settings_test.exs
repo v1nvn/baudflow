@@ -29,6 +29,7 @@ defmodule Baudflow.SettingsTest do
       assert all["ping_target"] == "1.1.1.1"
       assert all["promised_download_mbps"] == "0"
       assert all["promised_upload_mbps"] == "0"
+      assert all["breach_notify_streak"] == "1"
     end
 
     test "upserts on repeated calls" do
@@ -67,6 +68,13 @@ defmodule Baudflow.SettingsTest do
     test "returns default when key is not stored" do
       # "retention_days" has a default of "365" in @default_settings
       assert Settings.get_integer("retention_days") == 365
+    end
+
+    test "breach_notify_streak defaults to 1 (the #21 streak threshold)" do
+      # The notification worker reads this via get_integer/2; an unset key still
+      # yields 1 (fire on the first breach) whether from the stored default or
+      # the get_integer fallback.
+      assert Settings.get_integer("breach_notify_streak", 1) == 1
     end
 
     test "returns explicit default for unknown key" do

@@ -7,6 +7,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
 
   alias Baudflow.Measurements
   alias Baudflow.Notifications.NotificationWorker
+  alias Baudflow.Settings
 
   setup do
     Application.put_env(:baudflow, :ntfy_url, "http://ntfy.test")
@@ -59,7 +60,8 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
       assert :ok =
                perform_job(NotificationWorker, %{
                  "kind" => "breach",
-                 "measurement_id" => m.id
+                 "measurement_id" => m.id,
+                 "streak" => 1
                })
     end
 
@@ -71,7 +73,8 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
       assert :ok =
                perform_job(NotificationWorker, %{
                  "kind" => "breach",
-                 "measurement_id" => m.id
+                 "measurement_id" => m.id,
+                 "streak" => 1
                })
     end
 
@@ -83,7 +86,8 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
       assert :ok =
                perform_job(NotificationWorker, %{
                  "kind" => "breach",
-                 "measurement_id" => m.id
+                 "measurement_id" => m.id,
+                 "streak" => 1
                })
 
       assert_received {:ntfy_request, conn}
@@ -93,10 +97,13 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     end
   end
 
-  describe "perform/1 - policy" do
-    # No stub is set here. If policy wrongly fired, Req.Test would raise (no
-    # matching stub), failing the test — a strong assertion of the step-0 policy.
-    test "does not notify on a recovered event (step-0 policy)" do
+  describe "perform/1 - recovery (#22)" do
+    # Recovery notifies now. stub_capture messages self() on the POST so we can
+    # assert it actually fired — Ntfy swallows Req.Test errors, so a bare :ok
+    # never proves anything.
+    test "posts an alert to ntfy" do
+      stub_capture()
+
       m = insert_measurement!(%{healthy: true})
 
       assert :ok =
@@ -104,9 +111,38 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
                  "kind" => "recovered",
                  "measurement_id" => m.id
                })
+
+      assert_received {:ntfy_request, conn}
+      body = Req.Test.raw_body(conn)
+      assert body =~ "recover"
     end
+  end
+
+  describe "perform/1 - failure (#23)" do
+    test "posts an alert to ntfy" do
+      stub_capture()
+
+      m = insert_measurement!(%{healthy: nil, failed: true})
+
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "failed",
+                 "measurement_id" => m.id
+               })
+
+      assert_received {:ntfy_request, conn}
+      body = Req.Test.raw_body(conn)
+      assert body =~ "fail"
+    end
+  end
+
+  describe "perform/1 - policy" do
+    # No notify means no POST — stub_capture messages self() only on a real POST,
+    # so refute_received is a reliable assertion (Ntfy swallows Req.Test errors,
+    # so an unstubbed wrongful POST would NOT raise — we can't rely on that).
 
     test "does not notify on a healthy event" do
+      stub_capture()
       m = insert_measurement!(%{healthy: true})
 
       assert :ok =
@@ -114,6 +150,45 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
                  "kind" => "healthy",
                  "measurement_id" => m.id
                })
+
+      refute_received {:ntfy_request, _}
+    end
+
+    test "respects the consecutive-breach streak threshold (#21)" do
+      Settings.update_all(%{"breach_notify_streak" => "3"})
+
+      stub_capture()
+      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+
+      # streak 1 < threshold 3 → no notify.
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id,
+                 "streak" => 1
+               })
+
+      refute_received {:ntfy_request, _}
+
+      # streak 3 == threshold → notify.
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id,
+                 "streak" => 3
+               })
+
+      assert_received {:ntfy_request, _}
+
+      # streak 4 > threshold → no re-notify (reduce alert fatigue).
+      assert :ok =
+               perform_job(NotificationWorker, %{
+                 "kind" => "breach",
+                 "measurement_id" => m.id,
+                 "streak" => 4
+               })
+
+      refute_received {:ntfy_request, _}
     end
   end
 
