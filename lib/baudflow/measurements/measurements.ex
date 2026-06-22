@@ -6,6 +6,11 @@ defmodule Baudflow.Measurements do
   alias Baudflow.Measurements.Measurement
   alias Baudflow.Repo
 
+  # Window for the /metrics uptime gauge (healthy share). Matches the dashboard's
+  # max range. A module attr, not a setting — promote to Settings only if it
+  # becomes user-facing.
+  @uptime_window_days 30
+
   @doc "Create a measurement from a parsed test-result attributes map."
   def create_measurement(attrs) do
     Measurement.from_result(attrs)
@@ -263,6 +268,49 @@ defmodule Baudflow.Measurements do
     |> Map.new(fn row ->
       {DateTime.to_date(row.bucket), bucket_status(row)}
     end)
+  end
+
+  @doc """
+  Snapshot for the Prometheus `/metrics` endpoint: the latest Ookla measurement,
+  the total retained count, and the healthy share over the uptime window. The
+  single source — the metrics controller formats this map and queries nothing
+  else.
+
+  `latest` is `nil` only on a fresh install with no Ookla tests. `uptime` is
+  `%{healthy, total, percent}`, where `percent` is `nil` when the window has no
+  tests (distinct from `0.0`). The window defaults to 30 days (`days:` to
+  override). Uptime is computed over **all** test types in the window via the
+  existing `health_buckets/1` aggregation (one query, one place).
+  """
+  def metrics(opts \\ []) do
+    %{
+      latest: latest_ookla(),
+      total: count(),
+      uptime: uptime(opts)
+    }
+  end
+
+  defp latest_ookla do
+    from(m in Measurement,
+      where: m.test_type == "ookla",
+      order_by: [desc: m.timestamp],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp uptime(opts) do
+    days = Keyword.get(opts, :days, @uptime_window_days)
+    since = DateTime.add(DateTime.utc_now(), -days * 24 * 3600, :second)
+
+    # Reuse the existing per-day health aggregation (all test types, windowed),
+    # then reduce to window totals — no second health-aggregation query path.
+    buckets = health_buckets(since: since)
+    total = Enum.reduce(buckets, 0, fn b, acc -> acc + b.total end)
+    healthy = Enum.reduce(buckets, 0, fn b, acc -> acc + b.healthy end)
+    percent = if total == 0, do: nil, else: Float.round(healthy / total * 100, 1)
+
+    %{healthy: healthy, total: total, percent: percent}
   end
 
   # `since: nil` means no lower bound — the wall grid fetches full history. A

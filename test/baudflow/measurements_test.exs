@@ -426,6 +426,75 @@ defmodule Baudflow.MeasurementsTest do
     end
   end
 
+  describe "metrics/1" do
+    test "returns nil latest and a 0-count snapshot on an empty store" do
+      assert %{latest: nil, total: 0, uptime: %{percent: nil, total: 0, healthy: 0}} =
+               Measurements.metrics()
+    end
+
+    test "latest is the most recent Ookla measurement, ignoring pings" do
+      seed(timestamp: days_ago(2), download_mbps: 100.0, result_id: "m-old")
+
+      newest =
+        seed(timestamp: days_ago(1), download_mbps: 421.5, result_id: "m-new")
+
+      # A ping an hour newer than the latest speed test must not become latest.
+      {:ok, _ping} =
+        Measurements.create_measurement(%{
+          timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
+          ping_latency: 5.0,
+          test_type: "ping",
+          result_id: "m-ping"
+        })
+
+      %{latest: latest, total: 3} = Measurements.metrics()
+      assert latest.id == newest.id
+      assert latest.download_mbps == 421.5
+    end
+
+    test "total counts every retained measurement (all test types)" do
+      seed(download_mbps: 100.0, result_id: "m-1")
+
+      {:ok, _ping} =
+        Measurements.create_measurement(%{
+          timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
+          ping_latency: 5.0,
+          test_type: "ping",
+          result_id: "m-ping"
+        })
+
+      assert %{total: 2} = Measurements.metrics()
+    end
+
+    test "uptime is the healthy share over the window, excluding older tests" do
+      seed_health(days_ago(1), true)
+      seed_health(days_ago(1), true)
+      seed_health(days_ago(1), false)
+      # Outside the 30-day default window — must not count.
+      seed_health(days_ago(35), true)
+
+      %{uptime: uptime} = Measurements.metrics()
+      assert uptime.healthy == 2
+      assert uptime.total == 3
+      assert uptime.percent == 66.7
+    end
+
+    test "uptime percent is nil when the window has no tests" do
+      seed_health(days_ago(35), true)
+
+      assert %{uptime: %{percent: nil, total: 0}} = Measurements.metrics()
+    end
+
+    test "a failed test lowers uptime (it counts as non-healthy)" do
+      seed_health(days_ago(1), true)
+      Measurements.record_failure(%{timestamp: days_ago(1), test_type: "ookla"})
+
+      %{uptime: uptime} = Measurements.metrics()
+      assert uptime.healthy == 1
+      assert uptime.total == 2
+    end
+  end
+
   # --- Migration sanity checks ---
 
   describe "migration indexes" do
