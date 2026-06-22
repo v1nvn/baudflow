@@ -20,7 +20,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
     test "renders threshold fields", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/settings")
 
-      assert has_element?(lv, "input[name='settings[threshold_enabled]']")
+      assert has_element?(lv, "select[name='settings[threshold_mode]']")
+      assert has_element?(lv, "input[name='settings[threshold_ratio]']")
       assert has_element?(lv, "input[name='settings[threshold_download]']")
       assert has_element?(lv, "input[name='settings[threshold_upload]']")
       assert has_element?(lv, "input[name='settings[threshold_ping]']")
@@ -79,7 +80,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "blocked_servers" => "54321",
           "retention_days" => "180",
           "dashboard_points" => "200",
-          "threshold_enabled" => "true",
+          "threshold_mode" => "absolute",
+          "threshold_ratio" => "0.8",
           "threshold_download" => "25",
           "threshold_upload" => "10",
           "threshold_ping" => "50",
@@ -95,7 +97,8 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert Settings.get("blocked_servers") == "54321"
       assert Settings.get("retention_days") == "180"
       assert Settings.get("dashboard_points") == "200"
-      assert Settings.get("threshold_enabled") == "true"
+      assert Settings.get("threshold_mode") == "absolute"
+      assert Settings.get("threshold_ratio") == "0.8"
       assert Settings.get("threshold_download") == "25"
       assert Settings.get("threshold_upload") == "10"
       assert Settings.get("threshold_ping") == "50"
@@ -127,7 +130,7 @@ defmodule BaudflowWeb.SettingsLiveTest do
           "blocked_servers" => "11111",
           "retention_days" => "90",
           "dashboard_points" => "100",
-          "threshold_enabled" => "false"
+          "threshold_mode" => "off"
         }
       })
 

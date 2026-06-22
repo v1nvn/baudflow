@@ -5,6 +5,14 @@ defmodule Baudflow.MeasurementsTest do
   alias Baudflow.Measurements.Measurement
   alias Ecto.Adapters.SQL
 
+  # Health verdicts are derived JIT, never stamped. Seed deterministic absolute
+  # thresholds so seed_health/2 maps to known verdicts (download >= 50 healthy,
+  # < 50 breach, nil → unknown) without touching a stored column.
+  setup do
+    Baudflow.Settings.update_all(%{"threshold_mode" => "absolute", "threshold_download" => "50"})
+    :ok
+  end
+
   describe "from_result/1" do
     test "computes mbps from bandwidth using factor 0.000008" do
       attrs = %{
@@ -96,30 +104,21 @@ defmodule Baudflow.MeasurementsTest do
     end
   end
 
-  describe "update_health/3" do
-    test "updates healthy and benchmarks and returns {:ok, measurement}" do
+  describe "update_benchmarks/2" do
+    test "persists the benchmarks snapshot and returns {:ok, measurement}" do
       {:ok, m} = Measurements.create_measurement(valid_attrs())
 
       assert {:ok, updated} =
-               Measurements.update_health(m, true, %{"download" => %{passed: true}})
+               Measurements.update_benchmarks(m, %{"download" => %{passed: true}})
 
-      assert updated.healthy == true
       assert updated.benchmarks == %{"download" => %{passed: true}}
     end
 
-    test "accepts nil healthy and benchmarks" do
+    test "accepts nil benchmarks" do
       {:ok, m} = Measurements.create_measurement(valid_attrs())
 
-      assert {:ok, updated} = Measurements.update_health(m, nil, nil)
-      assert updated.healthy == nil
+      assert {:ok, updated} = Measurements.update_benchmarks(m, nil)
       assert updated.benchmarks == nil
-    end
-
-    test "returns {:error, changeset} rather than raising on an invalid healthy value" do
-      {:ok, m} = Measurements.create_measurement(valid_attrs())
-
-      assert {:error, changeset} = Measurements.update_health(m, "not-a-boolean", nil)
-      assert "is invalid" in errors_on(changeset).healthy
     end
   end
 
@@ -326,6 +325,97 @@ defmodule Baudflow.MeasurementsTest do
 
       assert result.total == 0
       assert result.percent == nil
+    end
+  end
+
+  describe "health/1 + health_state/1 (single measurement, absolute mode)" do
+    test "maps a measurement to its derived state" do
+      healthy = seed_health(~U[2026-06-21 01:00:00Z], true)
+      breach = seed_health(~U[2026-06-21 02:00:00Z], false)
+      unknown = seed_health(~U[2026-06-21 03:00:00Z], nil)
+      {:ok, failed} = Measurements.record_failure(%{timestamp: ~U[2026-06-21 04:00:00Z]})
+
+      assert Measurements.health_state(healthy) == :healthy
+      assert Measurements.health_state(breach) == :breach
+      assert Measurements.health_state(unknown) == :unknown
+      assert Measurements.health_state(failed) == :failed
+    end
+
+    test "health/1 returns the per-check benchmarks alongside the state" do
+      breach = seed_health(~U[2026-06-21 02:00:00Z], false)
+
+      assert {:breach, %{download: %{passed: false, value: 30.0, unit: "Mbps"}}} =
+               Measurements.health(breach)
+    end
+
+    test "a failed test is :failed with no benchmarks" do
+      {:ok, failed} = Measurements.record_failure(%{timestamp: ~U[2026-06-21 04:00:00Z]})
+      assert Measurements.health(failed) == {:failed, nil}
+    end
+  end
+
+  describe "baseline_for/2 + health_states/1 (auto mode)" do
+    setup do
+      Baudflow.Settings.update_all(%{"threshold_mode" => "auto", "threshold_ratio" => "0.7"})
+      :ok
+    end
+
+    test "baseline_for/2 is nil outside auto mode" do
+      m = seed(timestamp: ~U[2026-06-21 01:00:00Z], download_mbps: 100.0)
+      absolute = %{mode: :absolute, ratio: 0.7, download: 50.0, upload: nil, ping: nil}
+      assert Measurements.baseline_for(m, absolute) == nil
+    end
+
+    test "baseline_for/2 is :insufficient below the sample floor, a median map above it" do
+      auto = Baudflow.Scheduling.global_thresholds()
+      at = ~U[2026-06-21 12:00:00Z]
+
+      for i <- 1..11,
+          do: seed(timestamp: DateTime.add(at, -i * 3600, :second), download_mbps: 100.0)
+
+      target = seed(timestamp: at, download_mbps: 90.0, result_id: "target")
+      assert Measurements.baseline_for(target, auto) == :insufficient
+
+      seed(timestamp: DateTime.add(at, -12 * 3600, :second), download_mbps: 100.0)
+      assert %{download: 100.0} = Measurements.baseline_for(target, auto)
+    end
+
+    test "health_states/1 matches per-row health_state/1 (point-in-time, per test_type)" do
+      base = ~U[2026-06-21 12:00:00Z]
+
+      # 12 ookla baseline samples (median download 100) inside the prior window.
+      for i <- 1..12,
+          do: seed(timestamp: DateTime.add(base, -i * 3600, :second), download_mbps: 100.0)
+
+      # Targets judged against that baseline: 90 healthy (>= 0.7×100), 60 breach.
+      seed(timestamp: base, download_mbps: 90.0, result_id: "auto-healthy")
+
+      seed(
+        timestamp: DateTime.add(base, 60, :second),
+        download_mbps: 60.0,
+        result_id: "auto-breach"
+      )
+
+      # A ping row must resolve against the ping baseline, never the ookla one.
+      {:ok, _ping} =
+        Measurements.create_measurement(%{
+          timestamp: base,
+          ping_latency: 5.0,
+          test_type: "ping",
+          result_id: "auto-ping"
+        })
+
+      measurements = Measurements.list_recent(limit: 50)
+      batch = Measurements.health_states(measurements)
+
+      for m <- measurements do
+        assert batch[m.id] == Measurements.health_state(m)
+      end
+
+      healthy = Enum.find(measurements, &(&1.result_id == "auto-healthy"))
+      breach = Enum.find(measurements, &(&1.result_id == "auto-breach"))
+      assert batch[healthy.id] == :healthy
+      assert batch[breach.id] == :breach
     end
   end
 
@@ -546,15 +636,13 @@ defmodule Baudflow.MeasurementsTest do
     m
   end
 
-  # Seed a speed test at `ts` and stamp its persisted health (`nil` = unknown).
-  defp seed_health(ts, healthy) do
-    seed(timestamp: ts, download_mbps: 100.0) |> set_healthy(healthy)
-  end
-
-  defp set_healthy(measurement, value) do
-    {:ok, updated} = Measurements.update_health(measurement, value, nil)
-    updated
-  end
+  # Seed a speed test at `ts` whose JIT verdict (absolute mode, download
+  # threshold 50 from the setup) is the requested state: true → healthy
+  # (100 >= 50), false → breach (30 < 50), nil → unknown (no download value,
+  # so the check is skipped and no verdict is produced).
+  defp seed_health(ts, true), do: seed(timestamp: ts, download_mbps: 100.0)
+  defp seed_health(ts, false), do: seed(timestamp: ts, download_mbps: 30.0)
+  defp seed_health(ts, nil), do: seed(timestamp: ts, download_mbps: nil)
 
   defp days_ago(days), do: DateTime.add(DateTime.utc_now(), -days * 24 * 3600, :second)
 

@@ -16,7 +16,7 @@ defmodule BaudflowWeb.HistoryLive do
     filters = %{
       "date_from" => params["date_from"] || "",
       "date_to" => params["date_to"] || "",
-      "healthy" => params["healthy"] || "",
+      "outcome" => params["outcome"] || "",
       "server" => params["server"] || ""
     }
 
@@ -37,6 +37,7 @@ defmodule BaudflowWeb.HistoryLive do
     {:noreply,
      socket
      |> assign(:measurements, measurements)
+     |> assign(:health_by_id, Measurements.health_states(measurements))
      |> assign(:page, page)
      |> assign(:total_pages, max(1, ceil(total / per_page)))
      |> assign(:filters, filters)
@@ -53,7 +54,7 @@ defmodule BaudflowWeb.HistoryLive do
       |> Map.put("page", "1")
       |> maybe_put("date_from", filter_params["date_from"])
       |> maybe_put("date_to", filter_params["date_to"])
-      |> maybe_put("healthy", filter_params["healthy"])
+      |> maybe_put("outcome", filter_params["outcome"])
       |> maybe_put("server", filter_params["server"])
 
     {:noreply, push_patch(socket, to: ~p"/history?#{params}")}
@@ -76,7 +77,7 @@ defmodule BaudflowWeb.HistoryLive do
       |> Map.put("page", "#{socket.assigns.page}")
       |> maybe_put("date_from", socket.assigns.filters["date_from"])
       |> maybe_put("date_to", socket.assigns.filters["date_to"])
-      |> maybe_put("healthy", socket.assigns.filters["healthy"])
+      |> maybe_put("outcome", socket.assigns.filters["outcome"])
       |> maybe_put("server", socket.assigns.filters["server"])
 
     {:noreply, push_patch(socket, to: ~p"/history?#{params}")}
@@ -95,6 +96,11 @@ defmodule BaudflowWeb.HistoryLive do
     end
   end
 
+  # A failed test carries nil speeds — round only when present, else show "—".
+  defp fmt(value, precision \\ 1)
+  defp fmt(nil, _precision), do: "—"
+  defp fmt(value, precision) when is_number(value), do: Float.round(value, precision)
+
   defp pagination_path(page, filters, sort_by, sort_dir) do
     params =
       %{}
@@ -103,7 +109,7 @@ defmodule BaudflowWeb.HistoryLive do
       |> maybe_put("dir", if(sort_dir == "desc", do: nil, else: sort_dir))
       |> maybe_put("date_from", filters["date_from"])
       |> maybe_put("date_to", filters["date_to"])
-      |> maybe_put("healthy", filters["healthy"])
+      |> maybe_put("outcome", filters["outcome"])
       |> maybe_put("server", filters["server"])
 
     ~p"/history?#{params}"

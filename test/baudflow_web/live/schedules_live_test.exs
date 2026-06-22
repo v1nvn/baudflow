@@ -136,17 +136,19 @@ defmodule BaudflowWeb.SchedulesLiveTest do
 
       lv
       |> element("#schedule-form")
-      |> render_submit(%{schedule: %{threshold_policy: "enabled", download: "100"}})
+      |> render_submit(%{schedule: %{threshold_policy: "absolute", download: "100"}})
 
       assert_patch(lv, ~p"/schedules")
 
       refreshed = Scheduling.get_schedule!(schedule.id)
-      assert refreshed.threshold_enabled == true
+      assert refreshed.threshold_mode == "absolute"
       assert refreshed.download == 100.0
 
       # The single threshold reader: override wins; unset fields inherit global.
+      # ratio is the non-auto constant (0.7) since mode is :absolute.
       assert Scheduling.thresholds_for(refreshed) == %{
-               enabled: true,
+               mode: :absolute,
+               ratio: 0.7,
                download: 100.0,
                upload: 0.0,
                ping: 0.0

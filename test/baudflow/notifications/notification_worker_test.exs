@@ -60,7 +60,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     test "posts an alert to ntfy" do
       stub_success()
 
-      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+      m = insert_measurement!(%{benchmarks: breach_benchmarks()})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -73,7 +73,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     test "does not crash when ntfy returns an error status" do
       Req.Test.stub(__MODULE__, fn conn -> Plug.Conn.send_resp(conn, 503, "unavailable") end)
 
-      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+      m = insert_measurement!(%{benchmarks: breach_benchmarks()})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -86,7 +86,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     test "renders the failed threshold in the body" do
       stub_capture()
 
-      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+      m = insert_measurement!(%{benchmarks: breach_benchmarks()})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -109,7 +109,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     test "posts an alert to ntfy" do
       stub_capture()
 
-      m = insert_measurement!(%{healthy: true})
+      m = insert_measurement!(%{})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -127,7 +127,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     test "posts an alert to ntfy" do
       stub_capture()
 
-      m = insert_measurement!(%{healthy: nil, failed: true})
+      m = insert_measurement!(%{failed: true})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -148,7 +148,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
 
     test "does not notify on a healthy event" do
       stub_capture()
-      m = insert_measurement!(%{healthy: true})
+      m = insert_measurement!(%{})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -163,7 +163,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
       Settings.update_all(%{"breach_notify_streak" => "3"})
 
       stub_capture()
-      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+      m = insert_measurement!(%{benchmarks: breach_benchmarks()})
 
       # streak 1 < threshold 3 → no notify.
       assert :ok =
@@ -214,7 +214,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
       Settings.update_all(%{"webhook_url" => "http://webhook.test/hook"})
       stub_capture()
 
-      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+      m = insert_measurement!(%{benchmarks: breach_benchmarks()})
 
       assert :ok =
                perform_job(NotificationWorker, %{
@@ -232,7 +232,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
     test "does not post to the webhook when no url is configured" do
       stub_capture()
 
-      m = insert_measurement!(%{healthy: false, benchmarks: breach_benchmarks()})
+      m = insert_measurement!(%{benchmarks: breach_benchmarks()})
 
       assert :ok =
                perform_job(NotificationWorker, %{

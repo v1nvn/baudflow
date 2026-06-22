@@ -15,9 +15,15 @@ defmodule BaudflowWeb.ResultLive do
 
     ref = if params["ref"] == "runs", do: :runs, else: :history
 
+    # State and the per-check breakdown both come from the one JIT call, so the
+    # pill and the metric rows can't disagree (or drift from the stored snapshot).
+    {state, benchmarks} = Measurements.health(measurement)
+
     {:noreply,
      socket
      |> assign(:measurement, measurement)
+     |> assign(:health, state)
+     |> assign(:benchmarks, benchmarks)
      |> assign(:older_id, neighbors.older_id)
      |> assign(:newer_id, neighbors.newer_id)
      |> assign(:ref, ref)}

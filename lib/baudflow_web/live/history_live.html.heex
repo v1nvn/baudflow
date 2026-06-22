@@ -34,14 +34,14 @@
           />
 
           <.input
-            field={@form[:healthy]}
+            field={@form[:outcome]}
             type="select"
-            label="Health"
+            label="Outcome"
             class="bf-select !w-32 !text-sm"
             options={[
               {"All", ""},
-              {"Healthy", "healthy"},
-              {"Unhealthy", "unhealthy"}
+              {"Succeeded", "succeeded"},
+              {"Failed", "failed"}
             ]}
           />
 
@@ -178,37 +178,41 @@
                 </td>
                 <td class="px-4 py-3">
                   <span class="stat-value font-semibold text-cyan">
-                    {Float.round(m.download_mbps, 1)}
+                    {fmt(m.download_mbps)}
                   </span>
                   <span class="text-xs text-text-ghost">Mbps</span>
                 </td>
                 <td class="px-4 py-3">
                   <span class="stat-value font-semibold text-green">
-                    {Float.round(m.upload_mbps, 1)}
+                    {fmt(m.upload_mbps)}
                   </span>
                   <span class="text-xs text-text-ghost">Mbps</span>
                 </td>
                 <td class="px-4 py-3">
                   <span class="stat-value font-semibold text-amber">
-                    {Float.round(m.ping_latency, 1)}
+                    {fmt(m.ping_latency)}
                   </span>
                   <span class="text-xs text-text-ghost">ms</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span class="stat-value">{Float.round(m.ping_jitter, 2)}</span>
+                  <span class="stat-value">{fmt(m.ping_jitter, 2)}</span>
                   <span class="text-xs text-text-ghost">ms</span>
                 </td>
                 <td class="px-4 py-3">
-                  <%= cond do %>
-                    <% m.healthy == true -> %>
+                  <%= case @health_by_id[m.id] do %>
+                    <% :healthy -> %>
                       <span class="status-pill success">
                         <.icon name="hero-check-mini" class="size-3" /> OK
                       </span>
-                    <% m.healthy == false -> %>
-                      <span class="status-pill error">
-                        <.icon name="hero-x-mark-mini" class="size-3" /> Fail
+                    <% :breach -> %>
+                      <span class="status-pill warning">
+                        <.icon name="hero-exclamation-triangle-mini" class="size-3" /> Breach
                       </span>
-                    <% true -> %>
+                    <% :failed -> %>
+                      <span class="status-pill error">
+                        <.icon name="hero-x-mark-mini" class="size-3" /> Failed
+                      </span>
+                    <% _ -> %>
                       <span class="text-text-ghost">--</span>
                   <% end %>
                 </td>

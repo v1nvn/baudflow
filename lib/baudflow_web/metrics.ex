@@ -6,15 +6,21 @@ defmodule BaudflowWeb.Metrics do
 
   Nil handling: a value that has no current reading (a failed test, or no tests
   yet) renders as `NaN` so Prometheus doesn't carry a stale value. `health` is
-  omitted entirely when the latest test was never evaluated (`healthy == nil`).
+  omitted when there's no verdict (calibrating, off mode, failed, or no latest) —
+  the verdict itself is derived JIT by `Measurements.metrics/1`, never stored.
   """
 
   @doc """
-  Render a metrics snapshot (`%{latest, total, uptime}`) as Prometheus text.
+  Render a metrics snapshot (`%{latest, total, uptime, health}`) as Prometheus text.
   """
-  @spec render(%{latest: struct() | nil, total: non_neg_integer(), uptime: map()}) ::
+  @spec render(%{
+          latest: struct() | nil,
+          total: non_neg_integer(),
+          uptime: map(),
+          health: boolean() | nil
+        }) ::
           binary()
-  def render(%{latest: latest, total: total, uptime: uptime}) do
+  def render(%{latest: latest, total: total, uptime: uptime, health: health}) do
     [
       gauge(
         "baudflow_download_mbps",
@@ -41,7 +47,7 @@ defmodule BaudflowWeb.Metrics do
         "Latest speed test packet loss (raw Ookla value).",
         latest && latest.packet_loss
       ),
-      health(latest),
+      health_metric(health),
       gauge(
         "baudflow_measurements_total",
         "Total number of retained measurements.",
@@ -73,20 +79,15 @@ defmodule BaudflowWeb.Metrics do
     ]
   end
 
-  # `latest && latest.healthy` short-circuits to nil when there's no latest test;
-  # nil healthy means a failed/unevaluated test with no verdict — omit the line.
-  defp health(latest) do
-    case latest && latest.healthy do
-      nil ->
-        []
+  # nil (no verdict — calibrating, off mode, failed, or no latest) omits the
+  # line so Prometheus doesn't carry a stale value.
+  defp health_metric(nil), do: []
 
-      true ->
-        [gauge("baudflow_health", "1 if the latest speed test is healthy, 0 if unhealthy.", 1)]
+  defp health_metric(true),
+    do: [gauge("baudflow_health", "1 if the latest speed test is healthy, 0 if unhealthy.", 1)]
 
-      false ->
-        [gauge("baudflow_health", "1 if the latest speed test is healthy, 0 if unhealthy.", 0)]
-    end
-  end
+  defp health_metric(false),
+    do: [gauge("baudflow_health", "1 if the latest speed test is healthy, 0 if unhealthy.", 0)]
 
   defp format_value(nil), do: "NaN"
   defp format_value(value), do: to_string(value)

@@ -22,9 +22,9 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     <div :for={tile <- @tiles} class="glass-card p-3">
-      <.heat_tile tile={tile} />
+      <.heat_tile tile={tile} unknown_label={@unknown_label} />
     </div>
   </div>
 
-  <.heat_legend />
+  <.heat_legend unknown_label={@unknown_label} />
 </Layouts.app>

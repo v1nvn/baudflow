@@ -22,12 +22,17 @@ defmodule BaudflowWeb.DashboardLiveTest do
     end
 
     test "pushes the current-month heatmap tile on mount", %{conn: conn} do
+      # Verdict derives JIT; absolute mode + a 50 Mbps threshold the 80 Mbps
+      # result clears so today's cell is "healthy".
+      Baudflow.Settings.update_all(%{
+        "threshold_mode" => "absolute",
+        "threshold_download" => "50"
+      })
+
       now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      {:ok, m} =
+      {:ok, _m} =
         Measurements.create_measurement(valid_attrs(timestamp: now, result_id: "hm-dash-1"))
-
-      Measurements.update_health(m, true, nil)
 
       {:ok, lv, _html} = live(conn, ~p"/")
 
@@ -372,9 +377,9 @@ defmodule BaudflowWeb.DashboardLiveTest do
   end
 
   describe "chart threshold config" do
-    test "chart_data carries the global thresholds when enabled", %{conn: conn} do
+    test "chart_data carries the global thresholds in absolute mode", %{conn: conn} do
       Baudflow.Settings.update_all(%{
-        "threshold_enabled" => "true",
+        "threshold_mode" => "absolute",
         "threshold_download" => "100",
         "threshold_upload" => "40"
       })
@@ -388,8 +393,9 @@ defmodule BaudflowWeb.DashboardLiveTest do
       assert thresholds.ping == nil
     end
 
-    test "chart_data thresholds are all nil when thresholds are disabled", %{conn: conn} do
-      # threshold_enabled defaults to "false"
+    test "chart_data thresholds are all nil when the mode is off", %{conn: conn} do
+      Baudflow.Settings.update_all(%{"threshold_mode" => "off"})
+
       {:ok, lv, _html} = live(conn, ~p"/")
 
       assert_push_event(lv, "chart_data", %{thresholds: thresholds})

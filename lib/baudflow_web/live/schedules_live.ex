@@ -108,12 +108,11 @@ defmodule BaudflowWeb.SchedulesLive do
     with {int, ""} <- Integer.parse(id), do: Scheduling.get_schedule(int)
   end
 
-  # The form's tristate `threshold_policy` select (Inherit/Enabled/Disabled) maps
-  # to the schema's `threshold_enabled` (nil/true/false). The single threshold
+  # The form's `threshold_policy` select (Inherit/Auto/Absolute/Off) maps to the
+  # schema's `threshold_mode` (nil/"auto"/"absolute"/"off"). The single threshold
   # reader `Scheduling.thresholds_for/1` resolves nil to the global fallback, so
-  # "inherit" is honored per-field. On "inherit" we nil the per-schedule value
-  # fields so a switch back clears stale overrides. The `enabled` checkbox
-  # already submits "false" when unchecked via its hidden input.
+  # "inherit" is honored. On "inherit" we nil the per-schedule value fields so a
+  # switch back clears stale overrides.
   defp normalize_attrs(attrs) do
     attrs
     |> Map.delete("threshold_policy")
@@ -122,23 +121,25 @@ defmodule BaudflowWeb.SchedulesLive do
 
   defp apply_threshold_policy(attrs, "inherit") do
     attrs
-    |> Map.put("threshold_enabled", nil)
+    |> Map.put("threshold_mode", nil)
     |> Map.put("download", nil)
     |> Map.put("upload", nil)
     |> Map.put("ping", nil)
   end
 
-  defp apply_threshold_policy(attrs, "enabled"), do: Map.put(attrs, "threshold_enabled", true)
-  defp apply_threshold_policy(attrs, "disabled"), do: Map.put(attrs, "threshold_enabled", false)
+  defp apply_threshold_policy(attrs, policy) when policy in ~w(auto absolute off) do
+    Map.put(attrs, "threshold_mode", policy)
+  end
 
   # --- Template helpers -------------------------------------------------------
 
   # Policy comes from the changeset so it survives a failed submit.
   defp threshold_policy(changeset) do
-    case Ecto.Changeset.get_field(changeset, :threshold_enabled) do
-      nil -> "inherit"
-      true -> "enabled"
-      false -> "disabled"
+    case Ecto.Changeset.get_field(changeset, :threshold_mode) do
+      "auto" -> "auto"
+      "absolute" -> "absolute"
+      "off" -> "off"
+      _ -> "inherit"
     end
   end
 
@@ -158,8 +159,9 @@ defmodule BaudflowWeb.SchedulesLive do
           aria-label="Threshold policy"
         >
           <option value="inherit" selected={@policy == "inherit"}>Inherit (global)</option>
-          <option value="enabled" selected={@policy == "enabled"}>Enabled</option>
-          <option value="disabled" selected={@policy == "disabled"}>Disabled</option>
+          <option value="auto" selected={@policy == "auto"}>Auto (relative)</option>
+          <option value="absolute" selected={@policy == "absolute"}>Absolute</option>
+          <option value="off" selected={@policy == "off"}>Off</option>
         </select>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">

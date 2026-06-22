@@ -144,7 +144,8 @@ defmodule Baudflow.SchedulingTest do
   describe "thresholds_for/1" do
     test "falls back to global settings when the schedule leaves thresholds nil" do
       Settings.update_all(%{
-        "threshold_enabled" => "true",
+        "threshold_mode" => "auto",
+        "threshold_ratio" => "0.8",
         "threshold_download" => "50",
         "threshold_upload" => "20",
         "threshold_ping" => "5"
@@ -152,43 +153,39 @@ defmodule Baudflow.SchedulingTest do
 
       {:ok, schedule} = Scheduling.create(%{name: "S", cron: "0 * * * *"})
 
+      # ratio is only resolved in :auto (the mode that uses it); here it falls
+      # back to the configured 0.8.
       assert Scheduling.thresholds_for(schedule) == %{
-               enabled: true,
+               mode: :auto,
+               ratio: 0.8,
                download: 50.0,
                upload: 20.0,
                ping: 5.0
              }
     end
 
-    test "a schedule's explicit false overrides a global true (no || trap)" do
-      Settings.update_all(%{"threshold_enabled" => "true", "threshold_download" => "50"})
+    test "a schedule's explicit mode overrides a global setting (no || trap)" do
+      Settings.update_all(%{"threshold_mode" => "absolute", "threshold_download" => "50"})
 
       {:ok, schedule} =
         Scheduling.create(%{
           name: "S",
           cron: "0 * * * *",
-          threshold_enabled: false,
+          threshold_mode: "off",
           download: 100.0
         })
 
       thresholds = Scheduling.thresholds_for(schedule)
-      refute thresholds.enabled
+      assert thresholds.mode == :off
       assert thresholds.download == 100.0
     end
 
-    test "a schedule's explicit true overrides a global false" do
-      # the global default for threshold_enabled is "false"
-      {:ok, schedule} =
-        Scheduling.create(%{
-          name: "S",
-          cron: "0 * * * *",
-          threshold_enabled: true,
-          download: 100.0
-        })
+    test "defaults to :auto with ratio 0.7 when nothing is configured" do
+      {:ok, schedule} = Scheduling.create(%{name: "S", cron: "0 * * * *"})
 
       thresholds = Scheduling.thresholds_for(schedule)
-      assert thresholds.enabled
-      assert thresholds.download == 100.0
+      assert thresholds.mode == :auto
+      assert thresholds.ratio == 0.7
     end
   end
 
@@ -295,34 +292,49 @@ defmodule Baudflow.SchedulingTest do
   end
 
   describe "bootstrap/0" do
-    test "seeds a default schedule from the legacy setting, idempotently" do
+    test "seeds an Ookla and a Ping schedule from the legacy cron, idempotently" do
       Settings.update_all(%{"schedule_cron" => "*/15 * * * *"})
 
-      assert {:ok, _} = Scheduling.bootstrap()
+      assert :ok = Scheduling.bootstrap()
 
-      [only] = Scheduling.list_schedules()
-      assert only.cron == "*/15 * * * *"
-      assert only.enabled
-      assert only.name == "Default"
+      schedules = Scheduling.list_schedules()
+      assert Enum.map(schedules, & &1.test_type) |> Enum.sort() == ["ookla", "ping"]
 
-      assert {:ok, :already_seeded} = Scheduling.bootstrap()
-      assert [^only] = Scheduling.list_schedules()
+      [ookla] = for(s <- schedules, s.test_type == "ookla", do: s)
+      assert ookla.cron == "*/15 * * * *"
+      assert ookla.escalated_cron == "*/15 * * *"
+      assert ookla.enabled
+      assert ookla.name == "Default"
+
+      [ping] = for(s <- schedules, s.test_type == "ping", do: s)
+      assert ping.cron == "*/15 * * * *"
+      assert ping.escalated_cron == "*/15 * * *"
+      assert ping.name == "Ping"
+
+      # Idempotent — re-bootstrap doesn't duplicate either kind.
+      assert :ok = Scheduling.bootstrap()
+      assert length(Scheduling.list_schedules()) == 2
     end
 
     test "falls back to hourly when the legacy cron is malformed" do
       Settings.update_all(%{"schedule_cron" => "garbage"})
 
-      assert {:ok, _} = Scheduling.bootstrap()
+      assert :ok = Scheduling.bootstrap()
 
-      [only] = Scheduling.list_schedules()
-      assert only.cron == "0 * * * *"
+      [ookla] = for(s <- Scheduling.list_schedules(), s.test_type == "ookla", do: s)
+      assert ookla.cron == "0 * * * *"
     end
 
-    test "does nothing when a schedule already exists" do
-      {:ok, existing} = Scheduling.create(%{name: "Mine", cron: "0 0 * * *"})
+    test "seeds only the missing test_type, leaving a custom schedule untouched" do
+      # A user with a custom Ookla schedule gains a Ping on next boot; their
+      # Ookla schedule is never replaced.
+      {:ok, mine} = Scheduling.create(%{name: "Mine", cron: "0 0 * * *", test_type: "ookla"})
 
-      assert {:ok, :already_seeded} = Scheduling.bootstrap()
-      assert [^existing] = Scheduling.list_schedules()
+      assert :ok = Scheduling.bootstrap()
+
+      schedules = Scheduling.list_schedules()
+      assert Enum.map(schedules, & &1.test_type) |> Enum.sort() == ["ookla", "ping"]
+      assert Enum.any?(schedules, &(&1.id == mine.id))
     end
   end
 end

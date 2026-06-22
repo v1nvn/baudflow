@@ -25,7 +25,7 @@ defmodule Baudflow.Scheduling.Schedule do
     field :enabled, :boolean, default: true
     field :escalation_level, :integer, default: 0
     field :breach_streak, :integer, default: 0
-    field :threshold_enabled, :boolean
+    field :threshold_mode, :string
     field :download, :float
     field :upload, :float
     field :ping, :float
@@ -36,7 +36,7 @@ defmodule Baudflow.Scheduling.Schedule do
   @type t :: %__MODULE__{}
 
   @fields ~w(name cron escalated_cron server_id target_host test_type enabled escalation_level
-             breach_streak threshold_enabled download upload ping)a
+             breach_streak threshold_mode download upload ping)a
 
   @doc "The only construction path for a schedule."
   def changeset(schedule, attrs) do
@@ -51,6 +51,19 @@ defmodule Baudflow.Scheduling.Schedule do
     |> validate_required([:name, :cron])
     |> validate_cron(:cron)
     |> validate_cron(:escalated_cron)
+    |> validate_threshold_mode()
+  end
+
+  # Closed enum for threshold_mode (nil = inherit the global Settings value).
+  # Validated by string membership — never String.to_atom/1 on stored input.
+  @threshold_modes ~w(auto absolute off)
+
+  defp validate_threshold_mode(changeset) do
+    case get_field(changeset, :threshold_mode) do
+      nil -> changeset
+      mode when mode in @threshold_modes -> changeset
+      _ -> add_error(changeset, :threshold_mode, "must be auto, absolute, or off")
+    end
   end
 
   @doc """

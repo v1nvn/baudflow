@@ -3,13 +3,23 @@ defmodule Baudflow.Measurements do
   Context for speedtest measurement results.
   """
   import Ecto.Query
+  alias Baudflow.Health
   alias Baudflow.Measurements.Measurement
   alias Baudflow.Repo
+  alias Baudflow.Scheduling
 
   # Window for the /metrics uptime gauge (healthy share). Matches the dashboard's
   # max range. A module attr, not a setting — promote to Settings only if it
   # becomes user-facing.
   @uptime_window_days 30
+
+  # :auto-mode rolling baseline: median of the prior N days, deemed trustworthy
+  # only past this many qualifying samples (below = "calibrating", no verdict).
+  @baseline_window_days 7
+  @baseline_min_samples 12
+
+  @typedoc "A measurement's JIT health state — derived on read, never stored."
+  @type state :: :healthy | :breach | :failed | :unknown
 
   @doc "Create a measurement from a parsed test-result attributes map."
   def create_measurement(attrs) do
@@ -113,11 +123,64 @@ defmodule Baudflow.Measurements do
     |> Repo.all()
   end
 
-  @doc "Update healthy and benchmarks fields on a measurement."
-  def update_health(measurement, healthy, benchmarks) do
-    Measurement.health_changeset(measurement, %{healthy: healthy, benchmarks: benchmarks})
+  @doc """
+  Persist the per-check `benchmarks` snapshot from a health evaluation. The
+  verdict itself is derived JIT (never stored) — this only saves the detail the
+  result page and notification template render.
+  """
+  def update_benchmarks(measurement, benchmarks) do
+    Measurement.benchmarks_changeset(measurement, %{benchmarks: benchmarks})
     |> Repo.update()
   end
+
+  @doc """
+  JIT health for a single measurement: `{state, benchmarks}`. `state` is
+  `:healthy | :breach | :failed | :unknown`; `benchmarks` is the per-check map
+  (`nil` when there's no verdict). Derived on read — never stored — so changing
+  the mode/ratio re-derives every view on the next read. `:auto` judges the
+  measurement against its own point-in-time trailing median (`baseline_for/2`),
+  `:absolute` against the fixed thresholds, `:off` yields `:unknown`.
+  """
+  @spec health(Measurement.t()) :: {state(), map() | nil}
+  def health(%Measurement{failed: true}), do: {:failed, nil}
+
+  def health(%Measurement{} = measurement) do
+    thresholds = Scheduling.global_thresholds()
+    evaluate(measurement, thresholds, baseline_for(measurement, thresholds))
+  end
+
+  @doc "The `state` half of `health/1` (`:healthy | :breach | :failed | :unknown`)."
+  @spec health_state(Measurement.t()) :: state()
+  def health_state(%Measurement{} = measurement), do: elem(health(measurement), 0)
+
+  @doc """
+  Batch JIT state as `%{id => state}` for a list of measurements — the history
+  table's per-row badge. Point-in-time and per-`test_type` correct (so a row's
+  badge matches its result-detail badge), computed from one baseline pool fetched
+  for the whole list rather than a per-row query.
+  """
+  @spec health_states([Measurement.t()]) :: %{integer() => state()}
+  def health_states(measurements) do
+    thresholds = Scheduling.global_thresholds()
+    baselines = batch_baselines(thresholds, measurements, &baseline_pool/1)
+
+    Map.new(measurements, fn m ->
+      {state, _benchmarks} = evaluate(m, thresholds, Map.get(baselines, m.id, :insufficient))
+      {m.id, state}
+    end)
+  end
+
+  @doc """
+  The `:auto` rolling baseline for a single measurement (`nil` outside `:auto`) —
+  the one place a single measurement's baseline is sourced, shared by the live
+  `HealthWorker` and every JIT reader. `%{download, upload, ping}` or
+  `:insufficient` while calibrating.
+  """
+  @spec baseline_for(Measurement.t(), map()) :: map() | :insufficient | nil
+  def baseline_for(_measurement, %{mode: mode}) when mode != :auto, do: nil
+
+  def baseline_for(%Measurement{timestamp: at, test_type: test_type}, _thresholds),
+    do: trailing_median(at, test_type)
 
   @doc """
   Delete all measurements strictly older than `cutoff` timestamp.
@@ -193,49 +256,100 @@ defmodule Baudflow.Measurements do
   end
 
   @doc """
-  Bucket measurements by UTC day, returning per-day health counts.
-
-  Opts:
-
-    * `:since`     — optional `DateTime`; when set, only days with
-      `timestamp > since`. Omit (or `nil`) for the full history — the heatmap
-      wall grid fetches every month that has data this way.
-    * `:test_type` — scope to one runner (the heatmap passes `"ookla"`).
-
-  Buckets are UTC `date_trunc('day', ...)` boundaries (a v1 simplification — the
-  grouping is offset from the viewer's local evening; cell tooltips render the
-  absolute UTC date, which stays correct). Returns a list ascending by `bucket`:
+  Bucket measurements by UTC day, returning per-day health counts — derived
+  just-in-time, never read off a stored verdict (verdicts aren't persisted; see
+  `Baudflow.Health`). Same output shape the heatmap and `/metrics` consume:
 
       %{bucket: DateTime, total: n, healthy: n, breach: n, failed: n, unknown: n}
 
-  `total = healthy + breach + failed + unknown`. A row counts as `failed` when
-  `failed == true` (it carries `healthy: nil`); otherwise `healthy` decides, with
-  `nil` = `unknown`. `[]` when nothing matches.
+  Opts: `:since` (optional `DateTime` lower bound — omit/`nil` for full history),
+  `:test_type` (scope to one runner; the heatmap passes `"ookla"`).
+
+  Each row's verdict comes from `evaluate/3` against the global thresholds; in
+  `:auto` the baselines are the point-in-time trailing medians over the fetched
+  window (`trailing_baselines/2`, one pass per `test_type` — no per-row query, no
+  stored column to backfill). `failed` rows are always `:failed`. `[]` when
+  nothing matches.
   """
   def health_buckets(opts \\ []) do
     since = Keyword.get(opts, :since)
     test_type = Keyword.get(opts, :test_type)
+    thresholds = Scheduling.global_thresholds()
 
-    # Compute the day bucket once in a subquery so the outer GROUP BY groups by a
-    # concrete column rather than repeating the `date_trunc` expression.
-    bucketed =
+    measurements =
       from(m in Measurement)
       |> maybe_filter_test_type(test_type)
       |> maybe_since(since)
-      |> select([m], %{
-        bucket: type(fragment("date_trunc('day', ?)", m.timestamp), :utc_datetime),
-        healthy: m.healthy,
-        failed: m.failed
-      })
-
-    rows =
-      from(b in subquery(bucketed))
-      |> group_by([b], [b.bucket, b.healthy, b.failed])
-      |> order_by([b], b.bucket)
-      |> select([b], %{bucket: b.bucket, healthy: b.healthy, failed: b.failed, n: count()})
+      |> order_by([m], asc: m.timestamp)
       |> Repo.all()
 
-    pivot_buckets(rows)
+    baselines = batch_baselines(thresholds, measurements, & &1)
+
+    measurements
+    |> Enum.map(fn m ->
+      {state, _benchmarks} = evaluate(m, thresholds, Map.get(baselines, m.id, :insufficient))
+      %{bucket: day_bucket(m.timestamp), state: state}
+    end)
+    |> pivot_states()
+  end
+
+  @doc """
+  Rolling-median baseline at a point in time for `:auto` health: the median
+  download/upload/ping of the prior `@baseline_window_days` days for `test_type`,
+  excluding failed and manual rows. Returns `%{download, upload, ping}` or
+  `:insufficient` when fewer than `@baseline_min_samples` qualifying rows exist
+  (no verdict while calibrating). Sourced for single measurements via
+  `baseline_for/2`; the list consumers (`health_buckets`/`health_states`) compute
+  baselines in-memory over a fetched window (`trailing_baselines/2`) instead.
+  """
+  @spec trailing_median(DateTime.t(), String.t(), keyword()) :: map() | :insufficient
+  def trailing_median(at, test_type, opts \\ []) do
+    days = Keyword.get(opts, :days, @baseline_window_days)
+    since = DateTime.add(at, -days * 24 * 3600, :second)
+
+    row =
+      from(m in Measurement,
+        where:
+          m.test_type == ^test_type and m.timestamp > ^since and m.timestamp < ^at and
+            not m.failed and m.source != "manual"
+      )
+      |> select([m], %{
+        count: count(m.id),
+        download: fragment("percentile_cont(0.5) WITHIN GROUP (ORDER BY ?)", m.download_mbps),
+        upload: fragment("percentile_cont(0.5) WITHIN GROUP (ORDER BY ?)", m.upload_mbps),
+        ping: fragment("percentile_cont(0.5) WITHIN GROUP (ORDER BY ?)", m.ping_latency)
+      })
+      |> Repo.one()
+
+    if row && row.count >= Keyword.get(opts, :min_samples, @baseline_min_samples) do
+      row
+    else
+      :insufficient
+    end
+  end
+
+  @doc """
+  Scalar medians over a window (since, test_type) for the dashboard chart's
+  `:auto` reference line — a flat annotation, not a rolling series.
+  """
+  @spec window_median(DateTime.t(), String.t()) :: %{
+          download: float() | nil,
+          upload: float() | nil,
+          ping: float() | nil
+        }
+  def window_median(since, test_type) do
+    from(m in Measurement,
+      where:
+        m.test_type == ^test_type and m.timestamp > ^since and not m.failed and
+          m.source != "manual"
+    )
+    |> select([m], %{
+      download: fragment("percentile_cont(0.5) WITHIN GROUP (ORDER BY ?)", m.download_mbps),
+      upload: fragment("percentile_cont(0.5) WITHIN GROUP (ORDER BY ?)", m.upload_mbps),
+      ping: fragment("percentile_cont(0.5) WITHIN GROUP (ORDER BY ?)", m.ping_latency)
+    })
+    |> Repo.one()
+    |> Kernel.||(%{download: nil, upload: nil, ping: nil})
   end
 
   @doc """
@@ -283,11 +397,26 @@ defmodule Baudflow.Measurements do
   existing `health_buckets/1` aggregation (one query, one place).
   """
   def metrics(opts \\ []) do
+    latest = latest_ookla()
+
     %{
-      latest: latest_ookla(),
+      latest: latest,
       total: count(),
-      uptime: uptime(opts)
+      uptime: uptime(opts),
+      health: latest_health(latest)
     }
+  end
+
+  # JIT verdict for the /metrics health gauge: `:healthy`/`:breach` map to 1/0,
+  # while nil (calibrating, off mode, a failed test, or no latest) omits the gauge.
+  defp latest_health(nil), do: nil
+
+  defp latest_health(%Measurement{} = latest) do
+    case health_state(latest) do
+      :healthy -> true
+      :breach -> false
+      _ -> nil
+    end
   end
 
   defp latest_ookla do
@@ -320,28 +449,138 @@ defmodule Baudflow.Measurements do
   defp maybe_since(query, %DateTime{} = since),
     do: where(query, [m], m.timestamp > ^since)
 
-  # (bucket, healthy, failed, count) rows → one map per bucket with health-state
-  # counts. `failed` takes precedence over `healthy` (a failed row is healthy: nil).
-  defp pivot_buckets(rows) do
-    rows
+  # One `{bucket, state}` per measurement → per-day state counts, ascending by
+  # bucket. `bucket` is a UTC-midnight DateTime so `daily_health`/`uptime` keep
+  # their existing `DateTime.to_date`/`DateTime` sort handling.
+  defp pivot_states(states) do
+    states
     |> Enum.group_by(& &1.bucket)
     |> Enum.map(fn {bucket, group} ->
-      counts = count_states(group)
+      counts =
+        Enum.reduce(group, %{healthy: 0, breach: 0, failed: 0, unknown: 0}, fn %{state: s}, acc ->
+          Map.update!(acc, s, &(&1 + 1))
+        end)
+
       total = counts.healthy + counts.breach + counts.failed + counts.unknown
       Map.merge(counts, %{bucket: bucket, total: total})
     end)
     |> Enum.sort_by(& &1.bucket, DateTime)
   end
 
-  defp count_states(group) do
-    Enum.reduce(group, %{healthy: 0, breach: 0, failed: 0, unknown: 0}, fn row, acc ->
-      cond do
-        row.failed -> %{acc | failed: acc.failed + row.n}
-        row.healthy == true -> %{acc | healthy: acc.healthy + row.n}
-        row.healthy == false -> %{acc | breach: acc.breach + row.n}
-        true -> %{acc | unknown: acc.unknown + row.n}
-      end
+  # Measurement + resolved thresholds + baseline → `{state, benchmarks}`. The one
+  # place a verdict becomes a state atom; every reader (single, batch, buckets)
+  # funnels through here. A failed test is `:failed` with no benchmarks.
+  defp evaluate(%Measurement{failed: true}, _thresholds, _baseline), do: {:failed, nil}
+
+  defp evaluate(%Measurement{} = measurement, thresholds, baseline) do
+    case Health.verdict(measurement, thresholds, baseline) do
+      {true, benchmarks} -> {:healthy, benchmarks}
+      {false, benchmarks} -> {:breach, benchmarks}
+      {nil, _benchmarks} -> {:unknown, nil}
+    end
+  end
+
+  # Per-id `:auto` baselines for a list (`%{}` outside `:auto`). `pool_fun` yields
+  # the rows the in-memory sliding window draws from: the list itself for the
+  # full-history aggregate (`& &1`), a fetched prior-window pool for a page.
+  defp batch_baselines(%{mode: :auto}, measurements, pool_fun),
+    do: trailing_baselines(measurements, pool_fun.(measurements))
+
+  defp batch_baselines(_thresholds, _measurements, _pool_fun), do: %{}
+
+  # Per-id baselines via one forward pass per `test_type`: each target's baseline
+  # is the median of eligible `pool` rows in `(timestamp − @baseline_window_days,
+  # timestamp)`, scoped to its own test_type. The sliding window over the
+  # timestamp-sorted lists keeps the full-history wall grid O(n) rather than
+  # rescanning the pool per row. `:insufficient` below the min sample count.
+  defp trailing_baselines(targets, pool) do
+    pool_by_type =
+      pool
+      |> Enum.filter(&baseline_eligible?/1)
+      |> Enum.group_by(& &1.test_type)
+
+    targets
+    |> Enum.group_by(& &1.test_type)
+    |> Enum.flat_map(fn {test_type, type_targets} ->
+      slide(
+        Enum.sort_by(type_targets, & &1.timestamp, DateTime),
+        Enum.sort_by(Map.get(pool_by_type, test_type, []), & &1.timestamp, DateTime),
+        [],
+        []
+      )
     end)
+    |> Map.new()
+  end
+
+  # Baseline pool for a list: eligible rows of the same test_types spanning each
+  # row's prior window, in one query (a history page spans few rows, so this stays
+  # small) — sorted ascending for the slide.
+  defp baseline_pool([]), do: []
+
+  defp baseline_pool(measurements) do
+    test_types = measurements |> Enum.map(& &1.test_type) |> Enum.uniq()
+    earliest = measurements |> Enum.min_by(& &1.timestamp, DateTime) |> Map.fetch!(:timestamp)
+    latest = measurements |> Enum.max_by(& &1.timestamp, DateTime) |> Map.fetch!(:timestamp)
+    since = DateTime.add(earliest, -@baseline_window_days * 24 * 3600, :second)
+
+    from(m in Measurement,
+      where:
+        m.test_type in ^test_types and m.timestamp > ^since and m.timestamp <= ^latest and
+          not m.failed and m.source != "manual",
+      order_by: [asc: m.timestamp]
+    )
+    |> Repo.all()
+  end
+
+  # Two-pointer slide (targets + pool ascending, same test_type): the window holds
+  # eligible pool rows with `timestamp ∈ (target − window, target)` — admit newer
+  # rows, evict ones past the window as targets advance. Accumulates `{id, baseline}`.
+  defp slide([], _pool, _window, acc), do: acc
+
+  defp slide([target | rest], pool, window, acc) do
+    {admitted, pool} =
+      Enum.split_while(pool, fn m -> DateTime.compare(m.timestamp, target.timestamp) == :lt end)
+
+    cutoff = DateTime.add(target.timestamp, -@baseline_window_days * 24 * 3600, :second)
+
+    window =
+      (window ++ admitted)
+      |> Enum.drop_while(fn m -> DateTime.compare(m.timestamp, cutoff) != :gt end)
+
+    slide(rest, pool, window, [{target.id, window_baseline(window)} | acc])
+  end
+
+  defp window_baseline(window) when length(window) < @baseline_min_samples, do: :insufficient
+
+  defp window_baseline(window) do
+    %{
+      download: median(numbers(window, & &1.download_mbps)),
+      upload: median(numbers(window, & &1.upload_mbps)),
+      ping: median(numbers(window, & &1.ping_latency))
+    }
+  end
+
+  defp numbers(rows, fun), do: for(row <- rows, is_number(fun.(row)), do: fun.(row))
+
+  defp baseline_eligible?(%Measurement{failed: failed, source: source}),
+    do: not failed and source != "manual"
+
+  defp median([]), do: nil
+
+  defp median(values) do
+    sorted = Enum.sort(values)
+    len = length(sorted)
+    mid = div(len, 2)
+
+    if rem(len, 2) == 1 do
+      Enum.at(sorted, mid)
+    else
+      (Enum.at(sorted, mid - 1) + Enum.at(sorted, mid)) / 2
+    end
+  end
+
+  defp day_bucket(%DateTime{} = ts) do
+    DateTime.new!(DateTime.to_date(ts), ~T[00:00:00], "Etc/UTC")
   end
 
   defp maybe_require_download(query, promised) when promised > 0.0 do
@@ -363,7 +602,7 @@ defmodule Baudflow.Measurements do
     query
     |> maybe_filter_date_from(filters["date_from"])
     |> maybe_filter_date_to(filters["date_to"])
-    |> maybe_filter_healthy(filters["healthy"])
+    |> maybe_filter_outcome(filters["outcome"])
     |> maybe_filter_server(filters["server"])
   end
 
@@ -395,10 +634,14 @@ defmodule Baudflow.Measurements do
     end
   end
 
-  defp maybe_filter_healthy(query, nil), do: query
-  defp maybe_filter_healthy(query, ""), do: query
-  defp maybe_filter_healthy(query, "healthy"), do: from(m in query, where: m.healthy == true)
-  defp maybe_filter_healthy(query, "unhealthy"), do: from(m in query, where: m.healthy == false)
+  # Outcome filters the persisted test result (did the run complete?), the only
+  # SQL-able health signal now that the verdict is derived JIT. "succeeded" rows
+  # still carry a JIT badge of `:healthy` or `:breach`; "failed" rows badge
+  # `:failed` — so the filter and the badge never contradict each other.
+  defp maybe_filter_outcome(query, nil), do: query
+  defp maybe_filter_outcome(query, ""), do: query
+  defp maybe_filter_outcome(query, "succeeded"), do: from(m in query, where: m.failed == false)
+  defp maybe_filter_outcome(query, "failed"), do: from(m in query, where: m.failed == true)
 
   defp maybe_filter_server(query, nil), do: query
   defp maybe_filter_server(query, ""), do: query

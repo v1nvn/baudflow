@@ -18,8 +18,6 @@ defmodule BaudflowWeb.SettingsLive do
 
   @impl true
   def handle_event("save", %{"settings" => params}, socket) do
-    # An unchecked checkbox is omitted from params; default it to "false".
-    params = Map.put_new(params, "threshold_enabled", "false")
     :ok = Settings.update_all(params)
 
     {:noreply,

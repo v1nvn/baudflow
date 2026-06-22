@@ -12,7 +12,15 @@ defmodule Baudflow.Settings do
     "blocked_servers" => "",
     "retention_days" => "365",
     "dashboard_points" => "500",
-    "threshold_enabled" => "false",
+    # Health verdict mode (replaces the old threshold_enabled boolean). "auto"
+    # judges each test against the connection's own rolling baseline (the
+    # zero-config default); "absolute" against the fixed Mbps/ms values below;
+    # "off" produces no verdict. Resolved per-schedule → global via
+    # Scheduling.thresholds_for/1.
+    "threshold_mode" => "auto",
+    # Auto-mode breach ratio: a test breaches when download/upload fall below
+    # ratio×their rolling median, or when ping exceeds median/ratio.
+    "threshold_ratio" => "0.7",
     "threshold_download" => "0",
     "threshold_upload" => "0",
     "threshold_ping" => "0",
@@ -63,12 +71,6 @@ defmodule Baudflow.Settings do
   @spec get_float(String.t(), float() | nil) :: float() | nil
   def get_float(key, default \\ nil) do
     key |> get() |> parse_float(default)
-  end
-
-  @doc "Get a setting as a boolean. Returns `true` only when the stored value is `\"true\"`."
-  @spec get_boolean(String.t()) :: boolean()
-  def get_boolean(key) do
-    get(key) == "true"
   end
 
   @doc """

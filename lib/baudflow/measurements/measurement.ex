@@ -34,7 +34,6 @@ defmodule Baudflow.Measurements.Measurement do
              :result_url,
              :source,
              :speedtest_version,
-             :healthy,
              :benchmarks,
              :schedule_id,
              :test_type,
@@ -76,8 +75,8 @@ defmodule Baudflow.Measurements.Measurement do
     # Provenance
     field :source, :string
     field :speedtest_version, :string
-    # Health benchmarks
-    field :healthy, :boolean
+    # Per-check health benchmarks snapshot (the verdict itself is derived JIT,
+    # never stored — see `Baudflow.Measurements.health/1`).
     field :benchmarks, :map
     # Raw
     field :raw_result, :map
@@ -132,7 +131,6 @@ defmodule Baudflow.Measurements.Measurement do
       :result_url,
       :source,
       :speedtest_version,
-      :healthy,
       :benchmarks,
       :raw_result,
       :schedule_id,
@@ -150,10 +148,8 @@ defmodule Baudflow.Measurements.Measurement do
     end
   end
 
-  @doc "Changeset for a health/benchmark evaluation update."
-  def health_changeset(measurement, attrs) do
-    measurement
-    |> cast(attrs, [:healthy, :benchmarks])
-    |> validate_inclusion(:healthy, [true, false, nil])
+  @doc "Changeset for persisting the benchmarks snapshot from a health evaluation."
+  def benchmarks_changeset(measurement, attrs) do
+    cast(measurement, attrs, [:benchmarks])
   end
 end

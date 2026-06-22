@@ -7,7 +7,7 @@ defmodule Baudflow.Health.HealthWorkerTest do
   alias Baudflow.Scheduling
 
   setup do
-    {:ok, schedule: schedule!(%{threshold_enabled: true, download: 100.0})}
+    {:ok, schedule: schedule!(%{threshold_mode: "absolute", download: 100.0})}
   end
 
   defp schedule!(attrs) do
@@ -37,8 +37,6 @@ defmodule Baudflow.Health.HealthWorkerTest do
       id = m.id
 
       assert :ok = perform_job(HealthWorker, %{"measurement_id" => m.id})
-
-      assert Measurements.get_measurement!(m.id).healthy == false
 
       refreshed = Scheduling.get_schedule!(schedule.id)
       assert refreshed.breach_streak == 1
@@ -116,8 +114,6 @@ defmodule Baudflow.Health.HealthWorkerTest do
       m = insert_measurement!(150.0)
 
       assert :ok = perform_job(HealthWorker, %{"measurement_id" => m.id})
-
-      assert Measurements.get_measurement!(m.id).healthy == true
 
       refreshed = Scheduling.get_schedule!(schedule.id)
       assert refreshed.breach_streak == 0

@@ -2,6 +2,7 @@ defmodule BaudflowWeb.HeatmapEmbedLive do
   use BaudflowWeb, :live_view
 
   alias Baudflow.Measurements
+  alias Baudflow.Scheduling
   alias BaudflowWeb.HeatCalendar
 
   @moduledoc """
@@ -24,6 +25,9 @@ defmodule BaudflowWeb.HeatmapEmbedLive do
      socket
      |> assign(:page_title, "Baudflow")
      |> assign(:tile, tile)
+     |> assign(:unknown_label, unknown_label())
      |> push_event("heatmap_tile:heatmap-embed", %{cells: tile.cells, weeks: tile.weeks})}
   end
+
+  defp unknown_label, do: HeatCalendar.unknown_label(Scheduling.global_thresholds().mode)
 end

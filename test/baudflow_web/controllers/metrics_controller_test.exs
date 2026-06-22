@@ -24,7 +24,14 @@ defmodule BaudflowWeb.MetricsControllerTest do
     end
 
     test "reflects the latest Ookla speeds, count, and uptime" do
-      {:ok, m} =
+      # Verdict derives JIT; absolute mode + a 50 Mbps threshold the 421.5 Mbps
+      # result clears → health 1, uptime 100%.
+      Baudflow.Settings.update_all(%{
+        "threshold_mode" => "absolute",
+        "threshold_download" => "50"
+      })
+
+      {:ok, _m} =
         Measurements.create_measurement(%{
           timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
           download_mbps: 421.5,
@@ -33,8 +40,6 @@ defmodule BaudflowWeb.MetricsControllerTest do
           result_id: "metrics-1",
           source: "scheduled"
         })
-
-      {:ok, _} = Measurements.update_health(m, true, nil)
 
       body = get(build_conn(), "/metrics") |> response(200)
 

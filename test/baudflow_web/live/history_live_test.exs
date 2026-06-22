@@ -4,7 +4,6 @@ defmodule BaudflowWeb.HistoryLiveTest do
   import Phoenix.LiveViewTest
 
   alias Baudflow.Measurements
-  alias Baudflow.Repo
 
   describe "mount" do
     test "renders history page", %{conn: conn} do
@@ -20,16 +19,16 @@ defmodule BaudflowWeb.HistoryLiveTest do
       assert has_element?(lv, "#filter-form")
       assert has_element?(lv, "input[name='filters[date_from]']")
       assert has_element?(lv, "input[name='filters[date_to]']")
-      assert has_element?(lv, "select[name='filters[healthy]']")
+      assert has_element?(lv, "select[name='filters[outcome]']")
       assert has_element?(lv, "select[name='filters[server]']")
       assert has_element?(lv, "button[type='submit']")
     end
 
-    test "renders health filter options", %{conn: conn} do
+    test "renders outcome filter options", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/history")
 
-      assert has_element?(lv, "option[value='healthy']")
-      assert has_element?(lv, "option[value='unhealthy']")
+      assert has_element?(lv, "option[value='succeeded']")
+      assert has_element?(lv, "option[value='failed']")
     end
 
     test "renders server dropdown with distinct server names", %{conn: conn} do
@@ -45,6 +44,8 @@ defmodule BaudflowWeb.HistoryLiveTest do
 
   describe "pagination" do
     test "renders health column header", %{conn: conn} do
+      create_measurement_with(result_id: "header-row")
+
       {:ok, _lv, html} = live(conn, ~p"/history")
       assert html =~ "Health"
     end
@@ -167,39 +168,58 @@ defmodule BaudflowWeb.HistoryLiveTest do
     end
   end
 
-  describe "filtering by health status" do
-    test "filters to show only healthy measurements", %{conn: conn} do
-      m1 = create_measurement_with(result_id: "healthy-1")
-      m2 = create_measurement_with(result_id: "unhealthy-1")
+  describe "health badge" do
+    setup do
+      Baudflow.Settings.update_all(%{
+        "threshold_mode" => "absolute",
+        "threshold_download" => "50"
+      })
 
-      set_healthy(m1, true)
-      set_healthy(m2, false)
+      :ok
+    end
 
-      {:ok, lv, _html} = live(conn, ~p"/history?healthy=healthy")
+    test "renders OK, Breach and Failed as distinct badges", %{conn: conn} do
+      # 80 Mbps ≥ 50 → OK; 40 Mbps < 50 → Breach; a failed run → Failed.
+      create_measurement_with(result_id: "badge-ok", download_bandwidth: 10_000_000)
+      create_measurement_with(result_id: "badge-breach", download_bandwidth: 5_000_000)
+      {:ok, _failed} = failed_measurement(result_id: "badge-failed")
+
+      {:ok, _lv, html} = live(conn, ~p"/history")
+
+      assert html =~ "OK"
+      assert html =~ "Breach"
+      assert html =~ "Failed"
+    end
+  end
+
+  describe "filtering by outcome" do
+    # The verdict is JIT, so the outcome filter operates on the persisted `failed`
+    # flag (the only SQL-able signal): "succeeded" = not failed, "failed" = failed.
+    # A failed test is seeded via record_failure/1.
+
+    test "filters to show only succeeded (non-failed) measurements", %{conn: conn} do
+      m1 = create_measurement_with(result_id: "succeeded-1")
+      {:ok, m2} = failed_measurement(result_id: "failed-1")
+
+      {:ok, lv, _html} = live(conn, ~p"/history?outcome=succeeded")
 
       assert has_element?(lv, "a[href='/results/#{m1.id}']")
       refute has_element?(lv, "a[href='/results/#{m2.id}']")
     end
 
-    test "filters to show only unhealthy measurements", %{conn: conn} do
-      m1 = create_measurement_with(result_id: "healthy-2")
-      m2 = create_measurement_with(result_id: "unhealthy-2")
+    test "filters to show only failed measurements", %{conn: conn} do
+      m1 = create_measurement_with(result_id: "succeeded-2")
+      {:ok, m2} = failed_measurement(result_id: "failed-2")
 
-      set_healthy(m1, true)
-      set_healthy(m2, false)
-
-      {:ok, lv, _html} = live(conn, ~p"/history?healthy=unhealthy")
+      {:ok, lv, _html} = live(conn, ~p"/history?outcome=failed")
 
       assert has_element?(lv, "a[href='/results/#{m2.id}']")
       refute has_element?(lv, "a[href='/results/#{m1.id}']")
     end
 
-    test "shows all measurements when healthy filter is empty", %{conn: conn} do
-      m1 = create_measurement_with(result_id: "all-healthy")
-      m2 = create_measurement_with(result_id: "all-unhealthy")
-
-      set_healthy(m1, true)
-      set_healthy(m2, false)
+    test "shows all measurements when the outcome filter is empty", %{conn: conn} do
+      m1 = create_measurement_with(result_id: "all-1")
+      m2 = create_measurement_with(result_id: "all-2")
 
       {:ok, lv, _html} = live(conn, ~p"/history")
 
@@ -436,9 +456,12 @@ defmodule BaudflowWeb.HistoryLiveTest do
     measurement
   end
 
-  defp set_healthy(measurement, value) do
-    measurement
-    |> Ecto.Changeset.change(healthy: value)
-    |> Repo.update!()
+  defp failed_measurement(overrides) do
+    Measurements.record_failure(%{
+      timestamp:
+        Keyword.get(overrides, :timestamp, DateTime.utc_now() |> DateTime.truncate(:second)),
+      test_type: "ookla",
+      result_id: Keyword.get(overrides, :result_id, "fail-#{System.unique_integer([:positive])}")
+    })
   end
 end

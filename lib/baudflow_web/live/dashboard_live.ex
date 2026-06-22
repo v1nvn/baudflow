@@ -47,6 +47,7 @@ defmodule BaudflowWeb.DashboardLive do
      socket
      |> assign(:test_running, false)
      |> assign(:latest_measurement, measurement)
+     |> assign(:latest_health, latest_health(measurement))
      |> assign(
        :measurements,
        [measurement | socket.assigns.measurements]
@@ -66,29 +67,10 @@ defmodule BaudflowWeb.DashboardLive do
   end
 
   @impl true
-  def handle_info({:health, id, _transition}, socket) do
-    # HealthWorker evaluated the latest measurement post-result; refetch so the
-    # health badge reflects it live (the v1 badge was stale until reload).
-    # A :health broadcast can reference a measurement already pruned by
-    # CleanupWorker (or a stray id under test sandbox isolation) — bail rather
-    # than crash the LiveView.
-    case Measurements.get_measurement(id) do
-      nil ->
-        {:noreply, socket}
-
-      measurement ->
-        socket =
-          if(socket.assigns.latest_measurement && socket.assigns.latest_measurement.id == id,
-            do: assign(socket, :latest_measurement, measurement),
-            else: socket
-          )
-
-        # The heatmap reflects ookla tests only, so a ping's health eval can't change
-        # a cell — skip the month recompute for non-ookla measurements.
-        socket = if measurement.test_type == "ookla", do: assign_heatmap(socket), else: socket
-
-        {:noreply, socket}
-    end
+  def handle_info({:health, _id, _transition}, socket) do
+    # JIT: the hero/heatmap are already current at `:result`, so this broadcast
+    # needs no view action — handled only so stray pruned-id broadcasts don't crash.
+    {:noreply, socket}
   end
 
   @impl true
@@ -197,12 +179,15 @@ defmodule BaudflowWeb.DashboardLive do
   defp load_range(socket, time_range) do
     measurements = fetch_measurements(time_range)
     averages = Measurements.window_averages()
-    thresholds = chart_thresholds()
+    thresholds = chart_thresholds(time_range)
+    latest = List.first(measurements)
 
     socket
     |> assign(:time_range, time_range)
     |> assign(:measurements, measurements)
-    |> assign(:latest_measurement, List.first(measurements))
+    |> assign(:latest_measurement, latest)
+    |> assign(:latest_health, latest_health(latest))
+    |> assign(:unknown_label, unknown_label())
     |> assign(:averages, averages)
     |> assign(:chart_config, %{thresholds: thresholds})
     |> assign(:compliance, compute_compliance(time_range))
@@ -243,20 +228,27 @@ defmodule BaudflowWeb.DashboardLive do
     )
   end
 
-  # Global threshold overlay values for the aggregate speed chart. The dashboard
-  # spans all Ookla schedules, so per-schedule thresholds don't map onto one view
-  # — we overlay the global `Settings` thresholds (the values `thresholds_for/1`
-  # falls back to), gated by `threshold_enabled`. A 0/unset value is "none" → nil,
-  # so the chart draws no line for it.
-  defp chart_thresholds do
-    if Baudflow.Settings.get_boolean("threshold_enabled") do
-      %{
-        download: threshold_or_nil("threshold_download"),
-        upload: threshold_or_nil("threshold_upload"),
-        ping: threshold_or_nil("threshold_ping")
-      }
-    else
-      %{download: nil, upload: nil, ping: nil}
+  # Threshold overlay for the aggregate speed chart. The dashboard spans all
+  # Ookla schedules, so it overlays the global thresholds (the values
+  # `thresholds_for/1` falls back to). Mode-aware: `:absolute` draws the
+  # configured Mbps/ms lines; `:auto` draws the visible-window median reference
+  # line (a flat annotation, not a rolling series); `:off` draws nothing. Each
+  # value is `nil` when there's no line to draw for it.
+  defp chart_thresholds(time_range) do
+    case Scheduling.global_thresholds().mode do
+      :absolute ->
+        %{
+          download: threshold_or_nil("threshold_download"),
+          upload: threshold_or_nil("threshold_upload"),
+          ping: threshold_or_nil("threshold_ping")
+        }
+
+      :auto ->
+        since = time_range_to_datetime(time_range)
+        Measurements.window_median(since, "ookla")
+
+      :off ->
+        %{download: nil, upload: nil, ping: nil}
     end
   end
 
@@ -266,6 +258,14 @@ defmodule BaudflowWeb.DashboardLive do
       _ -> nil
     end
   end
+
+  # JIT health state for the hero badge — the one shared reader, so the hero
+  # matches every other view. No latest measurement reads as `:unknown`.
+  defp latest_health(nil), do: :unknown
+  defp latest_health(%Measurement{} = measurement), do: Measurements.health_state(measurement)
+
+  # Label for a nil-verdict heatmap cell, from the global mode.
+  defp unknown_label, do: HeatCalendar.unknown_label(Scheduling.global_thresholds().mode)
 
   # A failed measurement is a valid "latest" (it's the most recent result) but
   # carries no download value — the hero renders a muted failure state instead

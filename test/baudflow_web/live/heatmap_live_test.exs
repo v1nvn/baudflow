@@ -18,15 +18,11 @@ defmodule BaudflowWeb.HeatmapLiveTest do
       # (months between them with no data render as all-empty tiles too).
       prev = DateTime.add(now, -40 * 24 * 3600, :second)
 
-      {:ok, m1} =
+      {:ok, _m1} =
         Measurements.create_measurement(valid_attrs(timestamp: now, result_id: "hm-now"))
 
-      Measurements.update_health(m1, true, nil)
-
-      {:ok, m2} =
+      {:ok, _m2} =
         Measurements.create_measurement(valid_attrs(timestamp: prev, result_id: "hm-prev"))
-
-      Measurements.update_health(m2, true, nil)
 
       {:ok, lv, html} = live(conn, ~p"/heatmap")
 

@@ -22,6 +22,12 @@ defmodule Baudflow.Scheduling do
   @fallback_cron "0 * * * *"
   @next_run_cap_minutes 7 * 24 * 60
 
+  # Crash-guard for the auto-mode breach ratio when the setting is blanked to an
+  # unparseable value (the canonical default is the `"threshold_ratio"` entry in
+  # `Settings.@default_settings`; this only stops a nil reaching Health's `ratio ×
+  # median` arithmetic). Keep the two in sync.
+  @fallback_ratio 0.7
+
   # --- Reads ------------------------------------------------------------------
 
   @doc "List all schedules, ordered by name."
@@ -240,44 +246,103 @@ defmodule Baudflow.Scheduling do
 
   @doc """
   Resolve a schedule's thresholds: the schedule's own value if set, else the
-  global `Settings` fallback. Uses an explicit nil-check for the boolean so a
-  real `false` overrides instead of falling through (the `||` trap).
+  global `Settings` fallback. Each uses an explicit nil-check so a set value
+  overrides instead of falling through (the `||` trap).
+
+  `mode` is `:auto | :absolute | :off`; `ratio` is the auto-mode breach factor
+  (global-only — a schedule-level ratio is not exposed yet). Download/upload/ping
+  are the absolute-mode Mbps/ms. The canonical defaults live in `Settings`;
+  `@fallback_ratio` only guards a blanked setting (see its definition).
   """
   @spec thresholds_for(Schedule.t()) :: %{
-          enabled: boolean(),
+          mode: :auto | :absolute | :off,
+          ratio: float(),
           download: float() | nil,
           upload: float() | nil,
           ping: float() | nil
         }
   def thresholds_for(%Schedule{} = schedule) do
+    mode = resolve_mode(schedule.threshold_mode, "threshold_mode")
+
+    # Read the ratio only in :auto — absolute/off callers (incl. pure unit tests
+    # whose schedule sets every field) then never touch Settings. `@fallback_ratio`
+    # is the lone code literal; the else value is an inert placeholder.
     %{
-      enabled: resolve_boolean(schedule.threshold_enabled, "threshold_enabled"),
+      mode: mode,
+      ratio:
+        if(mode == :auto,
+          do: Settings.get_float("threshold_ratio", @fallback_ratio),
+          else: @fallback_ratio
+        ),
       download: resolve_float(schedule.download, "threshold_download"),
       upload: resolve_float(schedule.upload, "threshold_upload"),
       ping: resolve_float(schedule.ping, "threshold_ping")
     }
   end
 
-  defp resolve_boolean(nil, key), do: Settings.get_boolean(key)
-  defp resolve_boolean(value, _key), do: value
+  @doc """
+  Global thresholds — the `Settings` fallbacks a blank schedule would resolve
+  to. The dashboard chart and JIT readers span all schedules, so they have no
+  single schedule to read; this is the one reader for "what's the configured
+  health mode/ratio right now?".
+  """
+  @spec global_thresholds() :: map()
+  def global_thresholds, do: thresholds_for(%Schedule{})
+
+  # Closed string→atom mapping; never String.to_atom/1 on stored input. An
+  # unknown or absent value resolves to :auto (the smart default).
+  defp resolve_mode(nil, key), do: key |> Settings.get() |> mode_atom()
+  defp resolve_mode(value, _key), do: mode_atom(value)
+
+  defp mode_atom("absolute"), do: :absolute
+  defp mode_atom("off"), do: :off
+  defp mode_atom(_), do: :auto
 
   defp resolve_float(nil, key), do: Settings.get_float(key, 0.0)
   defp resolve_float(value, _key), do: value
 
   # --- Seeding ----------------------------------------------------------------
 
+  @default_escalated_cron "*/15 * * *"
+
+  # The default schedules a fresh install gets, one per test_type: an Ookla
+  # speed test and an ICMP ping, both hourly, both escalating to 15 min on a
+  # breach. Keyed by test_type so re-bootstrapping is idempotent per-kind — a
+  # power user's extra schedules are untouched, and an existing one-schedule
+  # install gains the ping schedule on next boot.
+  @default_schedules [
+    {"ookla", "Default"},
+    {"ping", "Ping"}
+  ]
+
   @doc """
-  Seed the default schedule from the legacy `schedule_cron` setting when none
-  exist. Idempotent. A malformed legacy cron falls back to hourly so deployed
-  users keep a cadence instead of a broken one.
+  Seed the default schedules idempotently, one per test_type. Each gets the
+  resolved base cron (legacy `schedule_cron` setting or hourly fallback) and a
+  15-min escalated cadence so escalation actually speeds up tests on a breach.
+  A malformed legacy cron falls back to hourly.
   """
-  @spec bootstrap() :: {:ok, Schedule.t()} | {:ok, :already_seeded} | {:error, Ecto.Changeset.t()}
+  @spec bootstrap() :: :ok
   def bootstrap do
-    if list_schedules() == [] do
-      cron = (Settings.get("schedule_cron") || @fallback_cron) |> valid_cron_or(@fallback_cron)
-      create(%{name: "Default", cron: cron, enabled: true})
-    else
+    cron = (Settings.get("schedule_cron") || @fallback_cron) |> valid_cron_or(@fallback_cron)
+
+    for {test_type, name} <- @default_schedules do
+      seed_if_absent(%{
+        test_type: test_type,
+        name: name,
+        cron: cron,
+        escalated_cron: @default_escalated_cron,
+        enabled: true
+      })
+    end
+
+    :ok
+  end
+
+  defp seed_if_absent(%{test_type: test_type} = attrs) do
+    if Repo.get_by(Schedule, test_type: test_type) do
       {:ok, :already_seeded}
+    else
+      create(attrs)
     end
   end
 

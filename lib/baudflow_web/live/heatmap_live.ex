@@ -2,6 +2,7 @@ defmodule BaudflowWeb.HeatmapLive do
   use BaudflowWeb, :live_view
 
   alias Baudflow.Measurements
+  alias Baudflow.Scheduling
   alias BaudflowWeb.HeatCalendar
 
   @moduledoc """
@@ -12,9 +13,10 @@ defmodule BaudflowWeb.HeatmapLive do
   lives, compact, on the dashboard; a chrome-less copy for iframe embedding is
   at `/heatmap/embed`.
 
-  Health is read straight off the persisted `Measurement.healthy`/`failed`
-  columns — nothing recomputed. Buckets are UTC `date_trunc` days, so the
-  grouping is offset from the viewer's local evening; each cell's tooltip
+  Each day's status is derived just-in-time by `Measurements.daily_health/1`
+  (verdicts are never stored — see `Baudflow.Measurements.health/1`), so a change
+  to the mode/ratio repaints the wall on the next load. Buckets are UTC days, so
+  the grouping is offset from the viewer's local evening; each cell's tooltip
   renders the absolute UTC date, which is correct.
   """
 
@@ -45,6 +47,7 @@ defmodule BaudflowWeb.HeatmapLive do
       end)
       |> assign(:tiles, tiles)
       |> assign(:has_data, map_size(status_by_date) > 0)
+      |> assign(:unknown_label, unknown_label())
 
     {:noreply, socket}
   end
@@ -63,4 +66,6 @@ defmodule BaudflowWeb.HeatmapLive do
   defp tile_id(year, month) do
     "heat-#{year}-#{String.pad_leading(Integer.to_string(month), 2, "0")}"
   end
+
+  defp unknown_label, do: HeatCalendar.unknown_label(Scheduling.global_thresholds().mode)
 end

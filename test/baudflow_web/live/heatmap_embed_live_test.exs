@@ -7,9 +7,16 @@ defmodule BaudflowWeb.HeatmapEmbedLiveTest do
 
   describe "embed" do
     test "renders a chrome-less current-month tile (no app nav)", %{conn: conn} do
+      # Verdicts derive JIT; use absolute mode + a threshold the test's 80 Mbps
+      # result clears so today's cell resolves to "healthy".
+      Baudflow.Settings.update_all(%{
+        "threshold_mode" => "absolute",
+        "threshold_download" => "50"
+      })
+
       now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      {:ok, m} =
+      {:ok, _m} =
         Measurements.create_measurement(%{
           timestamp: now,
           ping_latency: 12.5,
@@ -18,8 +25,6 @@ defmodule BaudflowWeb.HeatmapEmbedLiveTest do
           result_id: "embed-1",
           source: "scheduled"
         })
-
-      Measurements.update_health(m, true, nil)
 
       {:ok, lv, html} = live(conn, ~p"/heatmap/embed")
 

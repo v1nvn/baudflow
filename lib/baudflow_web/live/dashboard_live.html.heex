@@ -2,9 +2,9 @@
   <!-- Health Status Bar -->
   <div class={[
     "health-bar",
-    @latest_measurement && @latest_measurement.healthy == true && "healthy",
-    @latest_measurement && @latest_measurement.healthy == false && "unhealthy",
-    (!@latest_measurement || @latest_measurement.healthy == nil) && "unknown"
+    @latest_health == :healthy && "healthy",
+    @latest_health == :breach && "unhealthy",
+    @latest_health in [:failed, :unknown] && "unknown"
   ]}>
   </div>
 
@@ -224,9 +224,9 @@
               this month · UTC days
             </span>
           </div>
-          <.heat_tile tile={@heatmap_tile} compact />
+          <.heat_tile tile={@heatmap_tile} compact unknown_label={@unknown_label} />
           <div class="mt-2">
-            <.heat_legend compact />
+            <.heat_legend compact unknown_label={@unknown_label} />
           </div>
         </div>
       </div>

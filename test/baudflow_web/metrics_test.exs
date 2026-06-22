@@ -14,15 +14,15 @@ defmodule BaudflowWeb.MetricsTest do
         upload_mbps: 22.1,
         ping_latency: 14.3,
         ping_jitter: 0.8,
-        packet_loss: 0.0,
-        healthy: true
+        packet_loss: 0.0
       }
 
       body =
         Metrics.render(%{
           latest: latest,
           total: 1234,
-          uptime: %{healthy: 100, total: 102, percent: 98.0}
+          uptime: %{healthy: 100, total: 102, percent: 98.0},
+          health: true
         })
 
       assert body =~ "# HELP baudflow_download_mbps"
@@ -42,9 +42,10 @@ defmodule BaudflowWeb.MetricsTest do
     test "renders health as 0" do
       body =
         Metrics.render(%{
-          latest: %Measurement{download_mbps: 10.0, healthy: false},
+          latest: %Measurement{download_mbps: 10.0},
           total: 5,
-          uptime: %{healthy: 0, total: 5, percent: 0.0}
+          uptime: %{healthy: 0, total: 5, percent: 0.0},
+          health: false
         })
 
       assert body =~ "baudflow_health 0"
@@ -60,11 +61,11 @@ defmodule BaudflowWeb.MetricsTest do
             upload_mbps: nil,
             ping_latency: nil,
             ping_jitter: nil,
-            packet_loss: nil,
-            healthy: nil
+            packet_loss: nil
           },
           total: 9,
-          uptime: %{healthy: 4, total: 9, percent: 44.4}
+          uptime: %{healthy: 4, total: 9, percent: 44.4},
+          health: nil
         })
 
       assert body =~ "baudflow_download_mbps NaN"
@@ -83,7 +84,8 @@ defmodule BaudflowWeb.MetricsTest do
         Metrics.render(%{
           latest: nil,
           total: 0,
-          uptime: %{healthy: 0, total: 0, percent: nil}
+          uptime: %{healthy: 0, total: 0, percent: nil},
+          health: nil
         })
 
       assert body =~ "baudflow_download_mbps NaN"

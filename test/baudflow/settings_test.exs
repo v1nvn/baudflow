@@ -137,36 +137,6 @@ defmodule Baudflow.SettingsTest do
     end
   end
 
-  describe "get_boolean/1" do
-    test "returns true for 'true'" do
-      Settings.update_all(%{"threshold_enabled" => "true"})
-      assert Settings.get_boolean("threshold_enabled") == true
-    end
-
-    test "returns false for 'false'" do
-      Settings.update_all(%{"threshold_enabled" => "false"})
-      assert Settings.get_boolean("threshold_enabled") == false
-    end
-
-    test "returns false for unknown key (no default)" do
-      assert Settings.get_boolean("nonexistent_key") == false
-    end
-
-    test "returns false for arbitrary string" do
-      Settings.update_all(%{"threshold_enabled" => "yes"})
-      assert Settings.get_boolean("threshold_enabled") == false
-    end
-
-    test "returns false for empty string" do
-      Settings.update_all(%{"threshold_enabled" => ""})
-      assert Settings.get_boolean("threshold_enabled") == false
-    end
-
-    test "returns false for stored nil (missing key with no default)" do
-      assert Settings.get_boolean("nonexistent_key") == false
-    end
-  end
-
   describe "get_integer_list/1" do
     test "parses comma-separated integers" do
       Settings.update_all(%{"preferred_servers" => "1, 2, 3"})

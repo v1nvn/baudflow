@@ -88,7 +88,7 @@
   </div>
   
 <!-- Health Check -->
-  <%= if @measurement.benchmarks do %>
+  <%= if @benchmarks do %>
     <h2 class="text-xs font-semibold tracking-wider text-text-dim uppercase pt-2">
       Health
     </h2>
@@ -98,34 +98,34 @@
           <h2 class="text-xs font-semibold text-text-dim uppercase tracking-wider">
             <.icon name="hero-shield-check-mini" class="size-4" /> Health Check
           </h2>
-          <%= if @measurement.healthy do %>
+          <%= if @health == :healthy do %>
             <span class="status-pill success">
               <.icon name="hero-check-mini" class="size-3" /> Healthy
             </span>
           <% else %>
-            <span class="status-pill error">
-              <.icon name="hero-x-mark-mini" class="size-3" /> Unhealthy
+            <span class="status-pill warning">
+              <.icon name="hero-x-mark-mini" class="size-3" /> Threshold breach
             </span>
           <% end %>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <%= for {metric, result} <- @measurement.benchmarks do %>
+          <%= for {metric, result} <- @benchmarks do %>
             <div class="flex items-center justify-between p-2 rounded-lg bg-surface-3">
               <div>
                 <p class="text-xs text-text-ghost capitalize">{metric}</p>
                 <p class="stat-value text-sm font-semibold">
-                  {Float.round(result["value"], 1)}
-                  <span class="text-xs text-text-ghost">{result["unit"]}</span>
+                  {Float.round(result.value, 1)}
+                  <span class="text-xs text-text-ghost">{result.unit}</span>
                 </p>
               </div>
               <div class="text-right">
                 <p class="text-xs text-text-ghost">
-                  {if metric == "ping", do: "Max", else: "Min"}: {Float.round(
-                    result["threshold"],
+                  {if metric == :ping, do: "Max", else: "Min"}: {Float.round(
+                    result.threshold,
                     1
-                  )} {result["unit"]}
+                  )} {result.unit}
                 </p>
-                <%= if result["passed"] do %>
+                <%= if result.passed do %>
                   <span class="status-pill success">Pass</span>
                 <% else %>
                   <span class="status-pill error">Fail</span>

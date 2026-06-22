@@ -41,7 +41,7 @@ defmodule Baudflow.PipelineTest do
         name: "Pin",
         cron: "* * * * *",
         enabled: true,
-        threshold_enabled: true,
+        threshold_mode: "absolute",
         download: 1000.0
       })
 
@@ -67,10 +67,9 @@ defmodule Baudflow.PipelineTest do
     assert m.schedule_id == schedule.id
 
     # 4. Health evaluates → breach → atomic streak + escalation + notification.
+    # (The verdict itself isn't persisted — it derives JIT — but its effects are.)
     [health_job] = all_enqueued(worker: HealthWorker)
     assert :ok = perform_job(HealthWorker, health_job.args)
-
-    assert Measurements.get_measurement!(m.id).healthy == false
 
     refreshed = Scheduling.get_schedule!(schedule.id)
     assert refreshed.breach_streak == 1

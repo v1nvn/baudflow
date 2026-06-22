@@ -14,18 +14,32 @@ defmodule BaudflowWeb.HeatCalendar do
 
   @doc """
   Legend statuses in display order — the single source of truth for status
-  wording. The legend renders it directly, and `status_labels/0` ships it to the
+  wording. The legend renders it directly, and `status_labels/1` ships it to the
   `HeatmapMatrix` tooltip via the canvas `data-labels`, so the two can't drift.
+
+  `unknown_label` is caller-supplied (the view resolves the global threshold
+  mode once and passes it): "Calibrating" under `:auto` (a nil verdict means the
+  baseline isn't ready yet), "No verdict" otherwise. The component never reads
+  `Settings` itself — it stays a dumb renderer shared by every placement.
   """
-  def statuses do
+  def statuses(unknown_label \\ "No verdict") do
     [
       {:healthy, "Healthy"},
       {:breach, "Threshold breach"},
       {:failed, "Failed"},
-      {:unknown, "No verdict"},
+      {:unknown, unknown_label},
       {:empty, "No data"}
     ]
   end
+
+  @doc """
+  The no-verdict wording for a given health `mode` — "Calibrating" under `:auto`
+  (a nil verdict means the rolling baseline isn't ready yet) vs "No verdict"
+  otherwise. The single owner of this wording; views pass it to `heat_tile`/
+  `heat_legend` so the dumb renderer never reads `Settings` to decide it.
+  """
+  def unknown_label(:auto), do: "Calibrating"
+  def unknown_label(_mode), do: "No verdict"
 
   @doc """
   Muted health palette — the same hues as the line-chart neon but desaturated
@@ -47,14 +61,15 @@ defmodule BaudflowWeb.HeatCalendar do
 
   @doc """
   Status labels keyed by the string the matrix cells carry (the `v` field),
-  derived from `statuses/0`. Shipped to the hook via the canvas `data-labels`,
+  derived from `statuses/1`. Shipped to the hook via the canvas `data-labels`,
   parallel to `status_colors`/`data-colors` — the JS maps are only fallbacks.
   """
-  def status_labels do
-    Map.new(statuses(), fn {key, label} -> {Atom.to_string(key), label} end)
+  def status_labels(unknown_label \\ "No verdict") do
+    Map.new(statuses(unknown_label), fn {key, label} -> {Atom.to_string(key), label} end)
   end
 
-  def status_labels_json, do: Jason.encode!(status_labels())
+  def status_labels_json(unknown_label \\ "No verdict"),
+    do: Jason.encode!(status_labels(unknown_label))
 
   @doc """
   UTC midnight on the first day of `date`'s month — the lower bound for "this
@@ -114,6 +129,10 @@ defmodule BaudflowWeb.HeatCalendar do
   attr :tile, :map, required: true, doc: "a `month_matrix/4` result"
   attr :compact, :boolean, default: false, doc: "smaller label + cells for the dashboard widget"
 
+  attr :unknown_label, :string,
+    default: "No verdict",
+    doc: "tooltip + legend word for a no-verdict cell"
+
   def heat_tile(assigns) do
     ~H"""
     <div>
@@ -128,7 +147,7 @@ defmodule BaudflowWeb.HeatCalendar do
           phx-hook="HeatmapMatrix"
           data-weeks={@tile.weeks}
           data-colors={status_colors_json()}
-          data-labels={status_labels_json()}
+          data-labels={status_labels_json(@unknown_label)}
         >
         </canvas>
       </div>
@@ -141,6 +160,7 @@ defmodule BaudflowWeb.HeatCalendar do
   match the `HeatmapMatrix` color scale.
   """
   attr :compact, :boolean, default: false
+  attr :unknown_label, :string, default: "No verdict"
 
   def heat_legend(assigns) do
     ~H"""
@@ -148,7 +168,7 @@ defmodule BaudflowWeb.HeatCalendar do
       "flex flex-wrap items-center gap-x-3 gap-y-1 text-text-ghost",
       if(@compact, do: "justify-center text-[10px]", else: "text-xs")
     ]}>
-      <span :for={{key, label} <- statuses()} class="flex items-center gap-1.5">
+      <span :for={{key, label} <- statuses(@unknown_label)} class="flex items-center gap-1.5">
         <span
           class={["size-2.5 rounded-sm", key == :empty && "border border-border-subtle"]}
           style={swatch_style(key)}
