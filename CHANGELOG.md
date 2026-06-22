@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.0](https://github.com/v1nvn/baudflow/compare/v0.4.0...v0.5.0) (2026-06-22)
+
+
+
+
+### Features:
+
+* add Prometheus metrics endpoint and rendering logic by v1nvn
+
 ## [v0.4.0](https://github.com/v1nvn/baudflow/compare/v0.3.1...v0.4.0) (2026-06-21)
 
 
