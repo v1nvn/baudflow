@@ -153,6 +153,105 @@
   position: relative;
 }
 
+/* System status cluster — heatmap viz + instrument readouts.
+   One panel, not three cards: the heatmap is a visualization, the rest are
+   single readouts, so they get different treatment inside a shared frame
+   (echoing the .crt-stat readout idiom) rather than identical card chrome. */
+.status-cluster {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface-1);
+}
+.status-cluster-viz {
+  flex: 0 0 auto;
+}
+.status-cluster-readouts {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+@media (min-width: 1024px) {
+  .status-cluster {
+    flex-direction: row;
+  }
+  .status-cluster-viz {
+    width: 250px;
+    padding-right: 1.75rem;
+  }
+  .status-cluster-readouts {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 0;
+    padding-left: 1.75rem;
+    border-top: none;
+    border-left: 1px solid var(--color-border);
+  }
+}
+
+/* A single instrument readout (next test, SLA, …). Stacks on mobile with a
+   horizontal divider; flows into equal columns with vertical dividers on wide
+   screens so one or two readouts fill the rail instead of clustering left. */
+.readout {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.readout + .readout {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+@media (min-width: 1024px) {
+  .readout + .readout {
+    margin-top: 0;
+    padding-top: 0;
+    margin-left: 1.75rem;
+    padding-left: 1.75rem;
+    border-top: none;
+    border-left: 1px solid var(--color-border-subtle);
+  }
+}
+.readout-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-ghost);
+  margin-bottom: 0.45rem;
+}
+.readout-value {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+.readout-value-note {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-text-ghost);
+}
+.readout-sub {
+  margin-top: 0.45rem;
+  font-size: 0.6875rem;
+  color: var(--color-text-ghost);
+}
+
 /* Segmented control */
 .seg-control {
   display: inline-flex;
