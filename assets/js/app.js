@@ -285,6 +285,7 @@ chartHooks.SpeedChart = {
     ]
 
     this.handleEvent("chart_data", ({results, averages, thresholds}) => {
+      this.chart.resize()
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.download_mbps)
@@ -367,6 +368,7 @@ chartHooks.PingChart = {
     const pingSpec = [{key: "ping", color: c.latency.border, label: "Max ping"}]
 
     this.handleEvent("chart_data", ({results, thresholds}) => {
+      this.chart.resize()
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.ping_latency)
@@ -433,6 +435,7 @@ chartHooks.JitterChart = {
     })
 
     this.handleEvent("chart_data", ({results}) => {
+      this.chart.resize()
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.download_jitter)
@@ -502,6 +505,7 @@ chartHooks.PingDetailChart = {
     const pingDetailSpec = [{key: "ping", color: c.latency.border, label: "Max ping"}]
 
     this.handleEvent("chart_data", ({results, thresholds}) => {
+      this.chart.resize()
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.ping_latency)
@@ -549,6 +553,7 @@ chartHooks.PacketLossChart = {
     })
 
     this.handleEvent("chart_data", ({results}) => {
+      this.chart.resize()
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.packet_loss)
@@ -601,6 +606,7 @@ chartHooks.DurationChart = {
     })
 
     this.handleEvent("chart_data", ({results}) => {
+      this.chart.resize()
       const sorted = [...results].reverse()
       this.chart.data.labels = sorted.map(r => r.timestamp)
       this.chart.data.datasets[0].data = sorted.map(r => r.download_elapsed)

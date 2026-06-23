@@ -307,7 +307,13 @@
         </div>
       </div>
       <div class="chart-section-body">
-        <div id="speed-chart" phx-hook="SpeedChart" class="w-full" style="min-height: 300px;">
+        <div
+          id="speed-chart"
+          phx-hook="SpeedChart"
+          phx-update="ignore"
+          class="w-full"
+          style="min-height: 300px;"
+        >
           <canvas id="speed-chart-canvas"></canvas>
         </div>
       </div>
@@ -323,7 +329,13 @@
           </div>
         </div>
         <div class="chart-section-body">
-          <div id="ping-chart" phx-hook="PingChart" class="w-full" style="min-height: 220px;">
+          <div
+            id="ping-chart"
+            phx-hook="PingChart"
+            phx-update="ignore"
+            class="w-full"
+            style="min-height: 220px;"
+          >
             <canvas id="ping-chart-canvas"></canvas>
           </div>
         </div>
@@ -339,7 +351,13 @@
           </div>
         </div>
         <div class="chart-section-body">
-          <div id="jitter-chart" phx-hook="JitterChart" class="w-full" style="min-height: 220px;">
+          <div
+            id="jitter-chart"
+            phx-hook="JitterChart"
+            phx-update="ignore"
+            class="w-full"
+            style="min-height: 220px;"
+          >
             <canvas id="jitter-chart-canvas"></canvas>
           </div>
         </div>
@@ -361,6 +379,7 @@
           <div
             id="ping-detail-chart"
             phx-hook="PingDetailChart"
+            phx-update="ignore"
             class="w-full"
             style="min-height: 220px;"
           >
@@ -382,6 +401,7 @@
           <div
             id="duration-chart"
             phx-hook="DurationChart"
+            phx-update="ignore"
             class="w-full"
             style="min-height: 220px;"
           >
@@ -405,6 +425,7 @@
         <div
           id="packet-loss-chart"
           phx-hook="PacketLossChart"
+          phx-update="ignore"
           class="w-full"
           style="min-height: 160px;"
         >
