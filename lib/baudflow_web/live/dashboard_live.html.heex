@@ -227,7 +227,7 @@
       </div>
 
       <div :if={@next_run || @compliance} class="status-cluster-readouts">
-        <div :if={@next_run} class="readout">
+        <div :if={@next_run} id="next-test-card" class="readout">
           <span class="readout-label">Next Scheduled Test</span>
           <div class="readout-value">
             <.local_time id="next-test-time" at={@next_run.at} />
@@ -237,7 +237,7 @@
           </p>
         </div>
 
-        <div :if={@compliance} class="readout">
+        <div :if={@compliance} id="compliance-card" class="readout">
           <span class="readout-label">SLA Compliance</span>
           <div class="readout-value">
             <%= if @compliance.percent do %>
