@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.1](https://github.com/v1nvn/baudflow/compare/v0.6.0...v0.6.1) (2026-06-24)
+
+
+
+
+### Bug Fixes:
+
+* ci checks by v1nvn
+
+* system status card ui by v1nvn
+
+* chart responsiveness by v1nvn
+
 ## [v0.6.0](https://github.com/v1nvn/baudflow/compare/v0.5.0...v0.6.0) (2026-06-22)
 
 
