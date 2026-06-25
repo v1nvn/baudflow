@@ -1,0 +1,79 @@
+---
+// CSS-only tabbed terminal (no JS). Radios precede the tabs + panels so the
+// :checked ~ sibling selectors can drive which panel shows.
+---
+
+<div class="term">
+  <input type="radio" id="t-docker" name="install" checked />
+  <input type="radio" id="t-mix" name="install" />
+
+  <div class="term-tabs">
+    <label for="t-docker">Docker</label>
+    <label for="t-mix">Mix (dev)</label>
+  </div>
+
+  <div class="term-body panel docker">
+    <div><span class="prompt">$</span> <span class="cmd">docker run -d</span></div>
+    <div class="indent cmd">-p 4000:4000</div>
+    <div class="indent cmd">-e DATABASE_URL=ecto://user:pass@db/baudflow</div>
+    <div class="indent cmd">-e SECRET_KEY_BASE=change-me</div>
+    <div class="indent cmd">ghcr.io/v1nvn/baudflow:0.6.0</div>
+    <div class="out">→ pulling image ✓</div>
+    <div class="out">→ running migrations ✓</div>
+    <div class="up">▲ listening on http://localhost:4000</div>
+    <div><span class="prompt">$</span> <span class="cursor"></span></div>
+  </div>
+
+  <div class="term-body panel mix">
+    <div><span class="prompt">$</span> <span class="cmd">git clone https://github.com/v1nvn/baudflow && cd baudflow</span></div>
+    <div><span class="prompt">$</span> <span class="cmd">mix setup</span></div>
+    <div class="out">→ installing deps ✓</div>
+    <div class="out">→ creating database, running migrations ✓</div>
+    <div><span class="prompt">$</span> <span class="cmd">mix phx.server</span></div>
+    <div class="up">▲ listening on http://localhost:4000</div>
+    <div><span class="prompt">$</span> <span class="cursor"></span></div>
+  </div>
+</div>
+
+<style>
+  .term {
+    max-width: 44rem;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-0);
+    overflow: hidden;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.45);
+  }
+  input[type='radio'] { position: absolute; opacity: 0; pointer-events: none; }
+
+  .term-tabs { display: flex; border-bottom: 1px solid var(--border); background: hsl(224 30% 16% / 0.6); }
+  .term-tabs label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0.6rem 1rem;
+    color: var(--text-ghost);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+  .term-tabs label:hover { color: var(--text-dim); }
+
+  .panel { display: none; padding: 1.1rem 1.3rem; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.85; }
+  .indent { padding-left: 1.4rem; }
+  .prompt { color: var(--green); }
+  .cmd { color: var(--text); }
+  .out { color: var(--text-dim); }
+  .up { color: var(--cyan); }
+  .cursor { display: inline-block; width: 7px; height: 0.95em; background: var(--cyan); vertical-align: -2px; box-shadow: 0 0 8px hsl(186 92% 52% / 0.6); }
+
+  /* show the panel + active tab for the checked radio */
+  #t-docker:checked ~ .panel.docker,
+  #t-mix:checked ~ .panel.mix { display: block; }
+  #t-docker:checked ~ .term-tabs label[for='t-docker'],
+  #t-mix:checked ~ .term-tabs label[for='t-mix'] {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+    text-shadow: 0 0 6px hsl(186 92% 52% / 0.5);
+  }
+</style>

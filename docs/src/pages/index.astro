@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Oscilloscope from '../components/Oscilloscope.astro';
+import ProductWindow from '../components/ProductWindow.astro';
+import FeatureCard from '../components/FeatureCard.astro';
+import Terminal from '../components/Terminal.astro';
+import { BASE } from '../utils';
+
+const gh = 'https://github.com/v1nvn/baudflow';
+
+const features = [
+  { icon: '∿', title: 'Live CRT oscilloscope', body: 'Speedtest output streamed line-by-line via Erlang ports — watch the waveform build in real time.' },
+  { icon: '⏱', title: 'Cron + manual runs', body: 'Schedule tests on a cron or trigger one instantly. Full run history with success/failure status.' },
+  { icon: '⚕', title: 'Health & degradation', body: 'Configurable thresholds flag degradation; alerts fire through your notification channels.' },
+  { icon: '⟡', title: 'Per-result drill-down', body: 'Ping, jitter, packet loss, server, ISP info — every measurement, fully inspectable.' },
+  { icon: '⚙', title: 'Oban background jobs', body: 'Run, schedule, cleanup, and notify workers stay decoupled and observable.' },
+  { icon: '♥', title: 'Health endpoint', body: 'A lightweight /health for uptime monitors, plus a Prometheus /metrics endpoint.' },
+];
+---
+
+<BaseLayout title="Baudflow — Know your network">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <span class="kicker">Self-hosted network monitoring</span>
+      <h1>Know your <em>network.</em><br />Down to the last megabit.</h1>
+      <p class="lede">
+        Baudflow runs automated Ookla speed tests on a schedule, streams progress live, and turns
+        raw results into a real-time dashboard of your connection's health.
+      </p>
+      <div class="ctas">
+        <a class="btn btn-fill" href={`${BASE}#install`}>▶ Get started</a>
+        <a class="btn btn-ghost" href={gh} rel="noopener">★ Star on GitHub</a>
+      </div>
+      <div class="hero-scope"><Oscilloscope /></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Power-user dashboard</span>
+        <h2>Everything a flaky connection can throw at you</h2>
+        <p>Live visualization, run history, per-result drill-downs, and health tracking — all on one screen.</p>
+      </div>
+      <ProductWindow />
+      <div class="feature-grid">
+        {features.map((f) => (
+          <FeatureCard icon={f.icon} title={f.title}>{f.body}</FeatureCard>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install" class="section install">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Up in under a minute</span>
+        <h2>Quick start</h2>
+        <p>Bring Postgres and the Ookla CLI, or just run the container.</p>
+      </div>
+      <Terminal />
+      <p class="post-install">
+        Need more detail? Read the <a href={`${BASE}docs/getting-started/`}>getting started guide</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 800; max-width: 18ch; margin: 0.7rem auto 0.9rem; }
+  .hero h1 em { font-style: normal; color: var(--cyan); text-shadow: 0 0 16px hsl(186 92% 52% / 0.45); }
+  .lede { color: var(--text-dim); max-width: 52ch; margin: 0 auto 1.7rem; }
+  .ctas { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.4rem; }
+  .hero-scope { max-width: 680px; margin: 0 auto; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2.5rem; }
+  @media (max-width: 820px) { .feature-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .feature-grid { grid-template-columns: 1fr; } }
+
+  .install { border-top: 1px solid var(--border); background: hsl(224 38% 4.5% / 0.4); }
+  .post-install { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; color: var(--text-dim); }
+  .post-install a { color: var(--accent); text-decoration: none; }
+  .post-install a:hover { color: var(--accent-glow); text-decoration: underline; }
+</style>

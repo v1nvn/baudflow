@@ -1,0 +1,41 @@
+---
+import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/dm-sans';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { BASE } from '../utils';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = 'Baudflow — a self-hosted network speed monitoring dashboard. Automated Ookla speed tests, live visualization, and health tracking.',
+} = Astro.props;
+const fullTitle = title.includes('Baudflow') ? title : `${title} · Baudflow`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href={`${BASE}favicon.ico`} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

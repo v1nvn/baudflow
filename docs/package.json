@@ -1,0 +1,17 @@
+{
+  "name": "baudflow-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.0.0",
+    "@fontsource-variable/jetbrains-mono": "^5.0.0",
+    "astro": "^7.0.2"
+  }
+}

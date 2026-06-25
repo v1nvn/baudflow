@@ -1,0 +1,50 @@
+---
+import { getCollection } from 'astro:content';
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { BASE } from '../../utils';
+
+const entries = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<DocsLayout
+  current=""
+  title="Documentation"
+  description="Baudflow documentation — install, configure, deploy, and troubleshoot your self-hosted network monitor."
+>
+  <div class="prose">
+    <h1>Documentation</h1>
+    <p>
+      Baudflow is a self-hosted network speed monitoring dashboard built with Phoenix LiveView.
+      These docs cover everything from a one-command install to tuning degradation thresholds and
+      scraping the metrics endpoint.
+    </p>
+  </div>
+
+  <div class="doc-cards">
+    {entries.map((e) => (
+      <a class="doc-card" href={`${BASE}docs/${e.id}/`}>
+        <h3>{e.data.title}</h3>
+        <p>{e.data.description}</p>
+        <span class="go">Read →</span>
+      </a>
+    ))}
+  </div>
+</DocsLayout>
+
+<style>
+  .doc-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+  .doc-card {
+    display: block;
+    padding: 1.2rem 1.3rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    text-decoration: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .doc-card:hover { border-color: var(--accent); box-shadow: 0 0 18px hsl(198 95% 52% / 0.08); }
+  .doc-card h3 { margin: 0 0 0.35rem; font-size: 1rem; color: var(--text); }
+  .doc-card p { margin: 0 0 0.9rem; font-size: 0.84rem; color: var(--text-dim); }
+  .doc-card .go { font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent); }
+  @media (max-width: 600px) { .doc-cards { grid-template-columns: 1fr; } }
+</style>

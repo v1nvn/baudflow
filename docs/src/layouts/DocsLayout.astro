@@ -1,0 +1,75 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { BASE } from '../utils';
+
+interface Props {
+  current?: string;
+  title: string;
+  description?: string;
+}
+const { current = '', title, description } = Astro.props;
+
+// One source for the sidebar: the whole docs collection, ordered.
+const entries = (await getCollection('docs')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const idx = entries.findIndex((e) => e.id === current);
+const prev = idx > 0 ? entries[idx - 1] : null;
+const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container docs-grid">
+    <aside class="sidebar">
+      <nav>
+        <a href={`${BASE}docs/`} class={!current ? 'active' : ''}>Documentation</a>
+        {entries.map((e) => (
+          <a href={`${BASE}docs/${e.id}/`} class={e.id === current ? 'active' : ''}>{e.data.title}</a>
+        ))}
+      </nav>
+    </aside>
+
+    <div class="docs-content">
+      <slot />
+      {(prev || next) && (
+        <nav class="pager">
+          {prev && <a class="pager-link" href={`${BASE}docs/${prev.id}/`}>← {prev.data.title}</a>}
+          {next && <a class="pager-link right" href={`${BASE}docs/${next.id}/`}>{next.data.title} →</a>}
+        </nav>
+      )}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .docs-grid {
+    display: grid;
+    grid-template-columns: 15rem 1fr;
+    gap: 3rem;
+    padding-top: 2.5rem;
+    padding-bottom: 3rem;
+  }
+  .sidebar nav { display: flex; flex-direction: column; gap: 0.1rem; position: sticky; top: 78px; }
+  .sidebar a {
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.86rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+  }
+  .sidebar a:hover { color: var(--text); background: var(--surface-2); }
+  .sidebar a.active { color: var(--accent); border-left-color: var(--accent); background: hsl(198 95% 52% / 0.06); }
+  .docs-content { min-width: 0; }
+  .pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .pager-link { font-size: 0.85rem; color: var(--text-dim); text-decoration: none; padding: 0.55rem 0.9rem; border: 1px solid var(--border); border-radius: 0.5rem; }
+  .pager-link:hover { color: var(--accent); border-color: var(--accent); }
+  .pager-link.right { margin-left: auto; }
+  @media (max-width: 820px) {
+    .docs-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .sidebar nav { position: static; flex-direction: row; flex-wrap: wrap; }
+    .sidebar a { border-left: none; border-bottom: 2px solid transparent; }
+    .sidebar a.active { border-left: none; border-bottom-color: var(--accent); }
+  }
+</style>
