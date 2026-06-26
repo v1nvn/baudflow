@@ -1085,6 +1085,161 @@ chartHooks.SpeedtestViz = {
   },
 }
 
+// Live TCP-connect ping view — single-phase cousin of SpeedtestViz. Each
+// `ping_progress` payload pushes a latency sample (null for a failed connect);
+// bars are drawn inverted (lower latency = taller, amber) with failed samples
+// as a red baseline marker. `ping_complete` stops the render loop.
+chartHooks.PingViz = {
+  mounted() {
+    this.samples = [] // [{latency: number|null}]
+    // Cap high enough for a long run (duration × samples/sec); _draw spreads the
+    // current set across the width, so a shorter run just widens the bars.
+    this.maxSamples = 120
+    this.startTime = Date.now()
+    this.animId = null
+
+    this.canvas = document.getElementById("ping-canvas")
+    this.ctx = this.canvas.getContext("2d")
+    this.avgEl = document.getElementById("ping-avg")
+    this.jitterEl = document.getElementById("ping-jitter")
+    this.lossEl = document.getElementById("ping-loss")
+    this.elapsedEl = document.getElementById("ping-elapsed")
+    this.targetEl = document.getElementById("ping-target")
+
+    this._resize()
+    window.addEventListener("resize", this._onResize = () => this._resize())
+
+    this._animate()
+
+    this.handleEvent("ping_start", () => this._reset())
+    this.handleEvent("ping_progress", (d) => this._onProgress(d))
+    this.handleEvent("ping_complete", () => this._stop())
+  },
+
+  destroyed() {
+    this._stop()
+  },
+
+  // A re-run from the open panel doesn't re-mount the hook (phx-update="ignore"
+  // keeps #ping-viz), so ping_start resets the samples/readouts and restarts the
+  // render loop for a fresh animation.
+  _reset() {
+    this.samples = []
+    this.startTime = Date.now()
+    if (this.avgEl) this.avgEl.textContent = "───"
+    if (this.jitterEl) this.jitterEl.textContent = "──"
+    if (this.lossEl) this.lossEl.textContent = "──"
+    if (this.elapsedEl) this.elapsedEl.textContent = "──"
+    if (!this.animId) this._animate()
+  },
+
+  _resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect()
+    const dpr = window.devicePixelRatio || 1
+    this.canvas.width = rect.width * dpr
+    this.canvas.height = rect.height * dpr
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    this.w = rect.width
+    this.h = rect.height
+  },
+
+  _stop() {
+    if (this.animId) {
+      cancelAnimationFrame(this.animId)
+      this.animId = null
+    }
+    if (this._onResize) {
+      window.removeEventListener("resize", this._onResize)
+    }
+  },
+
+  _onProgress(data) {
+    this.samples.push({latency: data.latency})
+    if (this.samples.length > this.maxSamples) this.samples.shift()
+
+    if (data.avg != null && this.avgEl) this.avgEl.textContent = data.avg.toFixed(1)
+    if (data.jitter != null && this.jitterEl) this.jitterEl.textContent = data.jitter.toFixed(1)
+    if (this.lossEl) this.lossEl.textContent = `${data.loss.toFixed(0)}%`
+    if (this.targetEl) this.targetEl.textContent = `${data.host}:${data.port}`
+  },
+
+  _animate() {
+    this._draw()
+    if (this.elapsedEl) {
+      const sec = ((Date.now() - this.startTime) / 1000).toFixed(1)
+      this.elapsedEl.textContent = sec
+    }
+    this.animId = requestAnimationFrame(() => this._animate())
+  },
+
+  _draw() {
+    const ctx = this.ctx
+    const w = this.w
+    const h = this.h
+    if (!w || !h) return
+
+    // Background + grid — matches the SpeedtestViz oscilloscope frame.
+    ctx.fillStyle = "#020408"
+    ctx.fillRect(0, 0, w, h)
+    ctx.strokeStyle = "hsla(186, 100%, 50%, 0.04)"
+    ctx.lineWidth = 1
+    for (let i = 1; i < 8; i++) {
+      const y = (h / 8) * i
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
+    }
+    for (let i = 1; i < 12; i++) {
+      const x = (w / 12) * i
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke()
+    }
+    ctx.strokeStyle = "hsla(186, 100%, 50%, 0.08)"
+    ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+
+    if (this.samples.length === 0) return
+
+    const padTop = 30
+    const padBottom = 30
+    const drawH = h - padTop - padBottom
+    const span = Math.max(this.samples.length, 2)
+    const barW = (w / span) * 0.6
+
+    // Auto-scale to the worst latency seen, floored so tiny latencies don't pin
+    // the bars to the top edge.
+    let maxVal = 1
+    for (const s of this.samples) {
+      if (s.latency != null && s.latency > maxVal) maxVal = s.latency
+    }
+    maxVal = maxVal * 1.2
+
+    // A bar per sample: inverted (lower latency = taller, amber gradient); a
+    // failed connect drops to a red stub on the baseline.
+    for (let i = 0; i < this.samples.length; i++) {
+      const x = (i / (span - 1)) * w
+      const s = this.samples[i]
+
+      if (s.latency != null) {
+        const frac = 1 - Math.min(s.latency / maxVal, 1)
+        const y = padTop + drawH * (1 - frac)
+        const barH = padTop + drawH - y
+        const grad = ctx.createLinearGradient(x, y, x, y + barH)
+        grad.addColorStop(0, "rgba(255, 170, 0, 0.9)")
+        grad.addColorStop(1, "rgba(255, 170, 0, 0.15)")
+        ctx.fillStyle = grad
+        ctx.fillRect(x - barW / 2, y, barW, barH)
+      } else {
+        const y = padTop + drawH - 4
+        ctx.fillStyle = "rgba(255, 51, 102, 0.9)"
+        ctx.fillRect(x - barW / 2, y, barW, 4)
+      }
+    }
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.12)"
+    ctx.font = "10px monospace"
+    ctx.textAlign = "left"
+    ctx.fillText(`${maxVal.toFixed(1)}ms`, 4, padTop + 10)
+    ctx.fillText("0ms", 4, h - padBottom - 2)
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

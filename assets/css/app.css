@@ -308,6 +308,25 @@
   pointer-events: none;
 }
 
+/* Split-button Run control: the two CTAs share .cta-run but need flat inner
+   edges. .cta-run's `border-radius` shorthand sits later than Tailwind's
+   per-corner utilities (equal specificity → source order wins), so the rounded-*
+   utilities are no-ops here — override per-side with a higher-specificity
+   selector instead. Each button keeps its rounded OUTER corner from .cta-run. */
+.run-split > .cta-run-primary {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.run-split > .cta-run-toggle {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  /* Narrower than .cta-run's 1.25rem so the chevron hugs the label instead of
+     floating in a wide button (the px-* utility can't override .cta-run's
+     padding shorthand — same source-order trap as the radius above). */
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 /* Native select restyle */
 .bf-select {
   appearance: none;

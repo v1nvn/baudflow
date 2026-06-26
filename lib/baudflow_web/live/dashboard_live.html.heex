@@ -197,14 +197,46 @@
             <% end %>
           </div>
 
-          <button
-            id="run-test-btn"
-            phx-click="run_test"
-            class="cta-run"
-            disabled={@test_running}
-          >
-            <.icon name="hero-play-mini" class="size-4" /> Run Test
-          </button>
+          <div class="run-split relative inline-flex">
+            <button
+              id="run-test-btn"
+              phx-click="run_test"
+              class="cta-run cta-run-primary"
+              disabled={@test_running}
+            >
+              <.icon name="hero-play-mini" class="size-4" /> Run Test
+            </button>
+            <button
+              id="run-menu-toggle"
+              phx-click="toggle-run-menu"
+              aria-haspopup="true"
+              aria-expanded={@run_menu_open}
+              class="cta-run cta-run-toggle border-l border-black/20"
+              disabled={@test_running}
+              aria-label="More test types"
+            >
+              <.icon name="hero-chevron-down-mini" class="size-4" />
+            </button>
+
+            <%= if @run_menu_open do %>
+              <!-- Click-away backdrop: a full-screen transparent layer behind the menu -->
+              <div id="run-menu-backdrop" class="fixed inset-0 z-40" phx-click="close-run-menu">
+              </div>
+              <div
+                class="absolute right-0 top-full mt-1 z-50 w-48 glass-card p-1 shadow-lg shadow-black/40"
+                role="menu"
+              >
+                <.link
+                  id="run-ping-item"
+                  navigate={~p"/ping?run=1"}
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-text hover:bg-surface-3 transition-colors"
+                  role="menuitem"
+                >
+                  <.icon name="hero-signal-mini" class="size-4 text-amber" /> Run Ping Test
+                </.link>
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
     </section>

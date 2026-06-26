@@ -30,9 +30,6 @@ config :baudflow, :bootstrap_on_start, false
 # Point the Ookla runner at a deterministic fake CLI (see test/support/fake_speedtest)
 config :baudflow, :speedtest_bin, Path.expand("../test/support/fake_speedtest", __DIR__)
 
-# Point the Ping runner at a deterministic fake CLI (see test/support/fake_ping)
-config :baudflow, :ping_bin, Path.expand("../test/support/fake_ping", __DIR__)
-
 # Print only warnings and errors during test
 config :logger, level: :warning
 
@@ -46,3 +43,7 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+# Ping samples are paced apart in dev/prod so the live view can render each as
+# it lands; zero here keeps the ping tests fast and deterministic.
+config :baudflow, ping_sample_interval_ms: 0

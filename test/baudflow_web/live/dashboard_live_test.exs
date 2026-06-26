@@ -318,6 +318,54 @@ defmodule BaudflowWeb.DashboardLiveTest do
     end
   end
 
+  describe "split-button run menu" do
+    test "renders the primary run button and dropdown toggle", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      assert has_element?(lv, "#run-test-btn")
+      assert has_element?(lv, "#run-menu-toggle[phx-click='toggle-run-menu']")
+    end
+
+    test "the ping menu item is hidden until the toggle is clicked", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      refute has_element?(lv, "#run-ping-item")
+
+      lv
+      |> element("#run-menu-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#run-ping-item")
+      assert render(lv) =~ "Run Ping Test"
+    end
+
+    test "clicking the backdrop closes the menu", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      lv
+      |> element("#run-menu-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#run-ping-item")
+
+      lv
+      |> element("#run-menu-backdrop")
+      |> render_click()
+
+      refute has_element?(lv, "#run-ping-item")
+    end
+
+    test "the ping item links to the ping page with auto-run", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      lv
+      |> element("#run-menu-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#run-ping-item[href='/ping?run=1']")
+    end
+  end
+
   describe "server selection" do
     test "renders server select dropdown", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/")

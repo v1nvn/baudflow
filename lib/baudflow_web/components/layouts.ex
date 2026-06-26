@@ -48,6 +48,21 @@ defmodule BaudflowWeb.Layouts do
             </li>
             <li>
               <.link
+                navigate={~p"/ping"}
+                aria-label="Ping"
+                class={[
+                  "px-2.5 py-1 text-xs font-medium rounded-md transition-colors duration-150",
+                  @active_page != :ping &&
+                    "text-text-ghost hover:text-text-dim hover:bg-surface-3",
+                  @active_page == :ping && "text-text bg-surface-3"
+                ]}
+              >
+                <.icon name="hero-signal-mini" class="size-3.5 inline-block mr-0.5" />
+                <span class="hidden sm:inline">Ping</span>
+              </.link>
+            </li>
+            <li>
+              <.link
                 navigate={~p"/history"}
                 aria-label="History"
                 class={[

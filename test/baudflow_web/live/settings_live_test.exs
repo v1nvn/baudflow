@@ -32,6 +32,14 @@ defmodule BaudflowWeb.SettingsLiveTest do
       assert html =~ "Thresholds"
     end
 
+    test "renders the ping target and port fields", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/settings")
+
+      assert has_element?(lv, "#ping-target-input")
+      assert has_element?(lv, "#ping-port-input")
+      assert has_element?(lv, "input[name='settings[ping_port]']")
+    end
+
     test "renders preferred and blocked servers fields", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/settings")
 

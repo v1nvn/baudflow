@@ -31,6 +31,7 @@ defmodule BaudflowWeb.DashboardLive do
      |> assign(:selected_server_id, "auto")
      |> assign(:available_servers, [])
      |> assign(:servers_loaded, false)
+     |> assign(:run_menu_open, false)
      |> load_range(time_range)}
   end
 
@@ -40,6 +41,12 @@ defmodule BaudflowWeb.DashboardLive do
   def handle_info({:result, %{test_type: test_type}}, socket) when test_type != "ookla" do
     {:noreply, socket}
   end
+
+  @impl true
+  # A running ping streams per-sample progress on the shared topic; the dashboard
+  # has no ping viz, so swallow it (handled only so the broadcast isn't logged as
+  # an unhandled message). The live ping view lives at /ping.
+  def handle_info({:ping_progress, _data}, socket), do: {:noreply, socket}
 
   @impl true
   def handle_info({:result, measurement}, socket) do
@@ -137,6 +144,16 @@ defmodule BaudflowWeb.DashboardLive do
     {:noreply, assign(socket, :selected_server_id, server_id)}
   end
 
+  # The split-button's dropdown is transient UI — a plain assign toggled by
+  # events, not a URL param (it carries no shareable state).
+  @impl true
+  def handle_event("toggle-run-menu", _params, socket),
+    do: {:noreply, assign(socket, :run_menu_open, not socket.assigns.run_menu_open)}
+
+  @impl true
+  def handle_event("close-run-menu", _params, socket),
+    do: {:noreply, assign(socket, :run_menu_open, false)}
+
   @impl true
   def handle_event("run_test", _params, socket) do
     if RunnerWorker.binary_available?() do
@@ -152,7 +169,7 @@ defmodule BaudflowWeb.DashboardLive do
         source: "manual",
         test_type: "ookla"
       }
-      |> RunnerWorker.new(unique: [period: 300])
+      |> RunnerWorker.new(unique: RunnerWorker.manual_unique())
       |> Oban.insert()
 
       # Safety net only — every outcome broadcasts {:test_failed,_} or

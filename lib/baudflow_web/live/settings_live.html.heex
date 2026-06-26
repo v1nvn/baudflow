@@ -116,6 +116,34 @@
           <p class="text-xs text-text-ghost mt-1">
             Host a ping schedule pings when it has no target of its own.
           </p>
+          <.input
+            field={@form[:ping_port]}
+            type="number"
+            id="ping-port-input"
+            label="Default Ping Port"
+            class="bf-input !max-w-sm"
+            min="1"
+            max="65535"
+            placeholder="443"
+          />
+          <p class="text-xs text-text-ghost mt-1">
+            TCP port the latency probe connects to — ping measures TCP-handshake
+            RTT, so no ICMP binary or privileges are needed.
+          </p>
+          <.input
+            field={@form[:ping_duration_seconds]}
+            type="number"
+            id="ping-duration-input"
+            label="Ping Run Duration (seconds)"
+            class="bf-input !max-w-sm"
+            min="1"
+            max="60"
+            placeholder="10"
+          />
+          <p class="text-xs text-text-ghost mt-1">
+            How long each ping run samples. Longer averages more readings for a
+            stabler latency/loss value (and SLA verdict).
+          </p>
         </div>
       </div>
       

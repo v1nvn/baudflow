@@ -35,6 +35,7 @@ Run quality gates through the `justfile` (`just`), not `mix` directly - the reci
 - Resolve a tunable that has a critical default as **per-row override → global `Settings` fallback** (e.g. `Scheduling.thresholds_for/1`, the ping target `schedule.target_host || Settings.get("ping_target")`); register the global default in `Settings.@default_settings` so resolution never yields nil - one reader, no second source of the default.
 - Run tests through `SpeedtestWorker` - it owns binary resolution, timeout wrapping, NDJSON parsing, and insertion.
 - Broadcast on the single `"measurements"` topic with stable shapes; emit a terminal event for every outcome so the UI never waits on a timer.
+- A LiveView that subscribes to `"measurements"` must no-op every broadcast shape on it (`{:health,_,_}`, `{:speedtest_progress,_,_}`, `{:ping_progress,_}`, …), not just the ones it renders — any unhandled one crashes the LV.
 - Give each schema one `changeset/2` as the only construction path; `@derive {Jason.Encoder, only: [...]}` on anything serialized.
 - Store the full raw result JSON - never drop fields when mapping; `:bigint` for bytes, `:float` for rates.
 - Display throughput in bits/sec everywhere; the raw `bandwidth` field is bytes/sec and storage-only - never render it as a rate, or one screen shows the same speed in both bits and bytes.
@@ -69,6 +70,7 @@ Run quality gates through the `justfile` (`just`), not `mix` directly - the reci
 - Don't `String.to_atom/1` on external input; don't cast programmatically-set fields like `measurement_id`.
 - Don't write inline `<script>` or vendor scripts; don't use daisyUI or `@apply`; don't reach for `LiveComponent`s without a strong need.
 - Don't `Process.sleep/1` in tests - monitor or `:sys.get_state/1`.
+- Don't broadcast a half-formed measurement from an async LiveView test — async tests share the `"measurements"` topic, so an Ookla row with a nil upload crashes a concurrent dashboard LV's `Float.round`. Fixtures must be complete rows.
 - Don't use `:httpc`, `:httpoison`, or `:tesla`; don't add deps unless asked.
 - Don't change CI without understanding the branch-protection and image-build gating.
 - Don't create files, add features beyond what was asked, or comment code you didn't touch.

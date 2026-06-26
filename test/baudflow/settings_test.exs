@@ -27,6 +27,7 @@ defmodule Baudflow.SettingsTest do
       assert all["retention_days"] == "365"
       assert all["dashboard_points"] == "500"
       assert all["ping_target"] == "1.1.1.1"
+      assert all["ping_port"] == "443"
       assert all["promised_download_mbps"] == "0"
       assert all["promised_upload_mbps"] == "0"
       assert all["breach_notify_streak"] == "1"
@@ -68,6 +69,13 @@ defmodule Baudflow.SettingsTest do
     test "returns default when key is not stored" do
       # "retention_days" has a default of "365" in @default_settings
       assert Settings.get_integer("retention_days") == 365
+    end
+
+    test "ping_port defaults to 443 (the TCP probe target port)" do
+      # The Ping runner resolves port via args → Settings fallback; an unset key
+      # still yields 443 whether from the stored default or the get_integer one.
+      assert Settings.get_integer("ping_port", 443) == 443
+      assert Settings.get_integer("ping_port") == 443
     end
 
     test "breach_notify_streak defaults to 1 (the #21 streak threshold)" do

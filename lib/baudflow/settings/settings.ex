@@ -25,6 +25,12 @@ defmodule Baudflow.Settings do
     "threshold_upload" => "0",
     "threshold_ping" => "0",
     "ping_target" => "1.1.1.1",
+    # TCP port the Ping runner connects to (it measures TCP-handshake RTT, not
+    # ICMP, so it works unprivileged with no binary). 443 = Cloudflare on 1.1.1.1.
+    "ping_port" => "443",
+    # How long a ping run lasts (seconds). A longer run averages more samples → a
+    # stabler latency/loss reading (and SLA verdict) instead of a noisy burst.
+    "ping_duration_seconds" => "10",
     "promised_download_mbps" => "0",
     "promised_upload_mbps" => "0",
     # #21: consecutive breaches before a breach alert fires. 1 = notify on the

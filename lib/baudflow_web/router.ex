@@ -18,6 +18,7 @@ defmodule BaudflowWeb.Router do
     pipe_through :browser
 
     live "/", DashboardLive
+    live "/ping", PingLive
     live "/history", HistoryLive
     live "/heatmap", HeatmapLive
     live "/heatmap/embed", HeatmapEmbedLive

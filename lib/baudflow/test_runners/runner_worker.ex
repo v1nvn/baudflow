@@ -43,6 +43,16 @@ defmodule Baudflow.TestRunners.RunnerWorker do
     impl_for(test_type).timeout_ms()
   end
 
+  # Debounce concurrent manual runs without blocking a fresh run after the
+  # previous one finishes. Oban's default unique `states` include `:completed`, so
+  # a plain `period: 300` would dedupe a re-click against a job that already ran —
+  # invisible for the slow Ookla test, but it strands a fast probe like ping in a
+  # stuck "running" state for the whole window. Excluding `:completed` keeps the
+  # spam-guard (don't pile up duplicates while one is queued/executing) while
+  # letting a completed test be re-run immediately.
+  def manual_unique,
+    do: [period: 300, states: [:available, :scheduled, :executing, :retryable]]
+
   @impl true
   def perform(%Oban.Job{id: job_id, args: args}) do
     started_at = DateTime.utc_now() |> DateTime.truncate(:second)
