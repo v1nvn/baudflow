@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.8.0](https://github.com/v1nvn/baudflow/compare/v0.7.0...v0.8.0) (2026-06-26)
+
+
+
+
+### Features:
+
+* add live ping diagnostics panel and settings by v1nvn
+
 ## [v0.7.0](https://github.com/v1nvn/baudflow/compare/v0.6.1...v0.7.0) (2026-06-25)
 
 
