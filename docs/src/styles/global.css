@@ -4,9 +4,8 @@
    reference these vars and never hardcode hex. */
 
 :root {
-  /* Fonts */
-  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Code", monospace;
-  --font-sans: "DM Sans Variable", system-ui, -apple-system, sans-serif;
+  /* Font tokens (--font-sans / --font-mono) are injected by the Astro Fonts API
+     via <Font preload/> in BaseLayout.astro — no second source of truth here. */
 
   /* Surfaces — near-black with cold blue undertone */
   --surface-0: hsl(224, 38%, 4.5%);

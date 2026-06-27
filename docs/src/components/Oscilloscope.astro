@@ -44,7 +44,7 @@
   .pill { padding: 0.22rem 0.6rem; border-radius: 0.28rem; border: 1px solid transparent; }
   .pill.done { color: var(--green); border-color: hsl(153 88% 52% / 0.25); background: hsl(153 88% 52% / 0.06); }
   .pill.active { color: var(--cyan); border-color: hsl(186 92% 52% / 0.3); background: hsl(186 92% 52% / 0.08); text-shadow: 0 0 8px hsl(186 92% 52% / 0.6); }
-  .pill.todo { color: rgba(255, 255, 255, 0.15); }
+  .pill.todo { color: var(--text-ghost); }
 
   .scope {
     position: relative;
@@ -69,6 +69,6 @@
   .num-lbl { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.18em; color: rgba(255, 255, 255, 0.4); margin-top: 0.25rem; }
   .scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0, 0, 0, 0.16) 3px 4px); mix-blend-mode: multiply; }
 
-  .stats { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.4rem; margin-top: 0.9rem; font-family: var(--font-mono); font-size: 0.68rem; color: rgba(255, 255, 255, 0.3); }
+  .stats { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.4rem; margin-top: 0.9rem; font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-ghost); }
   .stats b { color: rgba(255, 255, 255, 0.72); font-weight: 600; }
 </style>
