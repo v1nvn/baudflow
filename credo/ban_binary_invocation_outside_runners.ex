@@ -10,7 +10,7 @@ defmodule Baudflow.CredoChecks.BanBinaryInvocationOutsideRunners do
       TestRunner impl (lib/baudflow/test_runners/). The RunnerWorker resolves
       the impl by test_type and owns the pipeline; the binary invocation is the
       impl's job, so a new backend is one impl file with zero edits to workers.
-      (See SPINE.md.)
+      (See ARCHITECTURE.md.)
       """
     ]
 
