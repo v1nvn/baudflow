@@ -8,6 +8,10 @@ const faqs = [
     a: 'A hosted service tests from its own servers, on its schedule, and keeps your data. baudflow tests from your network, on your schedule, and the data never leaves your machine. It is yours to chart, export, and scrape.',
   },
   {
+    q: 'How does baudflow compare to speedtest-tracker?',
+    a: 'speedtest-tracker is the mature incumbent — PHP/Laravel, around 5,800 GitHub stars, broad Apprise notifications, SQLite/MySQL/Postgres support, and a multi-language UI. baudflow is a newer Elixir/Phoenix alternative that ships the features its users have requested for years: a live real-time dashboard, a first-class continuous ping runner, SLA tracking against your promised speed, and adaptive schedules. The full side-by-side comparison lives on the compare page.',
+  },
+  {
     q: 'What do I need to run it?',
     a: 'Docker and a Postgres database — the Ookla Speedtest CLI is already bundled into the image. The fastest path is the repo\'s docker-compose.yml, which brings up both in one command. From source you need Elixir 1.20+, OTP 29+, Postgres, and the Ookla CLI on your PATH.',
   },
@@ -44,14 +48,31 @@ const faqs = [
     a: 'Remote agents reporting from multiple locations, auto-grouped incident timelines with traceroute context, a REST API, and exportable reports. The ARCHITECTURE doc and CHANGELOG live in the repo.',
   },
 ];
+
+// FAQPage no longer earns a SERP rich result (Google retired it for all sites
+// May 7, 2026), but the markup is still a strong signal for AI Overviews /
+// answer-engine entity resolution — which is the AEO goal here.
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
 ---
 
-<BaseLayout title="FAQ — Baudflow" description="Common questions about baudflow — self-hosting, requirements, Postgres, auth, the ping runner, data retention, Grafana, and the roadmap.">
+<BaseLayout
+  title="FAQ — Baudflow"
+  description="Common questions about baudflow — self-hosting, requirements, Postgres, auth, the ping runner, data retention, Grafana, and the roadmap."
+  schema={faqSchema}
+>
   <section class="hero">
     <div class="container narrow">
       <span class="kicker">FAQ</span>
       <h1>Frequently asked questions</h1>
-      <p class="lede">Still wondering something? The <a href={`${BASE}docs/`}>docs</a> go deeper, and issues live on <a href="https://github.com/v1nvn/baudflow" rel="noopener">GitHub</a>.</p>
+      <p class="lede">Still wondering something? The <a href={`${BASE}docs/`}>docs</a> go deeper, see how baudflow <a href={`${BASE}compare/speedtest-tracker/`}>compares to speedtest-tracker</a>, and issues live on <a href="https://github.com/v1nvn/baudflow" rel="noopener">GitHub</a>.</p>
     </div>
   </section>
 

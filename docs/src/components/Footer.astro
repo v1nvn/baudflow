@@ -1,8 +1,26 @@
 ---
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { BASE } from '../utils';
 
 const year = new Date().getFullYear();
 const gh = 'https://github.com/v1nvn/baudflow';
+
+function findUp(startDir: string, target: string): string | null {
+  let dir: string | null = startDir;
+  while (dir !== null) {
+    const candidate = join(dir, target);
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    dir = parent === dir ? null : parent;
+  }
+  return null;
+}
+const mixPath = findUp(process.cwd(), 'mix.exs');
+const version = mixPath
+  ? readFileSync(mixPath, 'utf8').match(/@version\s+"([^"]+)"/)?.[1] ?? ''
+  : '';
+const versionTag = version ? ` · v${version}` : '';
 ---
 
 <footer class="site-footer">
@@ -14,13 +32,14 @@ const gh = 'https://github.com/v1nvn/baudflow';
         </svg>
         <span>baudflow</span>
       </a>
-      <p class="meta">Self-hosted network monitoring · v0.7.0 · MIT</p>
+      <p class="meta">Self-hosted network monitoring{versionTag} · MIT</p>
     </div>
     <nav class="foot-links">
       <a href={`${BASE}why/`}>Why</a>
       <a href={`${BASE}features/`}>Features</a>
       <a href={`${BASE}docs/`}>Docs</a>
       <a href={`${BASE}faq/`}>FAQ</a>
+      <a href={`${BASE}compare/speedtest-tracker/`}>vs speedtest-tracker</a>
       <a href={gh} rel="noopener">GitHub ↗</a>
       <a href={`${gh}/blob/main/CHANGELOG.md`} rel="noopener">Changelog</a>
     </nav>

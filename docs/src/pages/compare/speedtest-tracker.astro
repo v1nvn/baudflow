@@ -1,0 +1,335 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BASE } from '../../utils';
+
+// Honest, source-cited comparison. speedtest-tracker facts verified against the
+// live repo (alexjustesen/speedtest-tracker): MIT, PHP/Laravel, ~5.8k★, v1.14.4,
+// Apprise notifications, SQLite/MySQL/Postgres. Feature gaps cited by open
+// issue number so the claims stay auditable and rot slowly.
+const gh = 'https://github.com/v1nvn/baudflow';
+const stRepo = 'https://github.com/alexjustesen/speedtest-tracker';
+const stIssue = (n: number) => `${stRepo}/issues/${n}`;
+
+const site = Astro.site ?? new URL(Astro.url.origin);
+const ogImage = new URL('og.png', site).href;
+// Derived from Astro.url so this stays in lockstep with BaseLayout's canonical
+// (and the Article/Breadcrumb `item` URLs) if the route slug ever changes.
+const pageUrl = new URL(Astro.url.pathname, site).href;
+const updated = '2026-06-27';
+
+// Feature matrix — the single most-cited artifact by answer engines.
+// 'yes' | 'partial' | 'no'. Notes link to evidence.
+type Cell = 'yes' | 'partial' | 'no';
+const mark = (v: Cell) => (v === 'yes' ? '✅' : v === 'partial' ? '⚠️' : '—');
+
+const rows: { f: string; b: Cell; s: Cell; note?: string }[] = [
+  { f: 'Automated, scheduled Ookla speed tests', b: 'yes', s: 'yes' },
+  { f: 'Download / upload / ping / packet-loss capture', b: 'yes', s: 'yes' },
+  { f: 'Full historical results + charts', b: 'yes', s: 'yes' },
+  { f: 'Live, real-time test streaming (oscilloscope)', b: 'yes', s: 'no', note: `ST: open request <a href="${stIssue(2035)}">#2035</a>` },
+  { f: 'First-class continuous ping runner + live console', b: 'yes', s: 'no', note: `ST: top open request <a href="${stIssue(826)}">#826</a> (13👍)` },
+  { f: 'Adaptive cadence (auto-escalate during a breach)', b: 'yes', s: 'no', note: `ST: related <a href="${stIssue(1815)}">#1815</a>` },
+  { f: 'GitHub-style health heatmap', b: 'yes', s: 'no' },
+  { f: 'SLA compliance vs. your promised speed', b: 'yes', s: 'no', note: `ST: open request <a href="${stIssue(1943)}">#1943</a>` },
+  { f: 'Multi-schedule / per-target cron', b: 'yes', s: 'partial', note: `ST: one schedule; multi-server requested <a href="${stIssue(2586)}">#2586</a>` },
+  { f: 'Breach-streak alert gating (notify once)', b: 'yes', s: 'partial', note: `ST: threshold alerts; “notify once” requested <a href="${stIssue(2731)}">#2731</a>` },
+  { f: 'Per-channel notification templates', b: 'yes', s: 'no', note: `ST: template engine requested <a href="${stIssue(2105)}">#2105</a>` },
+  { f: 'Notification channels (out of the box)', b: 'partial', s: 'yes', note: 'Baudflow: ntfy + webhooks · ST: dozens via Apprise + Telegram' },
+  { f: 'Prometheus /metrics endpoint', b: 'yes', s: 'yes' },
+  { f: 'Embeddable widgets (heatmap iframe)', b: 'yes', s: 'no' },
+  { f: 'Built-in auth / login', b: 'no', s: 'yes', note: 'Baudflow: single-user, behind your reverse proxy' },
+  { f: 'Multi-language UI', b: 'no', s: 'yes', note: 'ST: community translations via Crowdin' },
+  { f: 'Database', b: 'partial', s: 'yes', note: 'Baudflow: PostgreSQL only · ST: SQLite, MySQL, or Postgres' },
+  { f: 'Image ecosystem', b: 'partial', s: 'yes', note: 'Baudflow: multi-arch Docker · ST: LinuxServer.io (Synology, Unraid, NAS)' },
+  { f: 'License', b: 'yes', s: 'yes', note: 'Both MIT' },
+  { f: 'Stack', b: 'yes', s: 'yes', note: 'Baudflow: Elixir / Phoenix LiveView + Oban · ST: PHP / Laravel + Filament' },
+];
+
+const compareFaqs = [
+  {
+    q: 'Is baudflow a fork of speedtest-tracker?',
+    a: 'No. They are entirely separate codebases. speedtest-tracker is PHP/Laravel; baudflow is Elixir/Phoenix LiveView with Oban and PostgreSQL. Different language, framework, and architecture — baudflow is an independent project chasing the same goal from a different starting point.',
+  },
+  {
+    q: 'Can I migrate my speedtest-tracker history into baudflow?',
+    a: 'Not yet. baudflow is a fresh install with no importer today. If your existing history matters, run both side by side until baudflow accumulates its own record. A migration path is plausible later, but it is not promised.',
+  },
+  {
+    q: 'Which is lighter to run?',
+    a: 'speedtest-tracker has the lower-friction floor — it can run on SQLite with no separate database process. baudflow needs PostgreSQL, because it leans on JSON columns and window queries for baselines and SLA. Both are a single container plus a database.',
+  },
+  {
+    q: 'Does baudflow support as many notification channels?',
+    a: 'No. baudflow ships ntfy and webhooks; speedtest-tracker covers dozens of services through Apprise plus native Telegram. baudflow’s notification channels are behaviour implementations, so adding one is a self-contained module — but today the built-in count is lower.',
+  },
+  {
+    q: 'Which should I pick?',
+    a: 'Pick speedtest-tracker if you want a battle-tested tracker with broad notification channels, a multi-language UI, a built-in login, and your choice of database. Pick baudflow if you want a live, real-time dashboard, a first-class continuous ping runner, SLA tracking against your promised speed, adaptive schedules, and you are happy running PostgreSQL.',
+  },
+];
+
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Baudflow vs speedtest-tracker: a modern self-hosted alternative',
+  description:
+    'An honest, source-cited comparison of two self-hosted speed test trackers — where speedtest-tracker still wins and where baudflow pulls ahead.',
+  datePublished: updated,
+  dateModified: updated,
+  author: { '@type': 'Person', name: 'v1nvn', url: 'https://github.com/v1nvn' },
+  publisher: { '@type': 'Organization', name: 'Baudflow', url: site.href },
+  mainEntityOfPage: pageUrl,
+  image: ogImage,
+  about: [
+    { '@type': 'SoftwareApplication', name: 'Baudflow' },
+    { '@type': 'SoftwareApplication', name: 'speedtest-tracker' },
+  ],
+};
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: compareFaqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: site.href },
+    { '@type': 'ListItem', position: 2, name: 'Baudflow vs speedtest-tracker', item: pageUrl },
+  ],
+};
+---
+
+<BaseLayout
+  title="Baudflow vs speedtest-tracker: a modern self-hosted alternative (2026)"
+  description="An honest, source-cited comparison of two self-hosted speed test trackers. Where speedtest-tracker wins (Apprise notifications, SQLite, i18n) and where baudflow pulls ahead (live ping, real-time streaming, SLA, adaptive schedules)."
+  ogType="article"
+  schema={[articleSchema, faqSchema, breadcrumbSchema]}
+>
+  <section class="hero">
+    <div class="container">
+      <span class="kicker">Comparison</span>
+      <h1>Baudflow vs <em>speedtest-tracker</em></h1>
+      <p class="lede">
+        Two self-hosted speed test trackers, compared honestly.
+        <a href={stRepo} rel="noopener">speedtest-tracker</a> is the mature,
+        widely-used incumbent — a Laravel app with ~5,800 GitHub stars and a
+        LinuxServer.io image. Baudflow is a newer Phoenix LiveView alternative
+        built to ship the features its users have requested for years.
+        <strong>Full disclosure: baudflow is ours</strong>, so we’ve kept this
+        straight — including the places speedtest-tracker still wins.
+      </p>
+      <p class="updated">Last updated {updated}. Verified against the live repos.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="tldr">
+        <h2>TL;DR</h2>
+        <p>
+          Pick <strong>speedtest-tracker</strong> if you want a battle-tested
+          tracker with broad notification channels (Apprise), a multi-language
+          UI, a built-in login, and your choice of database (including SQLite).
+          Pick <strong>baudflow</strong> if you want a live, real-time
+          dashboard, a first-class continuous ping runner, SLA tracking against
+          your promised speed, adaptive schedules, and you’re happy running
+          PostgreSQL.
+        </p>
+        <div class="ctas">
+          <a class="btn btn-fill" href={`${BASE}#install`}>▶ Try baudflow</a>
+          <a class="btn btn-ghost" href={`${BASE}features/`}>See the features</a>
+          <a class="btn btn-ghost" href={stRepo} rel="noopener">speedtest-tracker ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Feature matrix</span>
+        <h2>Side by side</h2>
+        <p>✅ yes · ⚠️ partial / planned · — not available. Evidence links point to the upstream issue tracker.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th class="col-feature">Capability</th>
+              <th>Baudflow</th>
+              <th>speedtest-tracker</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr>
+                <td class="col-feature">
+                  {r.f}
+                  {r.note && <span class="note" set:html={` — ${r.note}`} />}
+                </td>
+                <td class="cell">{mark(r.b)}</td>
+                <td class="cell">{mark(r.s)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section grid-two">
+    <div class="container">
+      <div class="duo">
+        <article class="card theirs">
+          <span class="pkicker">Where speedtest-tracker wins</span>
+          <ul>
+            <li><strong>Broad notifications.</strong> Dozens of channels through Apprise plus native Telegram — baudflow ships ntfy and webhooks.</li>
+            <li><strong>Database flexibility.</strong> SQLite, MySQL, or Postgres; SQLite means no separate database to run. baudflow is Postgres-only.</li>
+            <li><strong>Multi-language UI.</strong> Community translations via Crowdin. baudflow is English-only today.</li>
+            <li><strong>Built-in auth.</strong> Login and OIDC out of the box. baudflow is single-user by design and expects a reverse proxy.</li>
+            <li><strong>Ecosystem polish.</strong> The LinuxServer.io image lands on Synology, Unraid, and consumer NAS gear with one click.</li>
+            <li><strong>Maturity.</strong> ~5,800 stars and years of production use across a large install base.</li>
+          </ul>
+        </article>
+        <article class="card ours">
+          <span class="pkicker">Where baudflow pulls ahead</span>
+          <ul>
+            <li><strong>Live, real-time tests.</strong> Every test streams over PubSub as it runs — no spinner, no refresh (<a href={stIssue(2035)}>ST #2035</a>).</li>
+            <li><strong>A real ping runner.</strong> Continuous TCP-connect ping with its own live console — the single most upvoted open request on speedtest-tracker (<a href={stIssue(826)}>ST #826</a>).</li>
+            <li><strong>SLA evidence.</strong> “Delivered 91.3% of promised speed this month” — the number you can take to your ISP (<a href={stIssue(1943)}>ST #1943</a>).</li>
+            <li><strong>Adaptive cadence.</strong> A breached schedule runs faster until it recovers, then slows back down (<a href={stIssue(1815)}>ST #1815</a>).</li>
+            <li><strong>Smart alerts.</strong> A breach fires once when the streak is reached — not on every re-check (<a href={stIssue(2731)}>ST #2731</a>), with a per-channel template pipeline (<a href={stIssue(2105)}>ST #2105</a>).</li>
+            <li><strong>Health heatmap.</strong> A GitHub-style calendar wall that makes evening congestion jump out.</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container narrow prose">
+      <div class="section-head">
+        <span class="kicker">The honest framing</span>
+        <h2>Same goal, different priorities</h2>
+      </div>
+      <p>
+        Both projects do the same core job: run Ookla speed tests on a schedule
+        and keep the results so you can watch your connection over time. They
+        are not in a race to be “better” in the abstract — they optimize for
+        different people.
+      </p>
+      <p>
+        speedtest-tracker prioritizes reach and familiarity: more notification
+        channels, more databases, more languages, a login screen, and a NAS-ready
+        image. If you want a dependable tracker that fits into an existing
+        homelab with the least friction, it is a safe, well-supported choice.
+      </p>
+      <p>
+        baudflow prioritizes depth and immediacy: a live dashboard you watch
+        instead of wait on, ping treated as a first-class citizen, health and
+        SLA derived from your own baselines, and an alert pipeline that filters
+        noise before it reaches you. It asks for PostgreSQL in return, and it is
+        younger — smaller community, fewer channels, no login yet.
+      </p>
+      <p>
+        If your pain is “I have no proof to show my ISP,” “my calls lag but my
+        speed test says I’m fine,” or “I get a notification every five minutes
+        during an outage,” baudflow is built for exactly that. If your pain is
+        “I want this running on my Synology in five minutes with Telegram
+        alerts,” speedtest-tracker will get you there faster today.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container narrow">
+      <div class="section-head">
+        <span class="kicker">FAQ</span>
+        <h2>Switching &amp; migration</h2>
+      </div>
+      <dl class="faq">
+        {compareFaqs.map((f) => (
+          <div class="qa">
+            <dt>{f.q}</dt>
+            <dd><p>{f.a}</p></dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section cta">
+    <div class="container cta-inner">
+      <h2>Run baudflow in under a minute</h2>
+      <p>One container, one Postgres, the Ookla CLI bundled in.</p>
+      <div class="ctas">
+        <a class="btn btn-fill" href={`${BASE}#install`}>▶ Get started</a>
+        <a class="btn btn-ghost" href={`${BASE}docs/`}>Read the docs</a>
+        <a class="btn btn-ghost" href={gh} rel="noopener">★ Star on GitHub</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero { padding: 3.5rem 0 1rem; text-align: center; }
+  .hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 800; max-width: 18ch; margin: 0.7rem auto 0.9rem; }
+  .hero h1 em { font-style: normal; color: var(--cyan); text-shadow: 0 0 16px hsl(186 92% 52% / 0.45); }
+  .lede { color: var(--text-dim); max-width: 62ch; margin: 0 auto; line-height: 1.65; }
+  .lede a { color: var(--accent); text-decoration: underline; }
+  .updated { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-ghost); margin: 1rem 0 0; }
+
+  .narrow { max-width: 52rem; }
+  .prose { line-height: 1.7; }
+  .prose p { color: var(--text-dim); margin: 0 0 1.1rem; }
+  .prose a, .note a { color: var(--accent); text-decoration: underline; }
+
+  .tldr {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: hsl(198 95% 52% / 0.05);
+    padding: 1.6rem 1.8rem;
+  }
+  .tldr h2 { font-size: 1rem; margin: 0 0 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
+  .tldr p { margin: 0 0 1.3rem; color: var(--text); line-height: 1.65; }
+  .ctas { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  .matrix { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 540px; }
+  .matrix th, .matrix td { padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+  .matrix thead th { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-ghost); background: var(--surface-2); }
+  .matrix th:nth-child(2), .matrix th:nth-child(3) { text-align: center; }
+  .matrix .col-feature { font-weight: 600; color: var(--text); max-width: 32ch; }
+  .matrix .cell { text-align: center; font-size: 1.05rem; }
+  .matrix tbody tr:hover { background: hsl(198 95% 52% / 0.03); }
+  .matrix .note { display: block; font-weight: 400; color: var(--text-dim); font-size: 0.78rem; margin-top: 0.25rem; line-height: 1.4; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); padding: 1.5rem 1.6rem; }
+  .card .pkicker { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; display: block; margin-bottom: 0.8rem; }
+  .theirs .pkicker { color: var(--text-ghost); }
+  .ours .pkicker { color: var(--accent); }
+  .card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.7rem; }
+  .card li { color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; padding-left: 1.1rem; position: relative; }
+  .card li::before { content: '›'; position: absolute; left: 0; color: var(--accent); }
+  .theirs li::before { color: var(--text-ghost); }
+  .card a { color: var(--accent); text-decoration: underline; }
+  @media (max-width: 760px) { .duo { grid-template-columns: 1fr; } }
+
+  .faq { margin: 1.5rem 0 0; }
+  .qa { border-bottom: 1px solid var(--border-subtle); padding: 1.2rem 0; }
+  .qa:first-child { padding-top: 0; }
+  .qa dt { font-weight: 700; color: var(--text); font-size: 1rem; margin-bottom: 0.5rem; }
+  .qa dd { margin: 0; }
+  .qa dd p { margin: 0; color: var(--text-dim); line-height: 1.65; }
+
+  .cta { border-top: 1px solid var(--border); text-align: center; }
+  .cta-inner h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); margin: 0 0 0.5rem; }
+  .cta-inner p { color: var(--text-dim); margin: 0 0 1.4rem; }
+</style>

@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import llms from './src/integrations/llms-md.mjs';
 
 export default defineConfig({
   site: 'https://baudflow.com',
@@ -27,5 +28,13 @@ export default defineConfig({
     layout: 'constrained',
     responsiveStyles: true,
   },
-  integrations: [sitemap()],
+  integrations: [
+    sitemap(),
+    llms({
+      name: 'Baudflow',
+      description:
+        'Baudflow is a self-hosted, open-source speed-test tracker and network monitor built with Elixir, Phoenix LiveView, and PostgreSQL. It runs automated Ookla speed tests and continuous TCP-connect pings on a schedule, streams every run in real time, and turns the results into health verdicts, SLA compliance, and alerts.',
+      excludeSelectors: ['nav', 'aside', 'header', 'footer', "[aria-hidden='true']", '[hidden]'],
+    }),
+  ],
 });

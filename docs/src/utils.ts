@@ -1,7 +1,7 @@
-// Single source of truth for base-aware URLs. The site is served under the
-// /baudflow/ subpath, so every internal link and asset must be prefixed with
-// import.meta.env.BASE_URL (Astro's documented pattern for a non-root base).
-export const BASE = import.meta.env.BASE_URL as string; // e.g. "/baudflow/"
+// Single source of truth for base-aware URLs. The site builds at the root today
+// (no `base` in astro.config.mjs), so BASE resolves to "/". Kept as a helper so
+// every internal link stays correct if a base path is ever added.
+export const BASE = import.meta.env.BASE_URL as string; // "/", or "/subpath/" if a base is set
 
 /** Join a site-relative path ("/docs/foo/") onto the configured base. */
 export function href(path = ''): string {

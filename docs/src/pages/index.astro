@@ -26,18 +26,54 @@ const pains = [
   { q: 'Most outages are not about throughput', a: 'Latency spikes, jitter, and packet loss hit long before bandwidth drops. A first-class ping runner catches what a speed test misses.' },
   { q: 'One cron is a tracker, not a platform', a: 'Multiple schedules, adaptive cadence, health evaluation, and a four-layer alert pipeline turn a cron job into a monitoring platform.' },
 ];
+
+// Product entity for search + answer engines. No aggregateRating (we have no
+// real review data — faking it would violate Google's policy and harm AEO).
+const site = Astro.site ?? new URL(Astro.url.origin);
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Baudflow',
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Linux, Docker',
+  url: site.href,
+  downloadUrl: 'https://github.com/v1nvn/baudflow',
+  description:
+    'Baudflow is a self-hosted speed test tracker and network monitor — automated Ookla speed tests, live TCP-connect ping diagnostics, adaptive schedules, SLA tracking, and health heatmaps.',
+  featureList: [
+    'Automated Ookla speed tests on a schedule',
+    'Live TCP-connect ping diagnostics with a real-time console',
+    'CRT oscilloscope streaming each test as it runs',
+    'Adaptive cadence that escalates during a breach',
+    'GitHub-style health heatmap',
+    'SLA compliance tracking against promised speed',
+    'Multi-schedule platform with per-target cron',
+    'Four-layer alert pipeline (event → policy → template → channel)',
+    'Prometheus /metrics endpoint',
+    'ntfy and webhook notifications',
+  ],
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  license: 'https://opensource.org/license/mit',
+  isAccessibleForFree: true,
+  author: { '@type': 'Person', name: 'v1nvn', url: 'https://github.com/v1nvn' },
+};
 ---
 
-<BaseLayout title="Baudflow — Know your network">
+<BaseLayout
+  title="Baudflow — Self-hosted speed test tracker & network monitor"
+  description="Baudflow is a self-hosted speed test tracker and network monitor — automated Ookla speed tests, live ping diagnostics, adaptive schedules, SLA tracking, and health heatmaps. A modern, open-source alternative to speedtest-tracker."
+  schema={softwareSchema}
+>
   <!-- HERO -->
   <section class="hero">
     <div class="container">
-      <span class="kicker">Self-hosted network monitoring</span>
+      <span class="kicker">Self-hosted speed test tracker</span>
       <h1>Know your <em>network.</em><br />Down to the last megabit.</h1>
       <p class="lede">
-        Baudflow runs automated Ookla speed tests and live TCP-connect pings on a
-        schedule, streams every run in real time, and turns the results into an
-        actionable picture of your connection's health.
+        Baudflow is a self-hosted speed test tracker that runs automated Ookla
+        speed tests and live TCP-connect pings on a schedule, streams every run
+        in real time, and turns the results into an actionable picture of your
+        connection's health.
       </p>
       <div class="ctas">
         <a class="btn btn-fill" href={`${BASE}#install`}>▶ Get started</a>
@@ -64,7 +100,11 @@ const pains = [
           </article>
         ))}
       </div>
-      <p class="more"><a href={`${BASE}why/`}>Read the full case for baudflow →</a></p>
+      <p class="more">
+        <a href={`${BASE}why/`}>Read the full case for baudflow →</a>
+        &nbsp;·&nbsp;
+        <a href={`${BASE}compare/speedtest-tracker/`}>Baudflow vs speedtest-tracker →</a>
+      </p>
     </div>
   </section>
 

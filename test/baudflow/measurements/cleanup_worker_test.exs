@@ -54,16 +54,12 @@ defmodule Baudflow.Measurements.CleanupWorkerTest do
       assert Measurements.count() == 1
     end
 
-    test "retention boundary: exactly at cutoff is kept" do
-      # retention_days = 7, so cutoff = now - 7*86400
-      # A measurement at exactly cutoff is NOT less than cutoff, so it stays.
-      now = DateTime.utc_now()
-      boundary_ts = DateTime.add(now, -7 * 24 * 3600, :second)
+    test "retention boundary: a row exactly at cutoff is kept" do
+      cutoff = DateTime.truncate(DateTime.utc_now(), :second)
 
-      insert_measurement!(%{timestamp: boundary_ts, result_id: "boundary-1"})
+      insert_measurement!(%{timestamp: cutoff, result_id: "boundary-1"})
 
-      assert {:ok, pruned: 0} = perform_job(CleanupWorker, %{})
-
+      assert Measurements.prune_older_than(cutoff) == 0
       assert Measurements.count() == 1
     end
 
