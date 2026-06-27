@@ -18,7 +18,7 @@ the run finishes the panel freezes on the final readout until you dismiss it or
 run again. You can also launch a ping from the main dashboard's split button,
 which jumps to `/ping` and starts immediately.
 
-![The /ping live diagnostics panel](/screenshots/ping.png)
+![The /ping live diagnostics panel](../../assets/screenshots/ping.png)
 
 ## TCP-connect, not ICMP
 

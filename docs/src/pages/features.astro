@@ -2,7 +2,12 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Screenshot from '../components/Screenshot.astro';
 import FeatureCard from '../components/FeatureCard.astro';
-import { BASE, asset } from '../utils';
+import { BASE } from '../utils';
+import dashboard from '../assets/screenshots/dashboard.png';
+import oscilloscope from '../assets/screenshots/oscilloscope.jpg';
+import ping from '../assets/screenshots/ping.png';
+import heatmap from '../assets/screenshots/heatmap.png';
+import schedules from '../assets/screenshots/schedules.png';
 
 const groups = [
   {
@@ -67,31 +72,31 @@ const groups = [
   <section class="section showcase">
     <div class="container">
       <Screenshot
-        src={asset('screenshots/dashboard.png')}
+        src={dashboard}
         alt="The baudflow dashboard — live readout, health heatmap, SLA compliance, and speed history."
         url="baudflow.v1n.space"
         wide
       />
       <div class="shot-duo">
         <Screenshot
-          src={asset('screenshots/oscilloscope.jpg')}
+          src={oscilloscope}
           alt="A live Ookla speed test streaming into the CRT oscilloscope — download phase, 516 Mbps and climbing."
           url="baudflow.v1n.space"
         />
         <Screenshot
-          src={asset('screenshots/ping.png')}
+          src={ping}
           alt="The /ping page with a live per-sample diagnostics panel — average latency, jitter, loss, and a bar for each sample."
           url="baudflow.v1n.space"
         />
       </div>
       <div class="shot-duo">
         <Screenshot
-          src={asset('screenshots/heatmap.png')}
+          src={heatmap}
           alt="The health heatmap — a calendar wall of daily speed-test health."
           url="baudflow.v1n.space"
         />
         <Screenshot
-          src={asset('screenshots/schedules.png')}
+          src={schedules}
           alt="The schedules table — multiple cron schedules, each with its own test type and escalation state."
           url="baudflow.v1n.space"
         />

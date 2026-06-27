@@ -68,7 +68,7 @@ Or inside an IEx session: `iex -S mix phx.server`.
   thresholds and escalation.
 - **Settings (`/settings`)** — thresholds, servers, retention, notifications.
 
-![The baudflow dashboard](/screenshots/dashboard.png)
+![The baudflow dashboard](../../assets/screenshots/dashboard.png)
 
 ## Next steps
 

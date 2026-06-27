@@ -37,7 +37,7 @@ Each schedule owns:
 A malformed cron is rejected at write time and, as a defensive belt, logged and
 skipped at run time — one bad row can't stall the per-minute queue.
 
-![The schedules table](/screenshots/schedules.png)
+![The schedules table](../../assets/screenshots/schedules.png)
 
 ## Adaptive cadence
 

@@ -1,9 +1,13 @@
 ---
 // Reusable framed screenshot — a browser-chrome window (traffic-light dots +
-// location bar) wrapped around a real <img>. Used across the landing, /features,
-// /why, and doc pages so captures share one consistent frame.
+// location bar) wrapped around an optimized <Image/>. Used across the landing,
+// /features, /why, and doc pages so captures share one consistent frame.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
 interface Props {
-  src: string;
+  /** An imported src/ asset (ImageMetadata), so Astro optimizes it to WebP. */
+  src: ImageMetadata;
   alt: string;
   /** Caption shown under the image (optional). */
   caption?: string;
@@ -22,7 +26,7 @@ const { src, alt, caption, url = 'baudflow.v1n.space', wide = false } = Astro.pr
     <span class="dot" style="background:var(--green)"></span>
     <span class="shot-url">{url}</span>
   </div>
-  <img src={src} alt={alt} loading="lazy" decoding="async" />
+  <Image src={src} alt={alt} layout="constrained" />
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
 

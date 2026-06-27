@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Screenshot from '../components/Screenshot.astro';
-import { BASE, asset } from '../utils';
+import { BASE } from '../utils';
+import dashboard from '../assets/screenshots/dashboard.png';
 
 const problems = [
   {
@@ -51,7 +52,7 @@ const differentiators = [
   <section class="section shot-band">
     <div class="container">
       <Screenshot
-        src={asset('screenshots/dashboard.png')}
+        src={dashboard}
         alt="The baudflow dashboard — hero readout, health heatmap, SLA compliance, and speed history on one screen."
         url="baudflow.v1n.space"
       />

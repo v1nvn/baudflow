@@ -15,20 +15,24 @@ Real product captures, taken from a running instance. Desktop **1440×900** PNGs
 
 ## Wiring
 
-Screenshots render through `<Screenshot>` (`src/components/Screenshot.astro`) —
-a browser-chrome frame around an `<img>`. In `.astro` pages:
+These live under `src/assets/screenshots/` (not `public/`) so Astro runs them
+through the `<Image/>` pipeline — optimized WebP + a responsive `srcset`. They
+render through `<Screenshot>` (`src/components/Screenshot.astro`), a
+browser-chrome frame around that `<Image/>`. In `.astro` pages, import the
+asset and pass it directly:
 
 ```astro
 import Screenshot from '../components/Screenshot.astro';
-import { asset } from '../utils';
+import dashboard from '../assets/screenshots/dashboard.png';
 
-<Screenshot src={asset('screenshots/dashboard.png')} alt="..." url="baudflow.v1n.space" />
+<Screenshot src={dashboard} alt="..." url="baudflow.v1n.space" />
 ```
 
-In markdown docs, use a plain image (styled by `.prose img` in `global.css`):
+In markdown docs, reference the file relative to the `.md` (styled by
+`.prose img` in `global.css`, optimized via the global `image.layout`):
 
 ```md
-![The dashboard](/screenshots/dashboard.png)
+![The dashboard](../../assets/screenshots/dashboard.png)
 ```
 
 ## Re-capturing

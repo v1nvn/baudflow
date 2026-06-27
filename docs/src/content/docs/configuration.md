@@ -16,7 +16,7 @@ with a safe fallback — a bad value never crashes a queue — and every key shi
 with a default. Read the full list in the
 [Configuration reference](../configuration-reference/).
 
-![The settings page](/screenshots/settings.png)
+![The settings page](../../assets/screenshots/settings.png)
 
 ## Schedules
 

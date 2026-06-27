@@ -4,7 +4,8 @@ import Oscilloscope from '../components/Oscilloscope.astro';
 import Screenshot from '../components/Screenshot.astro';
 import FeatureCard from '../components/FeatureCard.astro';
 import Terminal from '../components/Terminal.astro';
-import { BASE, asset } from '../utils';
+import { BASE } from '../utils';
+import dashboard from '../assets/screenshots/dashboard.png';
 
 const gh = 'https://github.com/v1nvn/baudflow';
 
@@ -76,7 +77,7 @@ const pains = [
         <p>Live visualization, adaptive schedules, health intelligence, and a real alert pipeline — all self-hosted, all on one screen.</p>
       </div>
       <Screenshot
-        src={asset('screenshots/dashboard.png')}
+        src={dashboard}
         alt="The baudflow dashboard — live readout, health heatmap, SLA compliance, and speed history."
         url="baudflow.v1n.space"
       />
