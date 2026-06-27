@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.9.1](https://github.com/v1nvn/baudflow/compare/v0.9.0...v0.9.1) (2026-06-27)
+
+
+
+
+### Bug Fixes:
+
+* optimize docs images by v1nvn
+
 ## [v0.9.0](https://github.com/v1nvn/baudflow/compare/v0.8.0...v0.9.0) (2026-06-27)
 
 
