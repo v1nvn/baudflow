@@ -1,50 +1,71 @@
 ---
 title: Configuration
-description: Tune cron schedules, servers, retention, thresholds, and notifications from the Settings page.
+description: How settings, schedules, servers, thresholds, and notifications fit together — all from the Settings page.
+section: Guides
 order: 20
 ---
 
-All runtime configuration lives behind the **Settings** page (`/settings`). It is
-a key-value store that holds strings and returns typed values with a safe
-fallback, so a bad value never crashes a queue. Every key ships with a default.
+Almost everything is configured at runtime from the **Settings** page
+(`/settings`) and the **Schedules** page (`/schedules`). There are no config
+files to edit for normal operation.
 
-## Schedule
+## Settings
 
-Scheduling is **data, not config keys**: each schedule row owns its own
-escalation. The scheduler is a thin per-minute dispatcher that enqueues a
-speed-test job according to the configured cron. Edit the cron expression to
-change how often tests run.
+`Settings` is a typed key-value store. It holds strings and returns typed values
+with a safe fallback — a bad value never crashes a queue — and every key ships
+with a default. Read the full list in the
+[Configuration reference](../configuration-reference/).
+
+![The settings page](/screenshots/settings.png)
+
+## Schedules
+
+Scheduling is **data, not config keys**. Each schedule is a row that owns its
+cron, its test type (Ookla speed test or TCP-connect ping), its server, its ping
+target, and its own escalation state. The scheduler is a thin per-minute
+dispatcher: it asks `Scheduling.due_now()` and enqueues whatever's due.
+
+Run several at once — hourly against your ISP, every 15 minutes against
+Cloudflare, a frequent ping — without touching a config file. See
+[Schedules & adaptive cadence](../schedules/).
+
+## Thresholds
+
+What counts as "healthy" resolves as **per-schedule override → global `Settings`
+fallback**, through a single reader (`Scheduling.thresholds_for/1`) so resolution
+never yields `nil`. Three modes:
+
+- **`auto`** (default) — judges each test against the connection's own rolling
+  baseline; zero-config.
+- **`absolute`** — against fixed Mbps / ms values.
+- **`off`** — no verdict.
+
+Per-schedule thresholds are a tristate (Inherit / Enabled / Disabled). See
+[Health & thresholds](../health/).
 
 ## Servers
 
-- **Preferred servers** — pin tests to specific Ookla servers.
-- **Blocked servers** — exclude servers from selection.
+- **Preferred servers** — pin tests to specific Ookla server IDs.
+- **Blocked servers** — exclude server IDs from selection.
 
-Both accept server-id lists and are resolved through a single reader.
+Both are comma-separated lists, resolved through one reader.
 
-## Retention
+## Notifications
 
-Set how long measurements are kept. The `CleanupWorker` prunes old rows on a
-schedule according to the retention policy.
-
-## Degradation thresholds
-
-Define what counts as "healthy." Thresholds resolve as
-**per-row override → global `Settings` fallback**, with one reader
-(`thresholds_for/1`) so there is a single source of truth and resolution never
-yields `nil`. Register the global default in `Settings.@default_settings`.
-
-## Notification channels
-
-Notifications are **behaviour implementations, not branches in a worker**. The
-worker orchestrates; the channel behaviour does the work. Add a new channel by
-implementing the behaviour.
+Alerts are **behaviour implementations, not branches in a worker**. The worker
+orchestrates a four-layer pipeline — event → policy → template → channel — and a
+new channel is one module. `ntfy` and `webhook` ship out of the box. See
+[Notifications](../notifications/).
 
 ## Ping target
 
-A schedule may override the ping target per row; otherwise it falls back to the
-global setting:
+A schedule may override the ping target and port per row; otherwise it falls back
+to the global setting:
 
-```
+```elixir
 schedule.target_host || Settings.get("ping_target")
+schedule.target_port || Settings.get_integer("ping_port", 443)
 ```
+
+The ping runner measures TCP-handshake RTT, so it works unprivileged with no
+binary. See [Ping monitoring](../ping/).

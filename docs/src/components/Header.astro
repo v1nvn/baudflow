@@ -8,12 +8,13 @@ const gh = 'https://github.com/v1nvn/baudflow';
   <div class="container bar">
     <a class="brand" href={BASE} aria-label="Baudflow home">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-        <path d="M21.481,14.068l-2.2-6.585a1,1,0,0,0-.949-.683,4.865,4.865,0,0,1-2.893-.907A7.623,7.623,0,0,1,13.976,2.78a1,1,0,0,0-1.683-.487l-6,6a1,1,0,0,0,.016,1.43l12.537,12a1,1,0,0,0,1.4-.016L21.9,20.049a3.75,3.75,0,0,0,0-5.3A1.751,1.751,0,0,1,21.481,14.068ZM1,17a1,1,0,0,1,1-1h8a1,1,0,0,1,0,2H2A1,1,0,0,1,1,17Zm0-4a1,1,0,0,1,1-1H6a1,1,0,0,1,0,2H2A1,1,0,0,1,1,13Zm0,8a1,1,0,0,1,1-1H14a1,1,0,0,1,0,2H2A1,1,0,0,1,1,21Z"/>
+        <path d="M21.481,14.068l-2.2-6.585a1,1,0,0,0-.949-.683,4.865,4.865,0,0,1-2.893-.907A7.623,7.623,0,0,1,13.976,2.78a1,1,0,0,0-1.683-.487l-6,6a1,1,0,0,0,.016,1.43l12.537,12a1,1,0,0,0,1.4-.016L21.9,20.049a3.75,3.75,0,0,0,0-5.3A1.751,1.751,0,0,1,21.481,14.068ZM1,17a1,1,0,0,1,1-1h8a1,1,0,0,1,0,2H2A1,1,0,0,1,1,17Zm0-4a1,1,0,0,1,1-1H6a1,1,0,0,1,0,2H2A1,1,0,0,1,1,13Zm0-8a1,1,0,0,1,1-1H14a1,1,0,0,1,0,2H2A1,1,0,0,1,1,21Z"/>
       </svg>
       <span>baudflow</span>
     </a>
     <nav class="nav-links">
-      <a href={`${BASE}#features`}>Features</a>
+      <a href={`${BASE}features/`}>Features</a>
+      <a href={`${BASE}why/`}>Why</a>
       <a href={`${BASE}docs/`}>Docs</a>
       <a href={gh} rel="noopener">GitHub ↗</a>
       <a class="btn btn-fill cta" href={`${BASE}#install`}>Get started</a>
@@ -37,8 +38,8 @@ const gh = 'https://github.com/v1nvn/baudflow';
   .nav-links a { font-size: 0.88rem; font-weight: 500; color: var(--text-dim); text-decoration: none; }
   .nav-links a:hover { color: var(--text); }
   .nav-links .cta { color: #000; }
-  @media (max-width: 640px) {
-    .nav-links { gap: 0.8rem; }
+  @media (max-width: 720px) {
+    .nav-links { gap: 0.6rem; }
     .nav-links a:not(.cta) { display: none; }
   }
 </style>

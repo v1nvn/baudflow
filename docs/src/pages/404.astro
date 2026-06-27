@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { BASE } from '../utils';
+---
+
+<BaseLayout title="Not found">
+  <section class="container nf">
+    <pre class="code">404</pre>
+    <h1>Signal lost</h1>
+    <p class="lede">This route didn't respond — nothing here, or a stale link.</p>
+    <div class="nf-ctas">
+      <a class="btn btn-fill" href={BASE}>▶ Back home</a>
+      <a class="btn btn-ghost" href={`${BASE}docs/`}>Read the docs</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf { text-align: center; padding: 6rem 0 8rem; }
+  .code {
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: clamp(4rem, 18vw, 9rem);
+    color: var(--accent);
+    text-shadow: 0 0 24px hsl(198 95% 52% / 0.45);
+    margin: 0;
+    line-height: 1;
+  }
+  .nf h1 { font-size: clamp(1.4rem, 4vw, 2rem); margin-top: 1rem; }
+  .lede { color: var(--text-dim); max-width: 40ch; margin: 0.6rem auto 1.8rem; }
+  .nf-ctas { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+</style>

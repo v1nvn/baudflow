@@ -2,37 +2,59 @@
 import { getCollection } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { BASE } from '../../utils';
+import { DOC_SECTIONS } from '../../content.config';
 
-const entries = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.order);
+const all = await getCollection('docs');
+const grouped = DOC_SECTIONS.map((section) => ({
+  section,
+  entries: all
+    .filter((e) => e.data.section === section)
+    .sort((a, b) => a.data.order - b.data.order),
+})).filter((g) => g.entries.length > 0);
 ---
 
 <DocsLayout
   current=""
   title="Documentation"
-  description="Baudflow documentation — install, configure, deploy, and troubleshoot your self-hosted network monitor."
+  description="Baudflow documentation — install, configure, deploy, and operate your self-hosted network monitor."
 >
   <div class="prose">
     <h1>Documentation</h1>
     <p>
-      Baudflow is a self-hosted network speed monitoring dashboard built with Phoenix LiveView.
-      These docs cover everything from a one-command install to tuning degradation thresholds and
-      scraping the metrics endpoint.
+      Baudflow is a self-hosted network monitoring platform built with Phoenix LiveView.
+      These docs cover everything from a one-command install to tuning adaptive
+      schedules, breach policies, and scraping the Prometheus metrics endpoint.
     </p>
   </div>
 
-  <div class="doc-cards">
-    {entries.map((e) => (
-      <a class="doc-card" href={`${BASE}docs/${e.id}/`}>
-        <h3>{e.data.title}</h3>
-        <p>{e.data.description}</p>
-        <span class="go">Read →</span>
-      </a>
-    ))}
-  </div>
+  {grouped.map((group) => (
+    <section class="doc-section">
+      <h2 class="doc-section-title">{group.section}</h2>
+      <div class="doc-cards">
+        {group.entries.map((e) => (
+          <a class="doc-card" href={`${BASE}docs/${e.id}/`}>
+            <h3>{e.data.title}</h3>
+            <p>{e.data.description}</p>
+            <span class="go">Read →</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
 </DocsLayout>
 
 <style>
-  .doc-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+  .doc-section { margin-top: 2.5rem; }
+  .doc-section-title {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-ghost);
+    margin: 0 0 1rem;
+  }
+  .doc-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
   .doc-card {
     display: block;
     padding: 1.2rem 1.3rem;
@@ -44,7 +66,7 @@ const entries = (await getCollection('docs')).sort((a, b) => a.data.order - b.da
   }
   .doc-card:hover { border-color: var(--accent); box-shadow: 0 0 18px hsl(198 95% 52% / 0.08); }
   .doc-card h3 { margin: 0 0 0.35rem; font-size: 1rem; color: var(--text); }
-  .doc-card p { margin: 0 0 0.9rem; font-size: 0.84rem; color: var(--text-dim); }
+  .doc-card p { margin: 0 0 0.9rem; font-size: 0.84rem; color: var(--text-dim); line-height: 1.5; }
   .doc-card .go { font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent); }
   @media (max-width: 600px) { .doc-cards { grid-template-columns: 1fr; } }
 </style>

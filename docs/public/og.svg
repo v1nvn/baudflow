@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="'DM Sans', Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0f1a"/>
+      <stop offset="1" stop-color="#070912"/>
+    </linearGradient>
+    <linearGradient id="waveFade" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#14d4f5" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#14d4f5" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- faint grid -->
+  <g stroke="#14d4f5" stroke-opacity="0.045" stroke-width="1">
+    <path d="M0 90 H1200 M0 180 H1200 M0 270 H1200 M0 450 H1200 M0 540 H1200"/>
+    <path d="M200 0 V630 M400 0 V630 M600 0 V630 M800 0 V630 M1000 0 V630"/>
+  </g>
+
+  <!-- oscilloscope waveform band -->
+  <g transform="translate(0,330)">
+    <path d="M0,150 L0,90 C90,90 130,20 210,20 C300,20 340,120 460,120 C560,120 600,40 700,40 C800,40 840,120 960,120 C1040,120 1080,30 1200,30 L1200,300 L0,300 Z" fill="url(#waveFade)"/>
+    <path d="M0,90 C90,90 130,20 210,20 C300,20 340,120 460,120 C560,120 600,40 700,40 C800,40 840,120 960,120 C1040,120 1080,30 1200,30" fill="none" stroke="#14d4f5" stroke-width="4" filter="url(#glow)" opacity="0.65"/>
+    <path d="M0,90 C90,90 130,20 210,20 C300,20 340,120 460,120 C560,120 600,40 700,40 C800,40 840,120 960,120 C1040,120 1080,30 1200,30" fill="none" stroke="#1bd6e8" stroke-width="2.5"/>
+  </g>
+
+  <!-- wordmark + tagline -->
+  <g transform="translate(90,96)">
+    <g transform="translate(2,14)" stroke="#14d4f5" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0,0 H44 l9,-20 l13,34 l11,-26 l9,12 H150" filter="url(#softGlow)" opacity="0.55"/>
+      <path d="M0,0 H44 l9,-20 l13,34 l11,-26 l9,12 H150"/>
+    </g>
+    <text x="0" y="42" font-size="34" font-weight="800" letter-spacing="-0.5" fill="#14d4f5">baudflow</text>
+    <text x="4" y="150" font-size="74" font-weight="800" letter-spacing="-2" fill="#eaf0f8">Know your network.</text>
+    <text x="4" y="232" font-size="74" font-weight="800" letter-spacing="-2" fill="#1bd6e8">Down to the last megabit.</text>
+  </g>
+
+  <!-- kicker -->
+  <text x="90" y="560" font-family="'JetBrains Mono', Menlo, monospace" font-size="19" letter-spacing="3" fill="#6b7a92">SELF-HOSTED NETWORK MONITORING · PHOENIX LIVEVIEW</text>
+</svg>

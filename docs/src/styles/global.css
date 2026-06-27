@@ -134,6 +134,16 @@ code, pre, kbd, samp { font-family: var(--font-mono); }
 .prose ul { padding-left: 1.2rem; }
 .prose li { margin: 0.4rem 0; }
 .prose hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.4);
+  margin: 1.5rem 0;
+}
+.prose figcaption { font-size: 0.8rem; color: var(--text-ghost); margin-top: -1rem; margin-bottom: 1.5rem; }
 .prose blockquote {
   margin: 1.5rem 0;
   padding: 0.8rem 1.1rem;

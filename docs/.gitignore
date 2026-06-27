@@ -4,3 +4,5 @@ dist/
 node_modules/
 # generated types
 .astro/
+# generated from repo CHANGELOG.md by scripts/sync-changelog.mjs
+src/content/docs/changelog.md

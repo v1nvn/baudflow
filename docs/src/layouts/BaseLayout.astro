@@ -13,9 +13,10 @@ interface Props {
 
 const {
   title,
-  description = 'Baudflow — a self-hosted network speed monitoring dashboard. Automated Ookla speed tests, live visualization, and health tracking.',
+  description = 'Baudflow — a self-hosted network monitoring platform. Automated Ookla speed tests, live ping diagnostics, adaptive schedules, and health tracking.',
 } = Astro.props;
 const fullTitle = title.includes('Baudflow') ? title : `${title} · Baudflow`;
+const ogImage = `${BASE}og.png`;
 ---
 
 <!doctype html>
@@ -23,12 +24,17 @@ const fullTitle = title.includes('Baudflow') ? title : `${title} · Baudflow`;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="hsl(224, 38%, 4.5%)" />
     <link rel="icon" href={`${BASE}favicon.ico`} />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
     <meta name="generator" content={Astro.generator} />
   </head>
   <body>

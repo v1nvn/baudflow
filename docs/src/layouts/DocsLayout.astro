@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { BASE } from '../utils';
+import { DOC_SECTIONS } from '../content.config';
 
 interface Props {
   current?: string;
@@ -10,13 +11,21 @@ interface Props {
 }
 const { current = '', title, description } = Astro.props;
 
-// One source for the sidebar: the whole docs collection, ordered.
-const entries = (await getCollection('docs')).sort(
-  (a, b) => a.data.order - b.data.order,
-);
+// One source for the sidebar: the whole docs collection, ordered by canonical
+// section, then by per-page `order`. prev/next walk this same linear order.
+const sectionRank = (s: string) => DOC_SECTIONS.indexOf(s as (typeof DOC_SECTIONS)[number]);
+const entries = (await getCollection('docs')).sort((a, b) => {
+  const r = sectionRank(a.data.section) - sectionRank(b.data.section);
+  return r !== 0 ? r : a.data.order - b.data.order;
+});
 const idx = entries.findIndex((e) => e.id === current);
 const prev = idx > 0 ? entries[idx - 1] : null;
 const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
+
+const grouped = DOC_SECTIONS.map((section) => ({
+  section,
+  entries: entries.filter((e) => e.data.section === section),
+})).filter((g) => g.entries.length > 0);
 ---
 
 <BaseLayout title={title} description={description}>
@@ -24,8 +33,13 @@ const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
     <aside class="sidebar">
       <nav>
         <a href={`${BASE}docs/`} class={!current ? 'active' : ''}>Documentation</a>
-        {entries.map((e) => (
-          <a href={`${BASE}docs/${e.id}/`} class={e.id === current ? 'active' : ''}>{e.data.title}</a>
+        {grouped.map((group) => (
+          <div class="section-group">
+            <span class="section-label">{group.section}</span>
+            {group.entries.map((e) => (
+              <a href={`${BASE}docs/${e.id}/`} class={e.id === current ? 'active' : ''}>{e.data.title}</a>
+            ))}
+          </div>
         ))}
       </nav>
     </aside>
@@ -51,7 +65,28 @@ const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
     padding-bottom: 3rem;
   }
   .sidebar nav { display: flex; flex-direction: column; gap: 0.1rem; position: sticky; top: 78px; }
-  .sidebar a {
+  .sidebar > nav > a { /* the "Documentation" home link */
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+  }
+  .sidebar > nav > a:hover { background: var(--surface-2); }
+  .sidebar > nav > a.active { color: var(--accent); border-left-color: var(--accent); background: hsl(198 95% 52% / 0.06); }
+  .section-group { display: flex; flex-direction: column; gap: 0.1rem; margin-top: 0.7rem; }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-ghost);
+    padding: 0.4rem 0.85rem 0.15rem;
+  }
+  .section-group a {
     padding: 0.5rem 0.85rem;
     border-radius: 0.5rem;
     font-size: 0.86rem;
@@ -59,8 +94,8 @@ const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
     text-decoration: none;
     border-left: 2px solid transparent;
   }
-  .sidebar a:hover { color: var(--text); background: var(--surface-2); }
-  .sidebar a.active { color: var(--accent); border-left-color: var(--accent); background: hsl(198 95% 52% / 0.06); }
+  .section-group a:hover { color: var(--text); background: var(--surface-2); }
+  .section-group a.active { color: var(--accent); border-left-color: var(--accent); background: hsl(198 95% 52% / 0.06); }
   .docs-content { min-width: 0; }
   .pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
   .pager-link { font-size: 0.85rem; color: var(--text-dim); text-decoration: none; padding: 0.55rem 0.9rem; border: 1px solid var(--border); border-radius: 0.5rem; }
@@ -68,8 +103,10 @@ const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
   .pager-link.right { margin-left: auto; }
   @media (max-width: 820px) {
     .docs-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-    .sidebar nav { position: static; flex-direction: row; flex-wrap: wrap; }
-    .sidebar a { border-left: none; border-bottom: 2px solid transparent; }
-    .sidebar a.active { border-left: none; border-bottom-color: var(--accent); }
+    .sidebar nav { position: static; flex-direction: row; flex-wrap: wrap; gap: 0.35rem; }
+    .section-group { flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 0.35rem; }
+    .section-label { width: 100%; padding: 0.6rem 0 0.1rem; }
+    .sidebar a, .section-group a { border-left: none; border-bottom: 2px solid transparent; }
+    .sidebar a.active, .section-group a.active { border-left: none; border-bottom-color: var(--accent); }
   }
 </style>
