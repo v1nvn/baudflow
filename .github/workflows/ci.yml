@@ -3,6 +3,21 @@ on: [push, pull_request]
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      # config/test.exs connects to localhost:5432 as postgres/postgres;
+      # ecto.create (via the `test` alias) provisions baudflow_test.
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v7
       - uses: erlef/setup-beam@v1
@@ -19,5 +34,5 @@ jobs:
           restore-keys: ${{ runner.os }}-mix-
       - run: mix deps.get
       - run: mix lint        # format, unused deps, warnings-as-errors, credo, sobelow, dialyzer
-      # testcontainers boots Postgres via the host Docker daemon and sets DATABASE_URL
-      - run: MIX_ENV=test mix testcontainers.run --database postgres test
+      # `mix test` auto-sets MIX_ENV=test against the postgres service on localhost:5432
+      - run: mix test

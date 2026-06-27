@@ -10,11 +10,11 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 
 Run quality gates through the `justfile` (`just`), not `mix` directly - the recipes are the source of truth and mirror what CI runs.
 
-- `just check` - **the done-gate.** Runs the full CI gate locally: `mix lint` + the test suite in a throwaway testcontainers Postgres (`MIX_ENV=test`) - the two steps ci.yml runs, verbatim. Run it before declaring a task done or pushing. Needs Docker.
+- `just check` - **the done-gate.** Runs the full CI gate locally: `mix lint` + the test suite against a throwaway Docker Postgres (`just test`, `MIX_ENV=test`) - the two steps ci.yml runs, verbatim. Run it before declaring a task done or pushing. Needs Docker.
 - `just lint` - the no-DB static gate (`mix lint`: format-**check**, deps audit, warnings-as-errors, credo `--strict`, sobelow, dialyzer). Fast; use it when Docker isn't available.
-- `just precommit` - fast loop (`mix precommit`: compile warnings, `deps.unlock --unused`, format, test). **Not CI-equivalent** - it skips the static gate, so it can be green while `just lint`/CI is red. Never use it alone as the done-gate; that is exactly how CI stayed red unnoticed.
+- `just precommit` - fast loop (`mix precommit` then `just test`: compile warnings, `deps.unlock --unused`, format, then the suite). **Not CI-equivalent** - it skips the static gate, so it can be green while `just lint`/CI is red. Never use it alone as the done-gate; that is exactly how CI stayed red unnoticed.
 - `just test [path.exs]` / `just test --failed` to target or rerun failures.
-- Fake CLI at `test/support/fake_speedtest` + testcontainers Postgres - no local binary or PG needed.
+- Fake CLI at `test/support/fake_speedtest` + a throwaway Docker Postgres (booted per `just test`) - no local binary or PG install needed.
 - Never format or lint by hand - the gates own that.
 
 ## Code Organization

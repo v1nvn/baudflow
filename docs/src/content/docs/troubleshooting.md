@@ -36,10 +36,10 @@ something that accepts the connection.
 
 ## Tests pass locally but fail in CI
 
-CI runs the full gate: `mix lint` plus the suite in a throwaway testcontainers
-Postgres. `mix precommit` (or `just precommit`) is a **fast loop that skips
-lint** — it can be green locally while CI is red. Run the CI-equivalent gate
-before pushing: `just check`.
+CI runs the full gate: `mix lint` plus the suite against a fresh Postgres
+service container. `just precommit` is a **fast loop that skips lint** — it can
+be green locally while CI is red. Run the CI-equivalent gate before pushing:
+`just check`.
 
 ## Port 4000 already in use
 

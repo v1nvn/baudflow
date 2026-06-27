@@ -1,6 +1,6 @@
 ---
 title: Contributing
-description: Local development — the justfile gates, testcontainers, the fake CLI, and conventional-commit versioning.
+description: Local development — the justfile gates, the throwaway Docker test database, the fake CLI, and conventional-commit versioning.
 section: Project
 order: 20
 ---
@@ -13,7 +13,7 @@ directly.
 
 | Command | What it runs | Use it for |
 |---|---|---|
-| `just check` | `mix lint` **plus** the suite in a throwaway testcontainers Postgres | **The done-gate.** Reproduces CI exactly. Run before declaring done or pushing. |
+| `just check` | `mix lint` **plus** the suite against a throwaway Docker Postgres | **The done-gate.** Reproduces CI exactly. Run before declaring done or pushing. |
 | `just lint` | `mix lint`: format-check, deps audit, warnings-as-errors, `credo --strict`, `sobelow`, `dialyzer` | The no-DB static gate. Fast; use when Docker isn't available. |
 | `just precommit` | compile, `deps.unlock --unused`, format, test | The fast loop. **Not CI-equivalent** — it skips lint, so it can be green locally while CI is red. |
 | `just test [path]` / `just test --failed` | the suite, targeted | Iterating. |
@@ -23,11 +23,14 @@ Always run `just check` before pushing.
 
 ## Tests need no local Postgres
 
-The suite runs against a throwaway **testcontainers** Postgres and a **fake
-speedtest binary** at `test/support/fake_speedtest` — no local Postgres or Ookla
-CLI required. Oban runs in `testing: :manual`, so jobs enqueue but don't fire
-until you assert on them. Keep tests deterministic: fixed timestamps,
-`start_supervised!/1`, assert by DOM id, and never `Process.sleep/1`.
+`just test` boots a throwaway **Docker** Postgres (`postgres:18`) on a random
+host port each run and points the suite at it via `DATABASE_URL` — hermetic and
+fresh every time, isolated from the dev database. CI does the same with a fresh
+Postgres service container per job. No local Postgres install or Ookla CLI is
+required — the suite also uses a **fake speedtest binary** at
+`test/support/fake_speedtest`. Oban runs in `testing: :manual`, so jobs enqueue
+but don't fire until you assert on them. Keep tests deterministic: fixed
+timestamps, `start_supervised!/1`, assert by DOM id, and never `Process.sleep/1`.
 
 ## Versioning
 

@@ -83,10 +83,6 @@ defmodule Baudflow.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
 
-      # Test
-      # Throwaway Postgres in Docker - hermetic, no local PG install needed
-      {:testcontainers, "~> 2.3", only: :test},
-
       # Lint / static analysis (compile-time only, never shipped in the release)
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
@@ -105,8 +101,9 @@ defmodule Baudflow.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
-      # ecto.create is a no-op against the container's pre-created DB, but keeps
-      # the alias usable against a plain local PG too.
+      # ecto.create provisions the test database (baudflow_test) in whatever
+      # Postgres the suite targets - the CI service container, the `just test`
+      # throwaway, or a plain local PG.
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind baudflow", "esbuild baudflow"],
@@ -126,8 +123,8 @@ defmodule Baudflow.MixProject do
         "dialyzer"
       ],
       # Full gate: lint + tests in a throwaway Postgres
-      check: ["lint", "testcontainers.run --database postgres test"],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      check: ["lint", "test"],
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format"]
     ]
   end
 end
