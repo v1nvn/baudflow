@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.9.0](https://github.com/v1nvn/baudflow/compare/v0.8.0...v0.9.0) (2026-06-27)
+
+
+
+
+### Features:
+
+* architecture.md by v1nvn
+
+* docs overhaul by v1nvn
+
 ## [v0.8.0](https://github.com/v1nvn/baudflow/compare/v0.7.0...v0.8.0) (2026-06-26)
 
 
