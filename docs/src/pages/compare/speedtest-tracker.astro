@@ -20,7 +20,8 @@ const updated = '2026-06-27';
 // Feature matrix — the single most-cited artifact by answer engines.
 // 'yes' | 'partial' | 'no'. Notes link to evidence.
 type Cell = 'yes' | 'partial' | 'no';
-const mark = (v: Cell) => (v === 'yes' ? '✅' : v === 'partial' ? '⚠️' : '—');
+const label: Record<Cell, string> = { yes: 'Yes', partial: 'Partial', no: '—' };
+const mark = (v: Cell) => `<span class="mark mark-${v}"><i></i>${label[v]}</span>`;
 
 const rows: { f: string; b: Cell; s: Cell; note?: string }[] = [
   { f: 'Automated, scheduled Ookla speed tests', b: 'yes', s: 'yes' },
@@ -141,7 +142,7 @@ const breadcrumbSchema = {
           PostgreSQL.
         </p>
         <div class="ctas">
-          <a class="btn btn-fill" href={`${BASE}#install`}>▶ Try baudflow</a>
+          <a class="btn btn-fill" href={`${BASE}#install`}>Try baudflow</a>
           <a class="btn btn-ghost" href={`${BASE}features/`}>See the features</a>
           <a class="btn btn-ghost" href={stRepo} rel="noopener">speedtest-tracker ↗</a>
         </div>
@@ -154,7 +155,7 @@ const breadcrumbSchema = {
       <div class="section-head">
         <span class="kicker">Feature matrix</span>
         <h2>Side by side</h2>
-        <p>✅ yes · ⚠️ partial / planned · — not available. Evidence links point to the upstream issue tracker.</p>
+        <p>Green = yes · Amber = partial / planned · — = not available. Evidence links point to the upstream issue tracker.</p>
       </div>
       <div class="table-scroll">
         <table class="matrix">
@@ -172,8 +173,8 @@ const breadcrumbSchema = {
                   {r.f}
                   {r.note && <span class="note" set:html={` — ${r.note}`} />}
                 </td>
-                <td class="cell">{mark(r.b)}</td>
-                <td class="cell">{mark(r.s)}</td>
+                <td class="cell" set:html={mark(r.b)}></td>
+                <td class="cell" set:html={mark(r.s)}></td>
               </tr>
             ))}
           </tbody>
@@ -268,9 +269,9 @@ const breadcrumbSchema = {
       <h2>Run baudflow in under a minute</h2>
       <p>One container, one Postgres, the Ookla CLI bundled in.</p>
       <div class="ctas">
-        <a class="btn btn-fill" href={`${BASE}#install`}>▶ Get started</a>
+        <a class="btn btn-fill" href={`${BASE}#install`}>Get started</a>
         <a class="btn btn-ghost" href={`${BASE}docs/`}>Read the docs</a>
-        <a class="btn btn-ghost" href={gh} rel="noopener">★ Star on GitHub</a>
+        <a class="btn btn-ghost" href={gh} rel="noopener">Star on GitHub</a>
       </div>
     </div>
   </section>
@@ -279,7 +280,7 @@ const breadcrumbSchema = {
 <style>
   .hero { padding: 3.5rem 0 1rem; text-align: center; }
   .hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 800; max-width: 18ch; margin: 0.7rem auto 0.9rem; }
-  .hero h1 em { font-style: normal; color: var(--cyan); text-shadow: 0 0 16px hsl(186 92% 52% / 0.45); }
+  .hero h1 em { font-style: normal; color: var(--cyan); }
   .lede { color: var(--text-dim); max-width: 62ch; margin: 0 auto; line-height: 1.65; }
   .lede a { color: var(--accent); text-decoration: underline; }
   .updated { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-ghost); margin: 1rem 0 0; }
@@ -306,7 +307,15 @@ const breadcrumbSchema = {
   .matrix thead th { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-ghost); background: var(--surface-2); }
   .matrix th:nth-child(2), .matrix th:nth-child(3) { text-align: center; }
   .matrix .col-feature { font-weight: 600; color: var(--text); max-width: 32ch; }
-  .matrix .cell { text-align: center; font-size: 1.05rem; }
+  .matrix .cell { text-align: center; }
+  .matrix .mark { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; }
+  .matrix .mark i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--text-ghost); display: inline-block; }
+  .matrix .mark-yes { color: var(--green); }
+  .matrix .mark-yes i { background: var(--green); }
+  .matrix .mark-partial { color: var(--amber); }
+  .matrix .mark-partial i { background: var(--amber); }
+  .matrix .mark-no { color: var(--text-ghost); }
+  .matrix .mark-no i { background: var(--text-ghost); opacity: 0.5; }
   .matrix tbody tr:hover { background: hsl(198 95% 52% / 0.03); }
   .matrix .note { display: block; font-weight: 400; color: var(--text-dim); font-size: 0.78rem; margin-top: 0.25rem; line-height: 1.4; }
 

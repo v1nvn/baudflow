@@ -19,7 +19,7 @@ docker run -d \
   -p 4000:4000 \
   -e DATABASE_URL="ecto://user:pass@host/baudflow" \
   -e SECRET_KEY_BASE="replace-with-a-long-random-value" \
-  ghcr.io/v1nvn/baudflow:0.7.0
+  ghcr.io/v1nvn/baudflow:%VERSION%
 ```
 
 On first boot the release runs migrations automatically. Open
@@ -34,7 +34,7 @@ git clone https://github.com/v1nvn/baudflow && cd baudflow
 docker compose up
 ```
 
-> The `:0.7.0` tag is the latest release. `:latest` follows the `main` branch,
+> The `:%VERSION%` tag is the latest release. `:latest` follows the `main` branch,
 > where new features (like the live ping diagnostics page) land before they're
 > cut into a tagged release.
 

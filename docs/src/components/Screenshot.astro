@@ -1,7 +1,6 @@
 ---
-// Reusable framed screenshot — a browser-chrome window (traffic-light dots +
-// location bar) wrapped around an optimized <Image/>. Used across the landing,
-// /features, /why, and doc pages so captures share one consistent frame.
+// Reusable framed screenshot — a clean frame around an optimized <Image/>.
+// Used across the landing, /features, /why, and doc pages so captures share one consistent frame.
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
@@ -11,21 +10,13 @@ interface Props {
   alt: string;
   /** Caption shown under the image (optional). */
   caption?: string;
-  /** Fake location-bar label (defaults to the live host). */
-  url?: string;
   /** Render at the full content width instead of the narrower card width. */
   wide?: boolean;
 }
-const { src, alt, caption, url = 'baudflow.v1n.space', wide = false } = Astro.props;
+const { src, alt, caption, wide = false } = Astro.props;
 ---
 
 <figure class:list={['shot', { wide }]}>
-  <div class="shot-bar">
-    <span class="dot" style="background:var(--red)"></span>
-    <span class="dot" style="background:var(--amber)"></span>
-    <span class="dot" style="background:var(--green)"></span>
-    <span class="shot-url">{url}</span>
-  </div>
   <Image src={src} alt={alt} layout="constrained" />
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
@@ -40,16 +31,6 @@ const { src, alt, caption, url = 'baudflow.v1n.space', wide = false } = Astro.pr
     box-shadow: 0 14px 50px rgba(0, 0, 0, 0.45);
   }
   .shot.wide { max-width: none; }
-  .shot-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.6rem 0.85rem;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-  }
-  .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
-  .shot-url { font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-dim); margin-left: 0.6rem; }
   .shot img { display: block; width: 100%; height: auto; }
   figcaption {
     padding: 0.6rem 0.9rem;

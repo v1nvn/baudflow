@@ -1,13 +1,14 @@
 ---
+import Icon from './Icon.astro';
 interface Props {
-  icon: string;
+  name: import('./Icon.astro').Props['name'];
   title: string;
 }
-const { icon, title } = Astro.props;
+const { name, title } = Astro.props;
 ---
 
 <article class="fcard">
-  <span class="ficon" aria-hidden="true">{icon}</span>
+  <span class="ficon"><Icon name={name} /></span>
   <h3>{title}</h3>
   <p><slot /></p>
 </article>
@@ -25,7 +26,7 @@ const { icon, title } = Astro.props;
     border-color: var(--accent);
     box-shadow: 0 0 18px hsl(198 95% 52% / 0.08);
   }
-  .ficon { font-family: var(--font-mono); color: var(--accent); font-size: 1.15rem; }
-  .fcard h3 { margin: 0.55rem 0 0.35rem; font-size: 0.98rem; }
+  .ficon { color: var(--accent); font-size: 1.3rem; display: inline-flex; }
+  .fcard h3 { margin: 0.7rem 0 0.35rem; font-size: 0.98rem; }
   .fcard p { margin: 0; color: var(--text-dim); font-size: 0.86rem; line-height: 1.5; }
 </style>

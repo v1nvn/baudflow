@@ -1,11 +1,41 @@
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { satteri } from '@astrojs/markdown-satteri';
+import { defineMdastPlugin } from 'satteri';
 import llms from './src/integrations/llms-md.mjs';
+import { version } from './src/version.ts';
+
+// Resolve `%VERSION%` in rendered Markdown (prose text, inline code, and fenced
+// code blocks) to the project version from mix.exs, so the docs quick-start
+// snippets stay in lockstep with releases with nothing to hand-edit. Runs as a
+// mdast plugin on Astro's default Sätteri processor.
+/** @param {string} v */
+function versionPlugin(v) {
+  /** @param {string} s */
+  const sub = (s) => s.split('%VERSION%').join(v);
+  return defineMdastPlugin({
+    name: 'baudflow-version',
+    text(node, ctx) {
+      if (node.value.includes('%VERSION%')) ctx.replaceNode(node, { type: 'text', value: sub(node.value) });
+    },
+    inlineCode(node, ctx) {
+      if (node.value.includes('%VERSION%')) ctx.replaceNode(node, { type: 'inlineCode', value: sub(node.value) });
+    },
+    code(node, ctx) {
+      if (node.value.includes('%VERSION%')) {
+        ctx.replaceNode(node, { type: 'code', lang: node.lang ?? null, meta: node.meta ?? null, value: sub(node.value) });
+      }
+    },
+  });
+}
 
 export default defineConfig({
   site: 'https://baudflow.com',
   build: { inlineStylesheets: 'always' },
+  markdown: {
+    processor: satteri({ mdastPlugins: version ? [versionPlugin(version)] : [] }),
+  },
   fonts: [
     {
       provider: fontProviders.fontsource(),

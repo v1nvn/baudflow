@@ -1,24 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Oscilloscope from '../components/Oscilloscope.astro';
 import Screenshot from '../components/Screenshot.astro';
 import FeatureCard from '../components/FeatureCard.astro';
 import Terminal from '../components/Terminal.astro';
 import { BASE } from '../utils';
 import dashboard from '../assets/screenshots/dashboard.png';
+import oscilloscope from '../assets/screenshots/oscilloscope.jpg';
 
 const gh = 'https://github.com/v1nvn/baudflow';
 
 // The marquee differentiators — what makes baudflow a platform, not a cron job.
 const pillars = [
-  { icon: '∿', title: 'Live CRT oscilloscope', body: 'Ookla output streamed line-by-line over Erlang ports — watch the waveform build across the ping → download → upload phases.' },
-  { icon: '◌', title: 'Live ping diagnostics', body: 'A dedicated /ping console streams each TCP-connect sample as it lands — cumulative latency, jitter, and loss, updating in real time.' },
-  { icon: '↯', title: 'Adaptive cadence', body: 'A breached schedule runs faster until it recovers, capturing a granular outage timeline without burning bandwidth the rest of the time.' },
-  { icon: '▦', title: 'Health heatmap', body: 'A GitHub-style calendar wall of speed health — evening congestion and weekend slowdowns jump out at a glance.' },
-  { icon: '∑', title: 'SLA & ISP evidence', body: 'Turn raw Mbps into "delivered promised speed 91.3% of the month" — the number you can actually take to your ISP.' },
-  { icon: '☰', title: 'Multi-schedule platform', body: 'Hourly against your ISP, every 15 minutes against Cloudflare, a ping every minute. Schedules are data, not config keys.' },
-  { icon: '⇄', title: 'Four-layer alerts', body: 'Event → policy → template → channel. ntfy and webhooks out of the box; a new channel is one module, never a branch.' },
-  { icon: '◔', title: 'Prometheus /metrics', body: 'Eight baudflow_* gauges in hand-rolled text format. Point Grafana at /metrics and it is part of your stack.' },
+  { name: 'oscilloscope', title: 'Live CRT oscilloscope', body: 'Ookla output streamed line-by-line over Erlang ports — watch the waveform build across the ping → download → upload phases.' },
+  { name: 'ping', title: 'Live ping diagnostics', body: 'A dedicated /ping console streams each TCP-connect sample as it lands — cumulative latency, jitter, and loss, updating in real time.' },
+  { name: 'cadence', title: 'Adaptive cadence', body: 'A breached schedule runs faster until it recovers, capturing a granular outage timeline without burning bandwidth the rest of the time.' },
+  { name: 'heatmap', title: 'Health heatmap', body: 'A GitHub-style calendar wall of speed health — evening congestion and weekend slowdowns jump out at a glance.' },
+  { name: 'sla', title: 'SLA & ISP evidence', body: 'Turn raw Mbps into "delivered promised speed 91.3% of the month" — the number you can actually take to your ISP.' },
+  { name: 'schedules', title: 'Multi-schedule platform', body: 'Hourly against your ISP, every 15 minutes against Cloudflare, a ping every minute. Schedules are data, not config keys.' },
+  { name: 'pipeline', title: 'Four-layer alerts', body: 'Event → policy → template → channel. ntfy and webhooks out of the box; a new channel is one module, never a branch.' },
+  { name: 'metrics', title: 'Prometheus /metrics', body: 'Eight baudflow_* gauges in hand-rolled text format. Point Grafana at /metrics and it is part of your stack.' },
 ];
 
 const pains = [
@@ -76,11 +76,11 @@ const softwareSchema = {
         connection's health.
       </p>
       <div class="ctas">
-        <a class="btn btn-fill" href={`${BASE}#install`}>▶ Get started</a>
+        <a class="btn btn-fill" href={`${BASE}#install`}>Get started</a>
         <a class="btn btn-ghost" href={`${BASE}why/`}>Why baudflow?</a>
-        <a class="btn btn-ghost" href={gh} rel="noopener">★ Star on GitHub</a>
+        <a class="btn btn-ghost" href={gh} rel="noopener">Star on GitHub</a>
       </div>
-      <div class="hero-scope"><Oscilloscope /></div>
+      <div class="hero-scope"><Screenshot src={oscilloscope} alt="A live Ookla speed test streaming into baudflow's CRT oscilloscope — download phase, building in real time." /></div>
     </div>
   </section>
 
@@ -112,18 +112,16 @@ const softwareSchema = {
   <section id="features" class="section">
     <div class="container">
       <div class="section-head">
-        <span class="kicker">Power-user dashboard</span>
         <h2>A monitoring platform, not a cron job</h2>
         <p>Live visualization, adaptive schedules, health intelligence, and a real alert pipeline — all self-hosted, all on one screen.</p>
       </div>
       <Screenshot
         src={dashboard}
         alt="The baudflow dashboard — live readout, health heatmap, SLA compliance, and speed history."
-        url="baudflow.v1n.space"
       />
       <div class="feature-grid">
         {pillars.map((f) => (
-          <FeatureCard icon={f.icon} title={f.title}>{f.body}</FeatureCard>
+          <FeatureCard name={f.name} title={f.title}>{f.body}</FeatureCard>
         ))}
       </div>
       <p class="more"><a href={`${BASE}features/`}>See the full feature catalog →</a></p>
@@ -149,7 +147,7 @@ const softwareSchema = {
 <style>
   .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
   .hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 800; max-width: 18ch; margin: 0.7rem auto 0.9rem; }
-  .hero h1 em { font-style: normal; color: var(--cyan); text-shadow: 0 0 16px hsl(186 92% 52% / 0.45); }
+  .hero h1 em { font-style: normal; color: var(--cyan); }
   .lede { color: var(--text-dim); max-width: 56ch; margin: 0 auto 1.7rem; }
   .ctas { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.4rem; }
   .hero-scope { max-width: 680px; margin: 0 auto; }

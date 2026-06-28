@@ -17,7 +17,7 @@ ghcr.io/v1nvn/baudflow:<version>
 It's a two-stage Elixir release: a self-contained BEAM bundle that runs as
 **non-root UID 1000**, with the Ookla CLI pre-installed at
 `/usr/local/bin/speedtest`. The fastest path is the repo's `docker-compose.yml`,
-which brings up Baudflow with Postgres in one command. Pin a `:0.7.0`-style tag
+which brings up Baudflow with Postgres in one command. Pin a `:%VERSION%`-style tag
 for stability; `:latest` follows `main`.
 
 ## Environment

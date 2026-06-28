@@ -95,9 +95,8 @@ code, pre, kbd, samp { font-family: var(--font-mono); }
   background: var(--accent);
   color: #000;
   border: none;
-  box-shadow: 0 0 16px hsl(198 95% 52% / 0.3);
 }
-.btn-fill:hover { background: var(--accent-glow); box-shadow: 0 0 24px hsl(198 95% 52% / 0.5); transform: translateY(-1px); }
+.btn-fill:hover { background: var(--accent-glow); transform: translateY(-1px); }
 .btn-ghost {
   background: transparent;
   color: var(--text);
