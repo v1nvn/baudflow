@@ -1,6 +1,6 @@
 ---
 title: Deployment
-description: Run Baudflow in production — container image, environment, health, metrics, and backups.
+description: "Run Baudflow in production: container image, environment, health, metrics, and backups."
 section: Getting started
 order: 20
 ---
@@ -24,27 +24,27 @@ for stability; `:latest` follows `main`.
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `DATABASE_URL` | yes | — | Ecto connection string, e.g. `ecto://user:pass@host/baudflow` |
-| `SECRET_KEY_BASE` | yes | — | Signs/encrypts session cookies. Generate with `mix phx.gen.secret` |
+| `DATABASE_URL` | yes | (none) | Ecto connection string, e.g. `ecto://user:pass@host/baudflow` |
+| `SECRET_KEY_BASE` | yes | (none) | Signs/encrypts session cookies. Generate with `mix phx.gen.secret` |
 | `PHX_HOST` | no | `example.com` | Public host, used in generated URLs and redirects |
 | `PORT` | no | `4000` | HTTP listen port |
 | `POOL_SIZE` | no | `10` | DB connection pool size |
-| `ECTO_IPV6` | no | — | `true` or `1` to connect to Postgres over IPv6 |
-| `DNS_CLUSTER_QUERY` | no | — | DNS name for Erlang clustering (multi-node) |
-| `PHX_SERVER` | no | — | `true` to start the web server (used by releases) |
+| `ECTO_IPV6` | no | (none) | `true` or `1` to connect to Postgres over IPv6 |
+| `DNS_CLUSTER_QUERY` | no | (none) | DNS name for Erlang clustering (multi-node) |
+| `PHX_SERVER` | no | (none) | `true` to start the web server (used by releases) |
 
 On boot the release runs `Baudflow.Release.migrate/0`, so migrations apply
-automatically — no separate step unless you run from source (`mix ecto.migrate`).
+automatically. No separate step is needed unless you run from source (`mix ecto.migrate`).
 
 Notification transport wiring (for example the ntfy endpoint) is set through
-application env, not these process env vars — see [Notifications](../notifications/).
+application env, not these process env vars. See [Notifications](../notifications/).
 
 ## Health & monitoring
 
-- **`GET /health`** — returns `{"status":"ok"}`. Point an external uptime monitor
+- **`GET /health`**: returns `{"status":"ok"}`. Point an external uptime monitor
   (Uptime Kuma, a Kubernetes liveness probe) here.
-- **`GET /metrics`** — Prometheus text format, hand-rolled with no cache and no
-  dependencies. Scrape it for `baudflow_*` gauges — see
+- **`GET /metrics`**: Prometheus text format, hand-rolled with no cache and no
+  dependencies. Scrape it for `baudflow_*` gauges. See
   [Prometheus metrics](../prometheus-metrics/) for the full list.
 
 Both endpoints bypass the browser pipeline deliberately: `/metrics` serves plain

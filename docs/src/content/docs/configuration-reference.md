@@ -57,5 +57,5 @@ back as typed values with a safe fallback, so a bad value never crashes a queue.
 | `webhook_url` | _(empty)_ | string | Webhook endpoint. Blank disables the channel. |
 | `webhook_template` | _(empty)_ | string | Custom EEx JSON body. Blank = built-in default. |
 
-ntfy is wired through application env, not these keys — see
+ntfy is wired through application env, not these keys. See
 [Notifications](../notifications/).

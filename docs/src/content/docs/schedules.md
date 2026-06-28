@@ -7,7 +7,7 @@ order: 30
 
 A schedule is a row: a cron cadence, a test type, a target, and its own escalation
 and threshold state. Scheduling is **data, not config keys**, so the scheduler is
-just a thin per-minute dispatcher — it asks `Scheduling.due_now()` and enqueues
+just a thin per-minute dispatcher: it asks `Scheduling.due_now()` and enqueues
 whatever's due.
 
 ## Multiple schedules
@@ -18,8 +18,8 @@ Run as many as you like, each independent:
 - a speed test every 15 minutes against Cloudflare,
 - a TCP-connect ping every minute against `1.1.1.1`.
 
-A fresh install seeds two defaults — an hourly **Default** speed test and an hourly
-**Ping** schedule — both escalating to every 15 minutes on a breach. Add or edit
+A fresh install seeds two defaults (an hourly **Default** speed test and an hourly
+**Ping** schedule), both escalating to every 15 minutes on a breach. Add or edit
 them on the **Schedules** page (`/schedules`).
 
 Each schedule owns:
@@ -35,7 +35,7 @@ Each schedule owns:
 | `threshold_*` | Per-schedule threshold override (see [Health](../health/)). |
 
 A malformed cron is rejected at write time and, as a defensive belt, logged and
-skipped at run time — one bad row can't stall the per-minute queue.
+skipped at run time, so one bad row can't stall the per-minute queue.
 
 ![The schedules table](../../assets/screenshots/schedules.png)
 
@@ -55,7 +55,7 @@ breach   → escalation_level++ → active_cron() returns escalated_cron
 recover  → escalation_level-- → active_cron() returns cron (floored at 0)
 ```
 
-The level is mutated with compare-and-set `update_all` — never get→change→update —
+The level is mutated with compare-and-set `update_all` (never get→change→update),
 so concurrent jobs on the same row can't race. Without an `escalated_cron`, the
 level is inert and the schedule always runs its base cadence.
 

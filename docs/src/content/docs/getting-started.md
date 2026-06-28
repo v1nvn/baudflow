@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Get Baudflow running in under a minute — a Docker one-liner or a local Mix dev setup.
+description: "Get Baudflow running in under a minute: a Docker one-liner or a local Mix dev setup."
 section: Getting started
 order: 10
 ---
@@ -8,7 +8,7 @@ order: 10
 Baudflow is a Phoenix LiveView app backed by PostgreSQL and Oban. Run the
 prebuilt container image (the Ookla CLI is bundled in) or boot it from source.
 
-## Option A — Docker (recommended)
+## Option A: Docker (recommended)
 
 The image is multi-arch (`linux/amd64`, `linux/arm64`) and bundles the Ookla
 Speedtest CLI, so there's nothing extra to install:
@@ -40,14 +40,14 @@ docker compose up
 
 See [Deployment](../deployment/) for production hardening.
 
-## Option B — from source
+## Option B: from source
 
 Prerequisites:
 
 - **Elixir 1.20+** and **Erlang/OTP 29+** (the Dockerfile pins `1.20 / 29.0.1`)
 - **PostgreSQL**
 - The [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli) on your `$PATH`
-  (only needed for speed tests — the TCP-connect ping runner needs no binary)
+  (only needed for speed tests, since the TCP-connect ping runner needs no binary)
 
 ```bash
 git clone https://github.com/v1nvn/baudflow && cd baudflow
@@ -59,14 +59,14 @@ Or inside an IEx session: `iex -S mix phx.server`.
 
 ## What you'll see
 
-- **Dashboard (`/`)** — hero readout, a speed-history chart with threshold lines,
+- **Dashboard (`/`)**: hero readout, a speed-history chart with threshold lines,
   an SLA-compliance card, a monthly health heatmap, and a manual Run button.
-- **Ping (`/ping`)** — a dedicated ping console with a live, per-sample
+- **Ping (`/ping`)**: a dedicated ping console with a live, per-sample
   diagnostics panel and ping-only history.
-- **History (`/history`)** — every measurement, filterable and sortable.
-- **Schedules (`/schedules`)** — multiple cron schedules, each with its own
+- **History (`/history`)**: every measurement, filterable and sortable.
+- **Schedules (`/schedules`)**: multiple cron schedules, each with its own
   thresholds and escalation.
-- **Settings (`/settings`)** — thresholds, servers, retention, notifications.
+- **Settings (`/settings`)**: thresholds, servers, retention, notifications.
 
 ![The baudflow dashboard](../../assets/screenshots/dashboard.png)
 

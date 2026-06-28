@@ -5,7 +5,7 @@ section: Guides
 order: 60
 ---
 
-Ping is a first-class citizen, not a bolt-on. It has its own page — `/ping` — a
+Ping is a first-class citizen, not a bolt-on. It has its own page (`/ping`), a
 live diagnostics panel that streams each sample as it lands, and its own history
 chart. It's deliberately ping-only, so a speed test never perturbs it.
 
@@ -28,7 +28,7 @@ treats each completed handshake (~1 RTT) as a latency sample, with failed
 connects counted as packet loss. Sampling for a sustained window (default 10 s)
 averages many readings into a stable value instead of a noisy burst.
 
-This needs **no binary and no `CAP_NET_RAW`** — it works unprivileged under a
+This needs **no binary and no `CAP_NET_RAW`**: it works unprivileged under a
 locked-down security context where neither the `ping` binary nor raw-socket
 capabilities are available. The tradeoff is the price of entry: a target that
 doesn't speak TCP on the configured port reads as 100% loss.
@@ -47,6 +47,6 @@ connection. Point a schedule at any host:port that speaks TCP.
 
 ## What a ping result carries
 
-Latency, jitter, low, high, and packet loss — plus the full raw sample set. It
+Latency, jitter, low, high, packet loss, and the full raw sample set. It
 carries no download/upload, so [health](../health/) skips those checks and judges
 ping on latency alone.

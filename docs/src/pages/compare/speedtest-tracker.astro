@@ -17,7 +17,7 @@ const ogImage = new URL('og.png', site).href;
 const pageUrl = new URL(Astro.url.pathname, site).href;
 const updated = '2026-06-27';
 
-// Feature matrix — the single most-cited artifact by answer engines.
+// Feature matrix: the single most-cited artifact by answer engines.
 // 'yes' | 'partial' | 'no'. Notes link to evidence.
 type Cell = 'yes' | 'partial' | 'no';
 const label: Record<Cell, string> = { yes: 'Yes', partial: 'Partial', no: '—' };
@@ -49,7 +49,7 @@ const rows: { f: string; b: Cell; s: Cell; note?: string }[] = [
 const compareFaqs = [
   {
     q: 'Is baudflow a fork of speedtest-tracker?',
-    a: 'No. They are entirely separate codebases. speedtest-tracker is PHP/Laravel; baudflow is Elixir/Phoenix LiveView with Oban and PostgreSQL. Different language, framework, and architecture — baudflow is an independent project chasing the same goal from a different starting point.',
+    a: 'No. They are entirely separate codebases. speedtest-tracker is PHP/Laravel; baudflow is Elixir/Phoenix LiveView with Oban and PostgreSQL. Different language, framework, and architecture. baudflow is an independent project chasing the same goal from a different starting point.',
   },
   {
     q: 'Can I migrate my speedtest-tracker history into baudflow?',
@@ -57,11 +57,11 @@ const compareFaqs = [
   },
   {
     q: 'Which is lighter to run?',
-    a: 'speedtest-tracker has the lower-friction floor — it can run on SQLite with no separate database process. baudflow needs PostgreSQL, because it leans on JSON columns and window queries for baselines and SLA. Both are a single container plus a database.',
+    a: 'speedtest-tracker has the lower-friction floor: it can run on SQLite with no separate database process. baudflow needs PostgreSQL, because it leans on JSON columns and window queries for baselines and SLA. Both are a single container plus a database.',
   },
   {
     q: 'Does baudflow support as many notification channels?',
-    a: 'No. baudflow ships ntfy and webhooks; speedtest-tracker covers dozens of services through Apprise plus native Telegram. baudflow’s notification channels are behaviour implementations, so adding one is a self-contained module — but today the built-in count is lower.',
+    a: 'No. baudflow ships ntfy and webhooks; speedtest-tracker covers dozens of services through Apprise plus native Telegram. baudflow’s notification channels are behaviour implementations, so adding one is a self-contained module, but today the built-in count is lower.',
   },
   {
     q: 'Which should I pick?',
@@ -74,7 +74,7 @@ const articleSchema = {
   '@type': 'Article',
   headline: 'Baudflow vs speedtest-tracker: a modern self-hosted alternative',
   description:
-    'An honest, source-cited comparison of two self-hosted speed test trackers — where speedtest-tracker still wins and where baudflow pulls ahead.',
+    'An honest, source-cited comparison of two self-hosted speed test trackers: where speedtest-tracker still wins and where baudflow pulls ahead.',
   datePublished: updated,
   dateModified: updated,
   author: { '@type': 'Person', name: 'v1nvn', url: 'https://github.com/v1nvn' },
@@ -118,11 +118,11 @@ const breadcrumbSchema = {
       <p class="lede">
         Two self-hosted speed test trackers, compared honestly.
         <a href={stRepo} rel="noopener">speedtest-tracker</a> is the mature,
-        widely-used incumbent — a Laravel app with ~5,800 GitHub stars and a
+        widely-used incumbent, a Laravel app with ~5,800 GitHub stars and a
         LinuxServer.io image. Baudflow is a newer Phoenix LiveView alternative
         built to ship the features its users have requested for years.
         <strong>Full disclosure: baudflow is ours</strong>, so we’ve kept this
-        straight — including the places speedtest-tracker still wins.
+        straight, including the places speedtest-tracker still wins.
       </p>
       <p class="updated">Last updated {updated}. Verified against the live repos.</p>
     </div>
@@ -171,7 +171,7 @@ const breadcrumbSchema = {
               <tr>
                 <td class="col-feature">
                   {r.f}
-                  {r.note && <span class="note" set:html={` — ${r.note}`} />}
+                  {r.note && <span class="note" set:html={r.note} />}
                 </td>
                 <td class="cell" set:html={mark(r.b)}></td>
                 <td class="cell" set:html={mark(r.s)}></td>
@@ -189,7 +189,7 @@ const breadcrumbSchema = {
         <article class="card theirs">
           <span class="pkicker">Where speedtest-tracker wins</span>
           <ul>
-            <li><strong>Broad notifications.</strong> Dozens of channels through Apprise plus native Telegram — baudflow ships ntfy and webhooks.</li>
+            <li><strong>Broad notifications.</strong> Dozens of channels through Apprise plus native Telegram; baudflow ships ntfy and webhooks.</li>
             <li><strong>Database flexibility.</strong> SQLite, MySQL, or Postgres; SQLite means no separate database to run. baudflow is Postgres-only.</li>
             <li><strong>Multi-language UI.</strong> Community translations via Crowdin. baudflow is English-only today.</li>
             <li><strong>Built-in auth.</strong> Login and OIDC out of the box. baudflow is single-user by design and expects a reverse proxy.</li>
@@ -200,11 +200,11 @@ const breadcrumbSchema = {
         <article class="card ours">
           <span class="pkicker">Where baudflow pulls ahead</span>
           <ul>
-            <li><strong>Live, real-time tests.</strong> Every test streams over PubSub as it runs — no spinner, no refresh (<a href={stIssue(2035)}>ST #2035</a>).</li>
-            <li><strong>A real ping runner.</strong> Continuous TCP-connect ping with its own live console — the single most upvoted open request on speedtest-tracker (<a href={stIssue(826)}>ST #826</a>).</li>
-            <li><strong>SLA evidence.</strong> “Delivered 91.3% of promised speed this month” — the number you can take to your ISP (<a href={stIssue(1943)}>ST #1943</a>).</li>
+            <li><strong>Live, real-time tests.</strong> Every test streams over PubSub as it runs, with no spinner or refresh (<a href={stIssue(2035)}>ST #2035</a>).</li>
+            <li><strong>A real ping runner.</strong> Continuous TCP-connect ping with its own live console, the single most upvoted open request on speedtest-tracker (<a href={stIssue(826)}>ST #826</a>).</li>
+            <li><strong>SLA evidence.</strong> “Delivered 91.3% of promised speed this month”, the number you can take to your ISP (<a href={stIssue(1943)}>ST #1943</a>).</li>
             <li><strong>Adaptive cadence.</strong> A breached schedule runs faster until it recovers, then slows back down (<a href={stIssue(1815)}>ST #1815</a>).</li>
-            <li><strong>Smart alerts.</strong> A breach fires once when the streak is reached — not on every re-check (<a href={stIssue(2731)}>ST #2731</a>), with a per-channel template pipeline (<a href={stIssue(2105)}>ST #2105</a>).</li>
+            <li><strong>Smart alerts.</strong> A breach fires once when the streak is reached, not on every re-check (<a href={stIssue(2731)}>ST #2731</a>), with a per-channel template pipeline (<a href={stIssue(2105)}>ST #2105</a>).</li>
             <li><strong>Health heatmap.</strong> A GitHub-style calendar wall that makes evening congestion jump out.</li>
           </ul>
         </article>
@@ -221,7 +221,7 @@ const breadcrumbSchema = {
       <p>
         Both projects do the same core job: run Ookla speed tests on a schedule
         and keep the results so you can watch your connection over time. They
-        are not in a race to be “better” in the abstract — they optimize for
+        are not in a race to be “better” in the abstract; they optimize for
         different people.
       </p>
       <p>
@@ -235,7 +235,7 @@ const breadcrumbSchema = {
         instead of wait on, ping treated as a first-class citizen, health and
         SLA derived from your own baselines, and an alert pipeline that filters
         noise before it reaches you. It asks for PostgreSQL in return, and it is
-        younger — smaller community, fewer channels, no login yet.
+        younger: smaller community, fewer channels, no login yet.
       </p>
       <p>
         If your pain is “I have no proof to show my ISP,” “my calls lag but my

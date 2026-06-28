@@ -7,7 +7,7 @@ order: 40
 
 Health is a pure function of a measurement and its thresholds, evaluated by
 `Baudflow.Health`. It has no database access of its own, and the verdict is **never
-stored** — every reader (dashboard hero, heatmap, `/metrics`, history filter,
+stored**. Every reader (dashboard hero, heatmap, `/metrics`, history filter,
 result detail) derives it just-in-time on the next read. Change the mode or ratio
 and every view re-derives instantly, with no backfill.
 
@@ -15,14 +15,14 @@ and every view re-derives instantly, with no backfill.
 
 Resolved per-schedule → global, through one reader (`Scheduling.thresholds_for/1`):
 
-- **`auto`** *(default)* — judges each value against the connection's own rolling
+- **`auto`** *(default)*: judges each value against the connection's own rolling
   median baseline. A test breaches when download or upload falls below
   `ratio × median`, or when ping exceeds `median / ratio`. While there isn't enough
-  history the baseline is `:insufficient` and no verdict is produced — the
+  history the baseline is `:insufficient` and no verdict is produced. This is the
   zero-config default that calibrates itself.
-- **`absolute`** — against fixed Mbps / ms values. Download/upload must meet or
+- **`absolute`**: against fixed Mbps / ms values. Download/upload must meet or
   exceed their threshold; ping must be at or below its threshold.
-- **`off`** — no verdict at all.
+- **`off`**: no verdict at all.
 
 A check runs only when it has both a threshold and a value: a ping result carries
 no bandwidth, so its download/upload checks are simply skipped (never an error).
@@ -32,10 +32,10 @@ no bandwidth, so its download/upload checks are simply skipped (never an error).
 `Health.evaluate/3` also produces a **transition** against the schedule's prior
 breach streak:
 
-- `:breach` — the first test that fails after a healthy run.
-- `:recovered` — the first healthy test after a breach.
-- `:healthy` — steady healthy.
-- `nil` — still breaching, or no verdict.
+- `:breach`: the first test that fails after a healthy run.
+- `:recovered`: the first healthy test after a breach.
+- `:healthy`: steady healthy.
+- `nil`: still breaching, or no verdict.
 
 The streak (`breach_streak`) and escalation level live on the schedule row and are
 mutated only by `Scheduling`, atomically. That transition is what drives both

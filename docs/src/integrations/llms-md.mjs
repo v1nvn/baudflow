@@ -1,6 +1,6 @@
 // Generates llms.txt, llms-full.txt, and one markdown file per page from the
 // built HTML, on every `astro:build:done`. Site URL, trailing-slash policy,
-// and build format are read from Astro's own config — nothing is hardcoded.
+// and build format are read from Astro's own config; nothing is hardcoded.
 //
 // Adapted from the astro-llms-md integration (TS → plain ESM JS). One fix vs
 // the upstream: the homepage entry now links to /index.md (it produced /.md).
@@ -46,7 +46,7 @@ function getErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
-// Markdown filename for a page — matches the file written on disk so llms.txt
+// Markdown filename for a page: matches the file written on disk so llms.txt
 // links always resolve. Home ("/") → index.md.
 function mdSlug(urlPath) {
   return urlPath === "/" ? "index" : urlPath.replace(/^\//, "");
@@ -294,7 +294,7 @@ export default function llmsIntegration(options = {}) {
           };
           if (!merged.siteUrl && !astroSiteUrl) {
             logger.warn(
-              "llms.txt: no site URL — set `site` in astro.config.mjs or pass `siteUrl`",
+              "llms.txt: no site URL; set `site` in astro.config.mjs or pass `siteUrl`",
             );
             return;
           }

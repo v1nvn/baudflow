@@ -1,13 +1,13 @@
-/* Baudflow site — Tron Legacy design system.
+/* Baudflow site: Tron Legacy design system.
    The palette is ported verbatim from the app (assets/css/app.css) and lives
    here as the single source of truth. Every color is a token; components
    reference these vars and never hardcode hex. */
 
 :root {
   /* Font tokens (--font-sans / --font-mono) are injected by the Astro Fonts API
-     via <Font preload/> in BaseLayout.astro — no second source of truth here. */
+     via <Font preload/> in BaseLayout.astro; no second source of truth here. */
 
-  /* Surfaces — near-black with cold blue undertone */
+  /* Surfaces: near-black with cold blue undertone */
   --surface-0: hsl(224, 38%, 4.5%);
   --surface-1: hsl(224, 36%, 10.5%);
   --surface-2: hsl(224, 30%, 16%);
@@ -23,7 +23,7 @@
   --text-dim: hsl(224, 18%, 66%);
   --text-ghost: hsl(224, 12%, 54%);
 
-  /* Accents — neon Tron Legacy palette */
+  /* Accents: neon Tron Legacy palette */
   --accent: hsl(198, 95%, 52%);
   --accent-glow: hsl(198, 84%, 70%);
   --cyan: hsl(186, 92%, 52%);

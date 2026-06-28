@@ -19,14 +19,14 @@ interface Props {
 
 const {
   title,
-  description = 'Baudflow is a self-hosted speed test tracker and network monitor — automated Ookla speed tests, live ping diagnostics, adaptive schedules, SLA tracking, and health heatmaps.',
+  description = 'Baudflow is a self-hosted speed test tracker and network monitor: automated Ookla speed tests, live ping diagnostics, adaptive schedules, SLA tracking, and health heatmaps.',
   ogType = 'website',
   schema,
 } = Astro.props;
 const fullTitle = title.includes('Baudflow') ? title : `${title} · Baudflow`;
 
 // Absolute URLs (Astro.site is configured in astro.config.mjs). Canonical,
-// og:url, and JSON-LD `url`/`item` fields must all be absolute — relative
+// og:url, and JSON-LD `url`/`item` fields must all be absolute; relative
 // URLs are a common schema-validation failure.
 const site = Astro.site ?? new URL(Astro.url.origin);
 const canonical = new URL(Astro.url.pathname, site).href;

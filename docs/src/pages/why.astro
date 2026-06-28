@@ -9,12 +9,12 @@ const problems = [
   {
     kicker: 'The evidence gap',
     title: 'A flaky connection with nothing to show for it',
-    body: 'You know your internet drops at 8pm every night — but "it feels slow" is not a support ticket. Baudflow stores every result in full and rolls it into SLA percentages, breach timelines, and heatmaps: the kind of record an ISP actually has to answer for.',
+    body: 'You know your internet drops at 8pm every night, but "it feels slow" is not a support ticket. Baudflow stores every result in full and rolls it into SLA percentages, breach timelines, and heatmaps: the kind of record an ISP actually has to answer for.',
   },
   {
     kicker: 'The blind spot',
     title: 'Most outages are not about throughput',
-    body: 'Latency spikes, jitter, and packet loss hit long before bandwidth drops. A speed test every hour will happily report full speed while your video calls are falling apart. A first-class ping runner — sampling continuously, with its own live console — catches what throughput misses.',
+    body: 'Latency spikes, jitter, and packet loss hit long before bandwidth drops. A speed test every hour will happily report full speed while your video calls are falling apart. A first-class ping runner (sampling continuously, with its own live console) catches what throughput misses.',
   },
   {
     kicker: 'The ceiling',
@@ -24,16 +24,16 @@ const problems = [
 ];
 
 const differentiators = [
-  { name: 'cadence', title: 'Adaptive cadence', body: 'When a schedule breaches, it runs faster — on its own — until it recovers, then slows back down. A detailed outage timeline without paying for it in bandwidth.' },
+  { name: 'cadence', title: 'Adaptive cadence', body: 'When a schedule breaches, it runs faster on its own until it recovers, then slows back down. A detailed outage timeline without paying for it in bandwidth.' },
   { name: 'realtime', title: 'Real-time, not refresh', body: 'LiveView streams each phase and each ping sample over PubSub. You watch the test happen, you do not wait on a spinner.' },
-  { name: 'ping', title: 'Ping as a peer', body: 'Ping is not a side feature — it has its own page, its own live diagnostics panel, and its own health evaluation. Most outages are its domain.' },
+  { name: 'ping', title: 'Ping as a peer', body: 'Ping is not a side feature; it has its own page, its own live diagnostics panel, and its own health evaluation. Most outages are its domain.' },
   { name: 'table', title: 'Schedules are data', body: 'Run hourly against your ISP, every 15 minutes against Cloudflare, a ping every minute. The scheduler is a thin dispatcher over a table, not a config file.' },
-  { name: 'shield', title: 'Built for ISP accountability', body: 'SLA compliance, breach evidence, and an export-friendly record of raw measurements — the deliverables for a refund or a fault report.' },
+  { name: 'shield', title: 'Built for ISP accountability', body: 'SLA compliance, breach evidence, and an export-friendly record of raw measurements, the deliverables for a refund or a fault report.' },
   { name: 'plug', title: 'Plays with your stack', body: 'Prometheus /metrics, webhooks, an embeddable heatmap, and a /health endpoint. It slots into Grafana, Home Assistant, and Uptime Kuma without ceremony.' },
 ];
 ---
 
-<BaseLayout title="Why baudflow — Baudflow" description="Baudflow is a monitoring platform, not a cron job with a web UI — built for homelabbers who want proof, patterns, and alerts, not just a number.">
+<BaseLayout title="Why baudflow · Baudflow" description="Baudflow is a monitoring platform, not a cron job with a web UI, built for homelabbers who want proof, patterns, and alerts, not just a number.">
   <section class="hero">
     <div class="container">
       <span class="kicker">Why baudflow</span>
@@ -54,7 +54,7 @@ const differentiators = [
     <div class="container">
       <Screenshot
         src={dashboard}
-        alt="The baudflow dashboard — hero readout, health heatmap, SLA compliance, and speed history on one screen."
+        alt="The baudflow dashboard, hero readout, health heatmap, SLA compliance, and speed history on one screen."
       />
     </div>
   </section>
@@ -105,15 +105,15 @@ const differentiators = [
       <div class="prose">
         <p>
           baudflow stores the complete raw result of every test and derives
-          everything else — health verdicts, SLA percentages, heatmaps, chart
-          annotations — on the fly. Change your thresholds and every view
+          everything else (health verdicts, SLA percentages, heatmaps, chart
+          annotations) on the fly. Change your thresholds and every view
           re-derives instantly; nothing is backfilled, nothing is lost.
         </p>
         <p>
           The architecture is built to stay that way. Test backends and
           notification channels are behaviour implementations, not branches in a
           worker. Schedules, escalation, and health are each owned by exactly one
-          module. Features are additive — a new row, a new function, a new module —
+          module. Features are additive (a new row, a new function, a new module),
           which is how a small project stays clean as it grows into a platform.
         </p>
       </div>

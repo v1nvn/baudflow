@@ -9,15 +9,15 @@ const faqs = [
   },
   {
     q: 'How does baudflow compare to speedtest-tracker?',
-    a: 'speedtest-tracker is the mature incumbent — PHP/Laravel, around 5,800 GitHub stars, broad Apprise notifications, SQLite/MySQL/Postgres support, and a multi-language UI. baudflow is a newer Elixir/Phoenix alternative that ships the features its users have requested for years: a live real-time dashboard, a first-class continuous ping runner, SLA tracking against your promised speed, and adaptive schedules. The full side-by-side comparison lives on the compare page.',
+    a: 'speedtest-tracker is the mature incumbent: PHP/Laravel, around 5,800 GitHub stars, broad Apprise notifications, SQLite/MySQL/Postgres support, and a multi-language UI. baudflow is a newer Elixir/Phoenix alternative that ships the features its users have requested for years: a live real-time dashboard, a first-class continuous ping runner, SLA tracking against your promised speed, and adaptive schedules. The full side-by-side comparison lives on the compare page.',
   },
   {
     q: 'What do I need to run it?',
-    a: 'Docker and a Postgres database — the Ookla Speedtest CLI is already bundled into the image. The fastest path is the repo\'s docker-compose.yml, which brings up both in one command. From source you need Elixir 1.20+, OTP 29+, Postgres, and the Ookla CLI on your PATH.',
+    a: 'Docker and a Postgres database; the Ookla Speedtest CLI is already bundled into the image. The fastest path is the repo\'s docker-compose.yml, which brings up both in one command. From source you need Elixir 1.20+, OTP 29+, Postgres, and the Ookla CLI on your PATH.',
   },
   {
     q: 'Why PostgreSQL only?',
-    a: 'baudflow leans on Postgres for the workload it is good at — typed columns, JSON storage for raw results, and window queries for baselines and SLA. The container ships with everything needed; you just provide the database.',
+    a: 'baudflow leans on Postgres for the workload it is good at: typed columns, JSON storage for raw results, and window queries for baselines and SLA. The container ships with everything needed; you just provide the database.',
   },
   {
     q: 'Is there a login?',
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: 'Does the ping runner use ICMP?',
-    a: 'No — it measures TCP-handshake RTT by opening connections to host:port at a fixed cadence. That means it needs no binary and no CAP_NET_RAW, so it runs unprivileged under a locked-down security context. The tradeoff: a target that does not accept TCP on the configured port reads as 100% loss, so it defaults to 1.1.1.1:443.',
+    a: 'No. It measures TCP-handshake RTT by opening connections to host:port at a fixed cadence. That means it needs no binary and no CAP_NET_RAW, so it runs unprivileged under a locked-down security context. The tradeoff: a target that does not accept TCP on the configured port reads as 100% loss, so it defaults to 1.1.1.1:443.',
   },
   {
     q: 'How is the Ookla CLI licensed?',
@@ -37,11 +37,11 @@ const faqs = [
   },
   {
     q: 'Can I get baudflow into Grafana?',
-    a: 'Yes. GET /metrics exposes eight baudflow_* gauges in Prometheus text format — point a scrape job at it and build panels or Alertmanager rules like any exporter. There is also an embeddable heatmap for dashboards that take iframes.',
+    a: 'Yes. GET /metrics exposes eight baudflow_* gauges in Prometheus text format. Point a scrape job at it and build panels or Alertmanager rules like any exporter. There is also an embeddable heatmap for dashboards that take iframes.',
   },
   {
     q: 'Does it work on a phone?',
-    a: 'The dashboard is responsive and renders in the browser\'s local timezone, so a quick glance from a phone just works. It is a LiveView app, not a native app — there is nothing to install.',
+    a: 'The dashboard is responsive and renders in the browser\'s local timezone, so a quick glance from a phone just works. It is a LiveView app, not a native app. There is nothing to install.',
   },
   {
     q: 'What is on the roadmap?',
@@ -51,7 +51,7 @@ const faqs = [
 
 // FAQPage no longer earns a SERP rich result (Google retired it for all sites
 // May 7, 2026), but the markup is still a strong signal for AI Overviews /
-// answer-engine entity resolution — which is the AEO goal here.
+// answer-engine entity resolution, which is the AEO goal here.
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -64,8 +64,8 @@ const faqSchema = {
 ---
 
 <BaseLayout
-  title="FAQ — Baudflow"
-  description="Common questions about baudflow — self-hosting, requirements, Postgres, auth, the ping runner, data retention, Grafana, and the roadmap."
+  title="FAQ · Baudflow"
+  description="Common questions about baudflow: self-hosting, requirements, Postgres, auth, the ping runner, data retention, Grafana, and the roadmap."
   schema={faqSchema}
 >
   <section class="hero">

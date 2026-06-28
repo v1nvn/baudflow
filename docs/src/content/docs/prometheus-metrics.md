@@ -6,7 +6,7 @@ order: 30
 ---
 
 Scrape `GET /metrics` for these gauges. The endpoint is hand-rolled Prometheus
-text format — no dependency, no cache. A value with no current reading (a failed
+text format with no dependency and no cache. A value with no current reading (a failed
 test, or no tests yet) renders as `NaN` so Prometheus doesn't carry a stale value;
 `baudflow_health` is omitted entirely when there's no verdict (calibrating, off
 mode, failed, or no latest).

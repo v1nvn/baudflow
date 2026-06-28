@@ -13,23 +13,23 @@ const groups = [
   {
     kicker: 'Real-time visibility',
     title: 'Watch every test happen',
-    lead: 'Baudflow streams progress over PubSub as it runs — no spinner, no polling, no waiting for a result to land.',
+    lead: 'Baudflow streams progress over PubSub as it runs, with no spinner, polling, or waiting for a result to land.',
     items: [
       { name: 'oscilloscope', title: 'Live CRT oscilloscope', body: 'Ookla NDJSON streamed line-by-line over Erlang ports, with phase tracking and phosphor afterglow as the waveform builds.' },
-      { name: 'ping', title: 'Live ping diagnostics', body: 'A dedicated /ping page streams each TCP-connect sample — cumulative avg, jitter, low/high, and loss, updating live.' },
+      { name: 'ping', title: 'Live ping diagnostics', body: 'A dedicated /ping page streams each TCP-connect sample: cumulative avg, jitter, low/high, and loss, updating live.' },
       { name: 'manual', title: 'Manual runs + history', body: 'Trigger a test instantly, or let the scheduler run. Every run is logged with success, failure, or timeout status.' },
-      { name: 'drill', title: 'Per-result drill-down', body: 'Ping, jitter, packet loss, server, ISP — every measurement fully inspectable, with the raw JSON preserved.' },
+      { name: 'drill', title: 'Per-result drill-down', body: 'Ping, jitter, packet loss, server, ISP. Every measurement is fully inspectable, with the raw JSON preserved.' },
     ],
   },
   {
     kicker: 'Health intelligence',
     title: 'From numbers to a verdict',
-    lead: 'Health is derived just-in-time from thresholds, never stored — so changing your mode re-derives every view instantly.',
+    lead: 'Health is derived just-in-time from thresholds, never stored, so changing your mode re-derives every view instantly.',
     items: [
-      { name: 'cadence', title: 'Adaptive cadence', body: 'A breached schedule switches to a faster escalated cron until it recovers — outage detail without wasted bandwidth.' },
+      { name: 'cadence', title: 'Adaptive cadence', body: 'A breached schedule switches to a faster escalated cron until it recovers, capturing outage detail without wasted bandwidth.' },
       { name: 'thresholds', title: 'Auto / absolute / off', body: 'Auto judges against your own rolling baseline (zero-config); absolute uses fixed Mbps/ms; off disables verdicts.' },
       { name: 'streaks', title: 'Breach streaks & transitions', body: 'Healthy → breach → recovered transitions, tracked atomically per schedule and surfaced to alerts and escalation.' },
-      { name: 'sla', title: 'SLA compliance', body: 'The percentage of tests that met your promised speeds — "delivered 91.3% of the month" instead of a bare Mbps number.' },
+      { name: 'sla', title: 'SLA compliance', body: 'The percentage of tests that met your promised speeds: "delivered 91.3% of the month" instead of a bare Mbps number.' },
       { name: 'heatmap', title: 'Health heatmap', body: 'A GitHub-style calendar wall revealing evening congestion, weekend slowdowns, and recurring outages at a glance.' },
     ],
   },
@@ -39,8 +39,8 @@ const groups = [
     lead: 'Event → policy → template → channel. Each layer is one concern; the policy decides whether to notify before any work is done.',
     items: [
       { name: 'pipeline', title: 'Four-layer pipeline', body: 'A pure policy module, a per-channel template renderer, and a channel behaviour. Adding a channel is one module.' },
-      { name: 'gate', title: 'Breach-streak gating', body: 'A breach fires exactly once, when the streak first reaches your threshold — not on every re-check. Less noise.' },
-      { name: 'recovery', title: 'Recovery & failure alerts', body: 'Get notified when service recovers, and when a run outright fails — not only on degradation.' },
+      { name: 'gate', title: 'Breach-streak gating', body: 'A breach fires exactly once, when the streak first reaches your threshold, not on every re-check. Less noise.' },
+      { name: 'recovery', title: 'Recovery & failure alerts', body: 'Get notified when service recovers, and when a run outright fails, not only on degradation.' },
       { name: 'ntfy', title: 'ntfy', body: 'Push to a self-hosted or hosted ntfy.sh topic, wired through application env.' },
       { name: 'webhook', title: 'Webhooks + templates', body: 'POST JSON to Home Assistant, Grafana, n8n, or a custom endpoint, with an editable EEx body. Blank URL disables it.' },
     ],
@@ -50,22 +50,22 @@ const groups = [
     title: 'Born for the homelab',
     lead: 'Standard interfaces, plain text, no lock-in. Baudflow slots into the observability setup you already run.',
     items: [
-      { name: 'metrics', title: 'Prometheus /metrics', body: 'Eight baudflow_* gauges in hand-rolled text format, NaN for stale values — scrape it like any exporter.' },
+      { name: 'metrics', title: 'Prometheus /metrics', body: 'Eight baudflow_* gauges in hand-rolled text format, NaN for stale values. Scrape it like any exporter.' },
       { name: 'health', title: '/health endpoint', body: 'A lightweight liveness check for Uptime Kuma or a Kubernetes probe.' },
       { name: 'embed', title: 'Embeddable heatmap', body: 'A chrome-less /heatmap/embed for iframing into Home Assistant or Grafana dashboards.' },
-      { name: 'rawjson', title: 'Raw JSON retention', body: 'The full result is stored on every measurement — derived views are cheap, raw data is sacred. Pruned by retention.' },
+      { name: 'rawjson', title: 'Raw JSON retention', body: 'The full result is stored on every measurement; derived views are cheap, raw data is sacred. Pruned by retention.' },
       { name: 'docker', title: 'Multi-arch Docker', body: 'A non-root, Ookla-bundled image for amd64 and arm64. One container, one Postgres.' },
     ],
   },
 ];
 ---
 
-<BaseLayout title="Features — Baudflow" description="Live speed and ping visualization, adaptive schedules, health intelligence, a four-layer alert pipeline, and Prometheus metrics — self-hosted.">
+<BaseLayout title="Features · Baudflow" description="Live speed and ping visualization, adaptive schedules, health intelligence, a four-layer alert pipeline, and Prometheus metrics, all self-hosted.">
   <section class="hero">
     <div class="container">
       <span class="kicker">Features</span>
       <h1>Everything a flaky connection can throw at you</h1>
-      <p class="lede">Live visualization, adaptive schedules, health intelligence, and a real alert pipeline — all self-hosted, all in one Phoenix LiveView app.</p>
+      <p class="lede">Live visualization, adaptive schedules, health intelligence, and a real alert pipeline, all self-hosted, all in one Phoenix LiveView app.</p>
     </div>
   </section>
 
@@ -73,27 +73,27 @@ const groups = [
     <div class="container">
       <Screenshot
         src={dashboard}
-        alt="The baudflow dashboard — live readout, health heatmap, SLA compliance, and speed history."
+        alt="The baudflow dashboard, live readout, health heatmap, SLA compliance, and speed history."
         wide
       />
       <div class="shot-duo">
         <Screenshot
           src={oscilloscope}
-          alt="A live Ookla speed test streaming into the CRT oscilloscope — download phase, 516 Mbps and climbing."
+          alt="A live Ookla speed test streaming into the CRT oscilloscope, download phase, 516 Mbps and climbing."
         />
         <Screenshot
           src={ping}
-          alt="The /ping page with a live per-sample diagnostics panel — average latency, jitter, loss, and a bar for each sample."
+          alt="The /ping page with a live per-sample diagnostics panel, average latency, jitter, loss, and a bar for each sample."
         />
       </div>
       <div class="shot-duo">
         <Screenshot
           src={heatmap}
-          alt="The health heatmap — a calendar wall of daily speed-test health."
+          alt="The health heatmap, a calendar wall of daily speed-test health."
         />
         <Screenshot
           src={schedules}
-          alt="The schedules table — multiple cron schedules, each with its own test type and escalation state."
+          alt="The schedules table, multiple cron schedules, each with its own test type and escalation state."
         />
       </div>
     </div>

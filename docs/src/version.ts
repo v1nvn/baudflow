@@ -1,7 +1,7 @@
 // Single source of truth for the project version. Read once at module load
 // from mix.exs (`@version "x.y.z"`) by walking up from the docs/ project root
-// to the repo root. Every version stamp on the site — the footer, the
-// quick-start terminal, and the docs snippets — derives from here, so a
+// to the repo root. Every version stamp on the site (the footer, the
+// quick-start terminal, and the docs snippets) derives from here, so a
 // release bump in mix.exs flows everywhere with nothing else to edit.
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

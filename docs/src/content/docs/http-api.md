@@ -1,6 +1,6 @@
 ---
 title: HTTP endpoints
-description: The lightweight HTTP surface — /health, /metrics, and the embeddable heatmap.
+description: "The lightweight HTTP surface: /health, /metrics, and the embeddable heatmap."
 section: Reference
 order: 40
 ---
@@ -19,14 +19,14 @@ no meaningful database hit.
 
 ## `GET /metrics`
 
-Prometheus text format — see [Prometheus metrics](../prometheus-metrics/). Served
+Prometheus text format. See [Prometheus metrics](../prometheus-metrics/). Served
 as plain text, bypassing the JSON pipeline and the browser CSRF/session plugs so
 scrapers just work.
 
 ## `GET /heatmap/embed`
 
-A chrome-less, current-month-only health heatmap for iframe embedding — drop it
-into a Home Assistant or Grafana dashboard:
+A chrome-less, current-month-only health heatmap for iframe embedding into a
+Home Assistant or Grafana dashboard:
 
 ```html
 <iframe src="https://baudflow.example/heatmap/embed"
