@@ -76,7 +76,7 @@ defmodule Baudflow.Measurements.Measurement do
     field :source, :string
     field :speedtest_version, :string
     # Per-check health benchmarks snapshot (the verdict itself is derived JIT,
-    # never stored — see `Baudflow.Measurements.health/1`).
+    # never stored - see `Baudflow.Measurements.health/1`).
     field :benchmarks, :map
     # Raw
     field :raw_result, :map
@@ -93,7 +93,7 @@ defmodule Baudflow.Measurements.Measurement do
   @doc """
   Build a measurement changeset from a parsed test result (any TestRunner impl).
 
-  Bandwidth is optional — a ping result has none, so its `download_mbps`/
+  Bandwidth is optional - a ping result has none, so its `download_mbps`/
   `upload_mbps` stay nil (and Postgres `avg()` then excludes it from speed
   averages). An Ookla result always carries bandwidth, so its mbps is derived.
   """

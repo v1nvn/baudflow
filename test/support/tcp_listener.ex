@@ -4,7 +4,7 @@ defmodule Baudflow.Test.TcpListener do
 
   Lets the Ping runner tests exercise `:gen_tcp.connect/4` against a real,
   deterministic localhost target instead of a mock. `start/0` returns a port
-  clients can connect to — the kernel completes the handshake into the listen
+  clients can connect to - the kernel completes the handshake into the listen
   backlog without anyone calling accept, so `connect/4` returns successfully.
   `closed_port/0` binds then immediately closes, handing back a port that
   refuses connections (for the all-attempts-fail path).

@@ -1,5 +1,5 @@
 // Regenerate public/og.png from public/og.svg. Run manually after editing the
-// SVG — the PNG is what social scrapers fetch (Twitter/FB won't render SVG OG
+// SVG - the PNG is what social scrapers fetch (Twitter/FB won't render SVG OG
 // images). The build does NOT depend on this; the committed PNG is the artifact.
 //
 //   node scripts/build-og.mjs

@@ -1,5 +1,5 @@
 defmodule Baudflow.Notifications.WebhookTest do
-  # async: false — Req.Test stubs are keyed on the owner ({Req.Test, __MODULE__});
+  # async: false - Req.Test stubs are keyed on the owner ({Req.Test, __MODULE__});
   # a sibling test stubbing the same owner concurrently would clobber this one.
   use Baudflow.DataCase, async: false
 
@@ -43,7 +43,7 @@ defmodule Baudflow.Notifications.WebhookTest do
     test "does not crash on a non-success status" do
       Req.Test.stub(__MODULE__, fn conn -> Plug.Conn.send_resp(conn, 503, "unavailable") end)
 
-      # A failed POST is a clean :error, never a raise — the worker absorbs it.
+      # A failed POST is a clean :error, never a raise - the worker absorbs it.
       assert :error = Webhook.send(~s|{"event":"breach"}|)
     end
   end

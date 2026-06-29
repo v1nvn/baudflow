@@ -1,11 +1,11 @@
 defmodule Baudflow.PipelineTest do
   @moduledoc """
   The pinning test for the step-0 event contract. It asserts the whole flow
-  fires the expected events end to end — the guard that keeps #13/#21/#22/#23
+  fires the expected events end to end - the guard that keeps #13/#21/#22/#23
   additive instead of re-coupling the stages.
   """
 
-  # async: false — mutates the global ntfy env (:ntfy_plug/url/topic) for the
+  # async: false - mutates the global ntfy env (:ntfy_plug/url/topic) for the
   # NotificationWorker step; serializing avoids racing notification_worker_test
   # over that shared app env.
   use Baudflow.DataCase, async: false
@@ -67,7 +67,7 @@ defmodule Baudflow.PipelineTest do
     assert m.schedule_id == schedule.id
 
     # 4. Health evaluates → breach → atomic streak + escalation + notification.
-    # (The verdict itself isn't persisted — it derives JIT — but its effects are.)
+    # (The verdict itself isn't persisted - it derives JIT - but its effects are.)
     [health_job] = all_enqueued(worker: HealthWorker)
     assert :ok = perform_job(HealthWorker, health_job.args)
 

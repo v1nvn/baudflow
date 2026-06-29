@@ -34,7 +34,7 @@ defmodule Baudflow.MeasurementsTest do
 
       errors = Baudflow.DataCase.errors_on(changeset)
       assert "can't be blank" in errors[:timestamp]
-      # ping_latency is optional — a failed run carries no ping data, so it must
+      # ping_latency is optional - a failed run carries no ping data, so it must
       # not be required (successful parses always set it).
       refute errors[:ping_latency]
     end
@@ -84,7 +84,7 @@ defmodule Baudflow.MeasurementsTest do
       assert m.failed == true
       assert m.timestamp == ts
       assert m.test_type == "ookla"
-      # No speed/ping data on a failure — averages and compliance exclude nil.
+      # No speed/ping data on a failure - averages and compliance exclude nil.
       assert m.download_mbps == nil
       assert m.upload_mbps == nil
       assert m.ping_latency == nil
@@ -234,7 +234,7 @@ defmodule Baudflow.MeasurementsTest do
     test "ignores measurements older than the window" do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      # 10 days old — outside the 7d window, would skew the average if included
+      # 10 days old - outside the 7d window, would skew the average if included
       Measurements.create_measurement(
         valid_attrs(
           timestamp: DateTime.add(now, -10 * 24 * 3600, :second),
@@ -306,7 +306,7 @@ defmodule Baudflow.MeasurementsTest do
 
     test "ignores tests outside the window and ping results (nil download)" do
       seed(download_mbps: 500.0)
-      # a ping result carries no download_mbps — never a compliance data point
+      # a ping result carries no download_mbps - never a compliance data point
       {:ok, _} =
         Measurements.create_measurement(%{
           timestamp: DateTime.utc_now() |> DateTime.truncate(:second),
@@ -459,7 +459,7 @@ defmodule Baudflow.MeasurementsTest do
              ) == []
     end
 
-    test "since is optional — nil means full history (the wall grid)" do
+    test "since is optional - nil means full history (the wall grid)" do
       seed_health(~U[2025-01-15 03:00:00Z], true)
 
       assert length(Measurements.health_buckets(test_type: "ookla")) == 1
@@ -497,7 +497,7 @@ defmodule Baudflow.MeasurementsTest do
                %{~D[2026-06-21] => :breach}
     end
 
-    test "since is optional — omit it to fetch full history" do
+    test "since is optional - omit it to fetch full history" do
       seed_health(~U[2025-01-15 03:00:00Z], true)
 
       assert Measurements.daily_health() == %{~D[2025-01-15] => :healthy}
@@ -560,7 +560,7 @@ defmodule Baudflow.MeasurementsTest do
       seed_health(days_ago(1), true)
       seed_health(days_ago(1), true)
       seed_health(days_ago(1), false)
-      # Outside the 30-day default window — must not count.
+      # Outside the 30-day default window - must not count.
       seed_health(days_ago(35), true)
 
       %{uptime: uptime} = Measurements.metrics()

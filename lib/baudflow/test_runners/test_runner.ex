@@ -4,8 +4,8 @@ defmodule Baudflow.TestRunners.TestRunner do
 
   An impl runs the test (`run/1`, streaming its own per-phase progress over
   PubSub) and maps its native result shape to measurement attrs (`parse/1`).
-  The `RunnerWorker` resolves the impl by `test_type` and owns the pipeline —
-  insert, run record, terminal broadcast, downstream enqueue — never the impl.
+  The `RunnerWorker` resolves the impl by `test_type` and owns the pipeline -
+  insert, run record, terminal broadcast, downstream enqueue - never the impl.
   """
 
   @type run_result ::

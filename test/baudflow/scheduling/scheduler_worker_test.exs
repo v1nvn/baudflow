@@ -25,7 +25,7 @@ defmodule Baudflow.Scheduling.SchedulerWorkerTest do
     end
 
     test "enqueues nothing when no schedule is due" do
-      # Feb 31 — never matches a real time.
+      # Feb 31 - never matches a real time.
       {:ok, _} = Scheduling.create(%{name: "Never", cron: "0 0 31 2 *", enabled: true})
 
       assert :ok = perform_job(SchedulerWorker, %{})

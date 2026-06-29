@@ -9,7 +9,7 @@ defmodule BaudflowWeb.HeatmapLiveTest do
   # a literal. The page's per-tile events have dynamic ids (`heat-YYYY-MM`), so
   # here we assert DOM wiring (a canvas + HeatmapMatrix hook per month and the
   # embed link); the pushed cell payload is asserted end-to-end on the literal-id
-  # consumers — see HeatmapEmbedLiveTest and the dashboard tile test.
+  # consumers - see HeatmapEmbedLiveTest and the dashboard tile test.
 
   describe "wall grid" do
     test "renders a tile for each month with data and links to the embed view", %{conn: conn} do

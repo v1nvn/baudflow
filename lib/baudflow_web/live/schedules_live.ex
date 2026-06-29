@@ -35,7 +35,7 @@ defmodule BaudflowWeb.SchedulesLive do
   defp apply_action(socket, :edit, %{"id" => id}) do
     case fetch_schedule(id) do
       nil ->
-        # Stale link to a deleted schedule — bounce back to the table.
+        # Stale link to a deleted schedule - bounce back to the table.
         socket |> put_flash(:error, "Schedule not found") |> push_patch(to: ~p"/schedules")
 
       schedule ->
@@ -80,7 +80,7 @@ defmodule BaudflowWeb.SchedulesLive do
         {:noreply,
          socket
          |> assign(:changeset, changeset)
-         |> put_flash(:error, "Could not save — check the fields below")}
+         |> put_flash(:error, "Could not save - check the fields below")}
     end
   end
 
@@ -93,7 +93,7 @@ defmodule BaudflowWeb.SchedulesLive do
         {:noreply,
          socket
          |> assign(:changeset, changeset)
-         |> put_flash(:error, "Could not save — check the fields below")}
+         |> put_flash(:error, "Could not save - check the fields below")}
     end
   end
 
@@ -101,7 +101,7 @@ defmodule BaudflowWeb.SchedulesLive do
 
   defp assign_schedules(socket), do: assign(socket, :schedules, Scheduling.list_schedules())
 
-  # The id comes from a path segment or a phx-value — parse it safely (no
+  # The id comes from a path segment or a phx-value - parse it safely (no
   # String.to_integer: banned outside Settings). Integer.parse is not banned and
   # returns :error / {int, trailing} for non-integers.
   defp fetch_schedule(id) do

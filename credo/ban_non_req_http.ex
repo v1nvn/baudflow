@@ -20,7 +20,7 @@ defmodule Baudflow.CredoChecks.BanNonReqHttp do
     Credo.Code.prewalk(source_file, &traverse(&1, &2, issue_meta))
   end
 
-  # :httpc.request(...) — atom receiver
+  # :httpc.request(...) - atom receiver
   defp traverse({{:., meta, [:httpc, :request]}, _, _args} = ast, issues, im) do
     {ast, [issue(im, "Use Req instead of :httpc", meta) | issues]}
   end
@@ -34,7 +34,7 @@ defmodule Baudflow.CredoChecks.BanNonReqHttp do
     {ast, [issue(im, "Do not start :inets manually; use Req", meta) | issues]}
   end
 
-  # Banned alias modules (HTTPoison/Tesla) — any call or reference
+  # Banned alias modules (HTTPoison/Tesla) - any call or reference
   defp traverse({:__aliases__, meta, [name]} = ast, issues, im) when name in @banned_aliases do
     {ast, [issue(im, "Use Req instead of #{name}", meta) | issues]}
   end

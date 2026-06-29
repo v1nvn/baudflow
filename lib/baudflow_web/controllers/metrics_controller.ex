@@ -9,7 +9,7 @@ defmodule BaudflowWeb.MetricsController do
 
   @doc """
   Serve the metrics snapshot as Prometheus text. Thin orchestration: the context
-  queries, the formatter renders — this only wires the response.
+  queries, the formatter renders - this only wires the response.
   """
   def index(conn, _params) do
     body = Measurements.metrics() |> Metrics.render()

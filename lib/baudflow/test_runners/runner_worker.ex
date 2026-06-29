@@ -5,7 +5,7 @@ defmodule Baudflow.TestRunners.RunnerWorker do
   and enqueue downstream workers.
 
   The impl is resolved by `test_type` (`"ookla"` today; `"ping"` lands with #15).
-  The worker never invokes the test binary directly — that lives in the impl.
+  The worker never invokes the test binary directly - that lives in the impl.
 
   Downstream is a single `HealthWorker` enqueue, which then owns threshold
   evaluation, streak/escalation mutation, and the notification fan-out.
@@ -19,7 +19,7 @@ defmodule Baudflow.TestRunners.RunnerWorker do
   alias Baudflow.TestRunners.Ookla
   alias Baudflow.TestRunners.Ping
 
-  # Single source of truth for runnable impls AND the schedule-form options —
+  # Single source of truth for runnable impls AND the schedule-form options -
   # add a tuple here and both dispatch and the test_type <select> pick it up.
   @registry [
     {"ookla", "Speedtest (Ookla)", Ookla},
@@ -45,7 +45,7 @@ defmodule Baudflow.TestRunners.RunnerWorker do
 
   # Debounce concurrent manual runs without blocking a fresh run after the
   # previous one finishes. Oban's default unique `states` include `:completed`, so
-  # a plain `period: 300` would dedupe a re-click against a job that already ran —
+  # a plain `period: 300` would dedupe a re-click against a job that already ran -
   # invisible for the slow Ookla test, but it strands a fast probe like ping in a
   # stuck "running" state for the whole window. Excluding `:completed` keeps the
   # spam-guard (don't pile up duplicates while one is queued/executing) while
@@ -152,7 +152,7 @@ defmodule Baudflow.TestRunners.RunnerWorker do
 
   # A failed test is still a timeline event: stamp a failed Measurement (nil
   # speeds, failed: true) and broadcast it as a result so the chart gets an
-  # outage marker and the hero reflects the failure. Enqueue HealthWorker too —
+  # outage marker and the hero reflects the failure. Enqueue HealthWorker too -
   # it short-circuits a failed measurement into a :failed notification (#23),
   # keeping Event construction inside Health. The Run keeps the reason.
   defp record_failure(started_at, args) do

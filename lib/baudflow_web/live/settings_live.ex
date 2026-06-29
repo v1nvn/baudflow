@@ -10,7 +10,7 @@ defmodule BaudflowWeb.SettingsLive do
      socket
      |> assign(:page_title, "Settings")
      |> assign(:active_page, :settings)
-     # The webhook template textarea placeholder is the built-in default — the
+     # The webhook template textarea placeholder is the built-in default - the
      # single source of truth lives in Template, so the UI never drifts from it.
      |> assign(:webhook_template_default, Template.default(:webhook))
      |> assign_form(Settings.get_all())}
@@ -31,7 +31,7 @@ defmodule BaudflowWeb.SettingsLive do
   # namespace and render through the shared `<.input>` component.
   #
   # Schedule cadence + per-schedule thresholds live on the `Schedule` row now
-  # (#12 multiple schedules) — managed at `/schedules`, not here. The global
+  # (#12 multiple schedules) - managed at `/schedules`, not here. The global
   # threshold fields below remain as the inherited fallback (`thresholds_for/1`).
   defp assign_form(socket, settings) do
     assign(socket, :form, to_form(settings, as: :settings))

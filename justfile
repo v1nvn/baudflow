@@ -80,14 +80,24 @@ with-tmp-db *ARGS:
 
 check:
     mix lint
+    just assets-check
     just test
 
 precommit:
     mix precommit
     just test
 
+# JS/TS static gate (mirrors CI): clean install + typecheck/lint/format-check.
+[private]
+assets-check:
+    npm --prefix assets ci
+    npm --prefix assets run typecheck
+    npm --prefix assets run lint
+    npm --prefix assets run format:check
+
 lint:
     mix lint
+    just assets-check
 
 format *ARGS:
     mix format {{ARGS}}

@@ -1,6 +1,6 @@
 defmodule BaudflowWeb.PingLive do
   @moduledoc """
-  The ping dashboard — ping's first-class home, paralleling the Ookla
+  The ping dashboard - ping's first-class home, paralleling the Ookla
   `DashboardLive`. Runs a manual TCP-connect ping, streams per-sample progress
   to the `PingViz` hook, and plots ping-typed history on `PingChart`.
 
@@ -38,7 +38,7 @@ defmodule BaudflowWeb.PingLive do
   end
 
   # `?run=1` launches a manual ping on landing (from the dashboard's split
-  # button). handle_params is the canonical place for param-driven actions — it
+  # button). handle_params is the canonical place for param-driven actions - it
   # reliably receives the query string on full loads AND live navigation (mount's
   # params can miss it on a `navigate`). Enqueue once (connected + not already
   # running), then strip the param so a refresh can't re-trigger it.
@@ -60,7 +60,7 @@ defmodule BaudflowWeb.PingLive do
   def handle_params(_params, _uri, socket), do: {:noreply, socket}
 
   @impl true
-  # The ping page is ping-only — Ookla results never touch its chart/hero.
+  # The ping page is ping-only - Ookla results never touch its chart/hero.
   def handle_info({:result, %{test_type: test_type}}, socket) when test_type != "ping" do
     {:noreply, socket}
   end
@@ -72,7 +72,7 @@ defmodule BaudflowWeb.PingLive do
 
   # The ping page subscribes to the shared "measurements" topic, so it also
   # receives Ookla progress and health-eval broadcasts it has no view for. Swallow
-  # both (handled only so they aren't logged as crashes) — the live speedtest viz
+  # both (handled only so they aren't logged as crashes) - the live speedtest viz
   # and health heatmap live elsewhere.
   @impl true
   def handle_info({:speedtest_progress, _type, _data}, socket), do: {:noreply, socket}
@@ -98,7 +98,7 @@ defmodule BaudflowWeb.PingLive do
   end
 
   # `:test_failed` / `:test_timeout` are untyped on the shared "measurements"
-  # topic — guard on `test_running` so a stray Ookla failure can't falsely end a
+  # topic - guard on `test_running` so a stray Ookla failure can't falsely end a
   # ping run (the dashboard has the same exposure; typed failures are future work).
   @impl true
   def handle_info({:test_failed, reason}, socket) do
@@ -163,7 +163,7 @@ defmodule BaudflowWeb.PingLive do
     |> RunnerWorker.new(unique: RunnerWorker.manual_unique())
     |> Oban.insert()
 
-    # Safety net only — every outcome broadcasts {:result,_} or {:test_failed,_}
+    # Safety net only - every outcome broadcasts {:result,_} or {:test_failed,_}
     # first. Fire after the ping SLA plus a margin so a hung job can't strand the
     # view in its running state.
     Process.send_after(self(), :test_timeout, RunnerWorker.timeout_ms("ping") + 10_000)

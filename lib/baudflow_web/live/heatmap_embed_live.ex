@@ -7,8 +7,8 @@ defmodule BaudflowWeb.HeatmapEmbedLive do
 
   @moduledoc """
   Chrome-less, current-month-only heatmap for iframe embedding (Home Assistant,
-  Grafana, etc.). Deliberately rendered without `<Layouts.app>` — no nav, no
-  flash toasts — so only the calendar tile and legend show on the page. The full
+  Grafana, etc.). Deliberately rendered without `<Layouts.app>` - no nav, no
+  flash toasts - so only the calendar tile and legend show on the page. The full
   all-months grid (with a link here) lives at `/heatmap`. Read-only: it renders
   the latest state on load; revisit the iframe to refresh.
   """

@@ -127,7 +127,7 @@
             placeholder="443"
           />
           <p class="text-xs text-text-ghost mt-1">
-            TCP port the latency probe connects to — ping measures TCP-handshake
+            TCP port the latency probe connects to - ping measures TCP-handshake
             RTT, so no ICMP binary or privileges are needed.
           </p>
           <.input
@@ -201,7 +201,7 @@
             <p class="text-xs text-text-ghost mt-1">
               <%= case @form[:threshold_mode].value do %>
                 <% "auto" -> %>
-                  Each test is judged against your own rolling median — flags a dip below it with no tuning.
+                  Each test is judged against your own rolling median - flags a dip below it with no tuning.
                 <% "absolute" -> %>
                   Flag each measurement against the fixed min speed / max latency below.
                 <% _ -> %>

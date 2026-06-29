@@ -482,7 +482,7 @@ defmodule BaudflowWeb.CoreComponents do
     doc: "datetime | datetime-seconds (seconds shown only in the result footer)."
 
   attr :id, :string, default: nil, doc: "unique DOM id; derived from the instant if omitted."
-  attr :placeholder, :string, default: "—", doc: "rendered when `:at` is nil."
+  attr :placeholder, :string, default: "-", doc: "rendered when `:at` is nil."
   attr :rest, :global, doc: "attributes forwarded to the <time> element (e.g. class)."
 
   def local_time(%{at: nil} = assigns) do

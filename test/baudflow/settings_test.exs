@@ -116,7 +116,7 @@ defmodule Baudflow.SettingsTest do
     end
 
     test "parses an integer-looking string without crashing" do
-      # String.to_float("1") would raise — this must not
+      # String.to_float("1") would raise - this must not
       Settings.update_all(%{"server_id" => "1"})
       assert Settings.get_float("server_id") == 1.0
     end

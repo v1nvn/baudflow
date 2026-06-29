@@ -9,8 +9,8 @@ defmodule Baudflow.CredoChecks.BanManualStringCoercion do
       String.to_integer/1 and String.to_float/1 raise on malformed input and have no
       fallback. String.to_float/1 even raises on integer-looking strings (e.g. "1").
 
-      Use the Settings typed accessors instead — get_integer/2, get_float/2,
-      get_boolean/1, get_integer_list/1 — which coerce safely and return a default.
+      Use the Settings typed accessors instead - get_integer/2, get_float/2,
+      get_boolean/1, get_integer_list/1 - which coerce safely and return a default.
       (See CLAUDE.md "Settings".)
       """
     ]

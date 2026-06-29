@@ -4,7 +4,7 @@ defmodule Baudflow.Notifications.Policy do
   channel): a **pure** decision of whether to notify for an event.
 
   Step 0 inlined this in the worker; #21/#22/#23 make it a real module so
-  streak-gating (#21), recovery (#22), and failure (#23) are config read here —
+  streak-gating (#21), recovery (#22), and failure (#23) are config read here -
   never `if` branches smeared across a worker or a channel impl. The worker reads
   `Settings`, builds the config map, and calls `notify?/2`; this module never
   touches the DB, so it stays trivially testable.
@@ -15,7 +15,7 @@ defmodule Baudflow.Notifications.Policy do
     (`event.streak == breach_notify_streak`), not `>=`. Using `==` is what makes
     #21 "reduce alert fatigue": a breach run climbing 1,2,…,N alerts only at N,
     never again, until it recovers and re-breaches. (Raising the threshold while a
-    schedule is mid-breach past the new N is intentionally a no-op — we don't
+    schedule is mid-breach past the new N is intentionally a no-op - we don't
     alert on a config change for an ongoing condition.)
   - `:recovered` (#22) and `:failed` (#23) fire on their transitions.
   - `:healthy` and a `:breach` whose snapshot streak is nil (malformed/legacy

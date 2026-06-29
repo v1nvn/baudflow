@@ -2,13 +2,13 @@ defmodule Baudflow.Repo.Migrations.JitHealthModel do
   use Ecto.Migration
 
   # The health verdict moves from a stored column to a just-in-time derivation
-  # (one value, one meaning — see `Baudflow.Measurements.health/1`). Two schema
+  # (one value, one meaning - see `Baudflow.Measurements.health/1`). Two schema
   # changes follow from that:
   #
   #   * schedules/settings `threshold_enabled` (boolean) → `threshold_mode`
-  #     (auto | absolute | off) — the boolean plus a new "auto" concept would be
+  #     (auto | absolute | off) - the boolean plus a new "auto" concept would be
   #     a compensating flag, so the column is replaced outright.
-  #   * measurements `healthy` (the stored verdict) is dropped — nothing writes
+  #   * measurements `healthy` (the stored verdict) is dropped - nothing writes
   #     or reads it now; the per-check `benchmarks` snapshot stays (notifications
   #     render it at alert time).
   #
@@ -27,7 +27,7 @@ defmodule Baudflow.Repo.Migrations.JitHealthModel do
     end
 
     # An explicitly-enabled schedule kept absolute thresholds; an explicit false
-    # stays off. nil (the common case — never set via UI) inherits the global.
+    # stays off. nil (the common case - never set via UI) inherits the global.
     execute "UPDATE schedules SET threshold_mode = 'absolute' WHERE threshold_enabled = true",
             "UPDATE schedules SET threshold_mode = NULL WHERE threshold_mode = 'absolute'"
 
@@ -40,7 +40,7 @@ defmodule Baudflow.Repo.Migrations.JitHealthModel do
 
     # --- settings: stored threshold_enabled → threshold_mode -------------------
     # The settings form persisted threshold_enabled on every save, so a stored
-    # "false" is almost always the inert default incidentally written — not an
+    # "false" is almost always the inert default incidentally written - not an
     # explicit "off" choice. Map an explicit "true" → "absolute" (preserve a
     # configured power-user setup) and delete the rest so those installs inherit
     # the new "auto" default rather than being locked into the broken old one.

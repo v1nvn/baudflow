@@ -13,14 +13,14 @@ defmodule BaudflowWeb.HeatCalendar do
   @month_names ~w(January February March April May June July August September October November December)
 
   @doc """
-  Legend statuses in display order — the single source of truth for status
+  Legend statuses in display order - the single source of truth for status
   wording. The legend renders it directly, and `status_labels/1` ships it to the
   `HeatmapMatrix` tooltip via the canvas `data-labels`, so the two can't drift.
 
   `unknown_label` is caller-supplied (the view resolves the global threshold
   mode once and passes it): "Calibrating" under `:auto` (a nil verdict means the
   baseline isn't ready yet), "No verdict" otherwise. The component never reads
-  `Settings` itself — it stays a dumb renderer shared by every placement.
+  `Settings` itself - it stays a dumb renderer shared by every placement.
   """
   def statuses(unknown_label \\ "No verdict") do
     [
@@ -33,7 +33,7 @@ defmodule BaudflowWeb.HeatCalendar do
   end
 
   @doc """
-  The no-verdict wording for a given health `mode` — "Calibrating" under `:auto`
+  The no-verdict wording for a given health `mode` - "Calibrating" under `:auto`
   (a nil verdict means the rolling baseline isn't ready yet) vs "No verdict"
   otherwise. The single owner of this wording; views pass it to `heat_tile`/
   `heat_legend` so the dumb renderer never reads `Settings` to decide it.
@@ -42,7 +42,7 @@ defmodule BaudflowWeb.HeatCalendar do
   def unknown_label(_mode), do: "No verdict"
 
   @doc """
-  Muted health palette — the same hues as the line-chart neon but desaturated
+  Muted health palette - the same hues as the line-chart neon but desaturated
   and lowered in lightness, so a wall of cells reads as a calm field rather than
   a grid of lasers. Single source of truth: the legend swatches and the
   `HeatmapMatrix` hook (via the canvas `data-colors`) both consume this map, so
@@ -62,7 +62,7 @@ defmodule BaudflowWeb.HeatCalendar do
   @doc """
   Status labels keyed by the string the matrix cells carry (the `v` field),
   derived from `statuses/1`. Shipped to the hook via the canvas `data-labels`,
-  parallel to `status_colors`/`data-colors` — the JS maps are only fallbacks.
+  parallel to `status_colors`/`data-colors` - the JS maps are only fallbacks.
   """
   def status_labels(unknown_label \\ "No verdict") do
     Map.new(statuses(unknown_label), fn {key, label} -> {Atom.to_string(key), label} end)
@@ -72,7 +72,7 @@ defmodule BaudflowWeb.HeatCalendar do
     do: Jason.encode!(status_labels(unknown_label))
 
   @doc """
-  UTC midnight on the first day of `date`'s month — the lower bound for "this
+  UTC midnight on the first day of `date`'s month - the lower bound for "this
   month's" heatmap window. The dashboard widget and the embed both fetch the
   current month this way; the wall grid at `/heatmap` does not (full history).
   """
@@ -82,7 +82,7 @@ defmodule BaudflowWeb.HeatCalendar do
 
   @doc """
   Build one month tile: `%{id, label, weeks, cells}`. `cells` is one
-  `{x, y, v, d}` per calendar day — `x` the ISO weekday column label (Mon-first),
+  `{x, y, v, d}` per calendar day - `x` the ISO weekday column label (Mon-first),
   `y` the zero-based week-of-month row, `v` the worst health status as a string
   (`"empty"` when the day has no bucket), `d` the ISO date for the tooltip.
   `weeks` is the row count so the hook can size its cells.
@@ -122,7 +122,7 @@ defmodule BaudflowWeb.HeatCalendar do
 
   @doc """
   Renders one month tile: a label plus the canvas the `HeatmapMatrix` hook
-  paints on. Deliberately chrome-less — the caller wraps it (a `glass-card` on
+  paints on. Deliberately chrome-less - the caller wraps it (a `glass-card` on
   the wall grid, the dashboard's existing card, a bare container on the embed)
   so the same component serves all three placements.
   """
@@ -179,7 +179,7 @@ defmodule BaudflowWeb.HeatCalendar do
     """
   end
 
-  # `:empty` has no fill — it's a faint outlined cell — so it returns no inline
+  # `:empty` has no fill - it's a faint outlined cell - so it returns no inline
   # style and the border utility does the work.
   defp swatch_style(:empty), do: nil
 

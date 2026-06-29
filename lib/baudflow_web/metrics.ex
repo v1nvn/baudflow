@@ -1,12 +1,12 @@
 defmodule BaudflowWeb.Metrics do
   @moduledoc """
   Renders a `Measurements.metrics/1` snapshot into Prometheus text-exposition
-  format for the `/metrics` endpoint. Pure — the controller queries the context,
+  format for the `/metrics` endpoint. Pure - the controller queries the context,
   this only formats. Every metric is a `baudflow_*` gauge.
 
   Nil handling: a value that has no current reading (a failed test, or no tests
   yet) renders as `NaN` so Prometheus doesn't carry a stale value. `health` is
-  omitted when there's no verdict (calibrating, off mode, failed, or no latest) —
+  omitted when there's no verdict (calibrating, off mode, failed, or no latest) -
   the verdict itself is derived JIT by `Measurements.metrics/1`, never stored.
   """
 
@@ -79,7 +79,7 @@ defmodule BaudflowWeb.Metrics do
     ]
   end
 
-  # nil (no verdict — calibrating, off mode, failed, or no latest) omits the
+  # nil (no verdict - calibrating, off mode, failed, or no latest) omits the
   # line so Prometheus doesn't carry a stale value.
   defp health_metric(nil), do: []
 

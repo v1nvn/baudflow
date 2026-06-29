@@ -3,7 +3,7 @@ defmodule Baudflow.Scheduling do
   Context for test schedules: the cron cadence plus the per-schedule escalation
   and threshold state the pipeline reads and mutates.
 
-  Mutations of `breach_streak` / `escalation_level` are atomic — compare-and-set
+  Mutations of `breach_streak` / `escalation_level` are atomic - compare-and-set
   via `Repo.update_all`, never get→change→update, because concurrent Oban jobs
   (later: ping every minute + speedtest) race on the same row. Thresholds are
   read through `thresholds_for/1`, the one threshold reader: a schedule's own
@@ -65,7 +65,7 @@ defmodule Baudflow.Scheduling do
   @doc """
   Delete a schedule. Its measurements' `schedule_id` is nilified by the FK
   `on_delete: :nilify_all`, so history is retained (HealthWorker falls back to
-  the first schedule when `schedule_id` is nil). Non-bang — returns
+  the first schedule when `schedule_id` is nil). Non-bang - returns
   `{:error, changeset}` on failure, never raises.
   """
   @spec delete(Schedule.t()) :: {:ok, Schedule.t()} | {:error, Ecto.Changeset.t()}
@@ -76,7 +76,7 @@ defmodule Baudflow.Scheduling do
   @doc """
   Return the enabled schedules whose cron matches the current minute.
 
-  A schedule with an unparseable cron is logged and skipped — never raised — so
+  A schedule with an unparseable cron is logged and skipped - never raised - so
   one bad row cannot crash the per-minute scheduler queue. (The changeset
   rejects bad crons at write time; this is the defensive belt.)
   """
@@ -142,7 +142,7 @@ defmodule Baudflow.Scheduling do
   The soonest next fire across enabled schedules, or `nil` when none run.
 
   Returns `%{name: schedule_name, at: datetime}` for the enabled schedule whose
-  `next_run_at/1` is earliest. Read-only — the dashboard "next test" card uses
+  `next_run_at/1` is earliest. Read-only - the dashboard "next test" card uses
   it; never mutates schedule state.
   """
   @spec next_run() :: %{name: String.t(), at: DateTime.t()} | nil
@@ -164,7 +164,7 @@ defmodule Baudflow.Scheduling do
   @doc """
   The cron expression in effect right now: the `escalated_cron` when the schedule
   is escalated (`escalation_level > 0`) and one is configured, else the base
-  `cron`. The single reader for "which cadence runs now" — `due_now/0`,
+  `cron`. The single reader for "which cadence runs now" - `due_now/0`,
   `next_run_at/1` (and so the dashboard "next test" card + the schedules table)
   all read it, so adaptive testing (#13) is a switch here, not a parallel path.
 
@@ -186,7 +186,7 @@ defmodule Baudflow.Scheduling do
 
   Returns `{:ok, count}`: `1` if this caller won the CAS (the level was still
   the expected value) or `0` if a concurrent job already moved it. Never
-  get→change→update — that races across concurrent Oban jobs.
+  get→change→update - that races across concurrent Oban jobs.
   """
   @spec escalate(Schedule.t()) :: {:ok, non_neg_integer()}
   def escalate(%Schedule{id: id, escalation_level: expected}) do
@@ -213,7 +213,7 @@ defmodule Baudflow.Scheduling do
   end
 
   @doc """
-  Atomically increment the breach streak; returns `{:ok, new_streak}` — the value
+  Atomically increment the breach streak; returns `{:ok, new_streak}` - the value
   just written, so HealthWorker can snapshot it into the breach event. The read
   back is authoritative (a schedule has a single writer per cron tick, so there is
   no concurrent inc to race the second read). `nil` if the row was concurrently
@@ -226,7 +226,7 @@ defmodule Baudflow.Scheduling do
   end
 
   @doc """
-  Atomically reset the breach streak to zero; returns `{:ok, 0}` — the value it
+  Atomically reset the breach streak to zero; returns `{:ok, 0}` - the value it
   set (a reset always writes zero).
   """
   @spec reset_streak(Schedule.t()) :: {:ok, 0}
@@ -250,7 +250,7 @@ defmodule Baudflow.Scheduling do
   overrides instead of falling through (the `||` trap).
 
   `mode` is `:auto | :absolute | :off`; `ratio` is the auto-mode breach factor
-  (global-only — a schedule-level ratio is not exposed yet). Download/upload/ping
+  (global-only - a schedule-level ratio is not exposed yet). Download/upload/ping
   are the absolute-mode Mbps/ms. The canonical defaults live in `Settings`;
   `@fallback_ratio` only guards a blanked setting (see its definition).
   """
@@ -264,7 +264,7 @@ defmodule Baudflow.Scheduling do
   def thresholds_for(%Schedule{} = schedule) do
     mode = resolve_mode(schedule.threshold_mode, "threshold_mode")
 
-    # Read the ratio only in :auto — absolute/off callers (incl. pure unit tests
+    # Read the ratio only in :auto - absolute/off callers (incl. pure unit tests
     # whose schedule sets every field) then never touch Settings. `@fallback_ratio`
     # is the lone code literal; the else value is an inert placeholder.
     %{
@@ -281,7 +281,7 @@ defmodule Baudflow.Scheduling do
   end
 
   @doc """
-  Global thresholds — the `Settings` fallbacks a blank schedule would resolve
+  Global thresholds - the `Settings` fallbacks a blank schedule would resolve
   to. The dashboard chart and JIT readers span all schedules, so they have no
   single schedule to read; this is the one reader for "what's the configured
   health mode/ratio right now?".
@@ -307,7 +307,7 @@ defmodule Baudflow.Scheduling do
 
   # The default schedules a fresh install gets, one per test_type: an Ookla
   # speed test and an ICMP ping, both hourly, both escalating to 15 min on a
-  # breach. Keyed by test_type so re-bootstrapping is idempotent per-kind — a
+  # breach. Keyed by test_type so re-bootstrapping is idempotent per-kind - a
   # power user's extra schedules are untouched, and an existing one-schedule
   # install gains the ping schedule on next boot.
   @default_schedules [

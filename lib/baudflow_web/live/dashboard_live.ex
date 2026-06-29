@@ -9,7 +9,7 @@ defmodule BaudflowWeb.DashboardLive do
   alias BaudflowWeb.HeatCalendar
 
   # The dashboard range is a per-browser preference (#5). Only a known value is
-  # honored — a stale or tampered string falls back to the default rather than
+  # honored - a stale or tampered string falls back to the default rather than
   # leaving no button active.
   @time_ranges ~w(24h 7d 30d)
   @default_time_range "7d"
@@ -76,7 +76,7 @@ defmodule BaudflowWeb.DashboardLive do
   @impl true
   def handle_info({:health, _id, _transition}, socket) do
     # JIT: the hero/heatmap are already current at `:result`, so this broadcast
-    # needs no view action — handled only so stray pruned-id broadcasts don't crash.
+    # needs no view action - handled only so stray pruned-id broadcasts don't crash.
     {:noreply, socket}
   end
 
@@ -144,7 +144,7 @@ defmodule BaudflowWeb.DashboardLive do
     {:noreply, assign(socket, :selected_server_id, server_id)}
   end
 
-  # The split-button's dropdown is transient UI — a plain assign toggled by
+  # The split-button's dropdown is transient UI - a plain assign toggled by
   # events, not a URL param (it carries no shareable state).
   @impl true
   def handle_event("toggle-run-menu", _params, socket),
@@ -172,7 +172,7 @@ defmodule BaudflowWeb.DashboardLive do
       |> RunnerWorker.new(unique: RunnerWorker.manual_unique())
       |> Oban.insert()
 
-      # Safety net only — every outcome broadcasts {:test_failed,_} or
+      # Safety net only - every outcome broadcasts {:test_failed,_} or
       # {:result,_} before this. Fire after the worker's worst-case runtime
       # (its own SLA) plus a margin so the net never preempts a real event.
       Process.send_after(self(), :test_timeout, RunnerWorker.timeout_ms() + 10_000)
@@ -191,7 +191,7 @@ defmodule BaudflowWeb.DashboardLive do
   end
 
   # Time-range-dependent data + assigns shared by mount and set_range. Both fetch
-  # the same window, so this lives in one place — the only difference is how the
+  # the same window, so this lives in one place - the only difference is how the
   # range arrived (a persisted connect param vs. a click).
   defp load_range(socket, time_range) do
     measurements = fetch_measurements(time_range)
@@ -276,7 +276,7 @@ defmodule BaudflowWeb.DashboardLive do
     end
   end
 
-  # JIT health state for the hero badge — the one shared reader, so the hero
+  # JIT health state for the hero badge - the one shared reader, so the hero
   # matches every other view. No latest measurement reads as `:unknown`.
   defp latest_health(nil), do: :unknown
   defp latest_health(%Measurement{} = measurement), do: Measurements.health_state(measurement)
@@ -285,7 +285,7 @@ defmodule BaudflowWeb.DashboardLive do
   defp unknown_label, do: HeatCalendar.unknown_label(Scheduling.global_thresholds().mode)
 
   # A failed measurement is a valid "latest" (it's the most recent result) but
-  # carries no download value — the hero renders a muted failure state instead
+  # carries no download value - the hero renders a muted failure state instead
   # of crashing on a nil Float.round.
   defp has_speed_data?(%Measurement{download_mbps: value}) when is_number(value),
     do: true
@@ -313,10 +313,10 @@ defmodule BaudflowWeb.DashboardLive do
     })
   end
 
-  # The current-month health heatmap on the dashboard — independent of the
+  # The current-month health heatmap on the dashboard - independent of the
   # speed-chart time range (the calendar spans a month, not the visible window).
   # Recomputed on mount/range change and on each ookla result or health eval so
-  # the latest day colors in live (a ping's health eval is skipped — it can't
+  # the latest day colors in live (a ping's health eval is skipped - it can't
   # change a cell). The full all-months grid lives at /heatmap.
   defp assign_heatmap(socket) do
     today = Date.utc_today()

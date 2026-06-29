@@ -1,12 +1,12 @@
 // Regenerate public/favicon.ico from public/favicon.svg. SVG favicons are
 // supported by every modern browser, but a committed .ico is still the
-// safest default for legacy crawlers, so we ship both — SVG primary, ICO
+// safest default for legacy crawlers, so we ship both - SVG primary, ICO
 // fallback (see BaseLayout.astro). Run after editing the SVG:
 //
 //   node scripts/build-favicon.mjs
 //
 // Uses sharp (ships with Astro). Emits a multi-size ICO (16/32/48) with PNG
-// entries — the PNG-in-ICO container is universally supported.
+// entries - the PNG-in-ICO container is universally supported.
 import sharp from 'sharp';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';

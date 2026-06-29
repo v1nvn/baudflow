@@ -2,7 +2,7 @@ defmodule Baudflow.Scheduling.SchedulerWorker do
   @moduledoc """
   Thin dispatcher: every minute, ask `Scheduling` which schedules are due and
   enqueue a `RunnerWorker` per due schedule. Owns no cron parsing or health
-  state — those live in `Scheduling` and `Health` respectively.
+  state - those live in `Scheduling` and `Health` respectively.
 
   Idempotency is guaranteed via Oban's unique constraint on
   `[:worker, :args]` with a 1-hour period. The `scheduled_for` key (truncated to

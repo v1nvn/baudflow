@@ -9,7 +9,7 @@ defmodule Baudflow.Measurements do
   alias Baudflow.Scheduling
 
   # Window for the /metrics uptime gauge (healthy share). Matches the dashboard's
-  # max range. A module attr, not a setting — promote to Settings only if it
+  # max range. A module attr, not a setting - promote to Settings only if it
   # becomes user-facing.
   @uptime_window_days 30
 
@@ -18,7 +18,7 @@ defmodule Baudflow.Measurements do
   @baseline_window_days 7
   @baseline_min_samples 12
 
-  @typedoc "A measurement's JIT health state — derived on read, never stored."
+  @typedoc "A measurement's JIT health state - derived on read, never stored."
   @type state :: :healthy | :breach | :failed | :unknown
 
   @doc "Create a measurement from a parsed test-result attributes map."
@@ -28,7 +28,7 @@ defmodule Baudflow.Measurements do
   end
 
   @doc """
-  Insert a measurement marking a failed test — no speed/ping data, just a
+  Insert a measurement marking a failed test - no speed/ping data, just a
   timestamped failure point on the timeline (`failed: true`).
 
   The runner writes this on every test-failure path so an outage is visible on
@@ -71,7 +71,7 @@ defmodule Baudflow.Measurements do
   @doc """
   List measurements since a given datetime, newest first.
 
-  Pass `test_type:` to scope to one impl — the dashboard uses `"ookla"` so ping
+  Pass `test_type:` to scope to one impl - the dashboard uses `"ookla"` so ping
   results (which carry no speed) don't pollute the speed chart.
   """
   def list_since(since, opts \\ []) do
@@ -125,7 +125,7 @@ defmodule Baudflow.Measurements do
 
   @doc """
   Persist the per-check `benchmarks` snapshot from a health evaluation. The
-  verdict itself is derived JIT (never stored) — this only saves the detail the
+  verdict itself is derived JIT (never stored) - this only saves the detail the
   result page and notification template render.
   """
   def update_benchmarks(measurement, benchmarks) do
@@ -136,7 +136,7 @@ defmodule Baudflow.Measurements do
   @doc """
   JIT health for a single measurement: `{state, benchmarks}`. `state` is
   `:healthy | :breach | :failed | :unknown`; `benchmarks` is the per-check map
-  (`nil` when there's no verdict). Derived on read — never stored — so changing
+  (`nil` when there's no verdict). Derived on read - never stored - so changing
   the mode/ratio re-derives every view on the next read. `:auto` judges the
   measurement against its own point-in-time trailing median (`baseline_for/2`),
   `:absolute` against the fixed thresholds, `:off` yields `:unknown`.
@@ -154,7 +154,7 @@ defmodule Baudflow.Measurements do
   def health_state(%Measurement{} = measurement), do: elem(health(measurement), 0)
 
   @doc """
-  Batch JIT state as `%{id => state}` for a list of measurements — the history
+  Batch JIT state as `%{id => state}` for a list of measurements - the history
   table's per-row badge. Point-in-time and per-`test_type` correct (so a row's
   badge matches its result-detail badge), computed from one baseline pool fetched
   for the whole list rather than a per-row query.
@@ -171,7 +171,7 @@ defmodule Baudflow.Measurements do
   end
 
   @doc """
-  The `:auto` rolling baseline for a single measurement (`nil` outside `:auto`) —
+  The `:auto` rolling baseline for a single measurement (`nil` outside `:auto`) -
   the one place a single measurement's baseline is sourced, shared by the live
   `HealthWorker` and every JIT reader. `%{download, upload, ping}` or
   `:insufficient` while calibrating.
@@ -256,18 +256,18 @@ defmodule Baudflow.Measurements do
   end
 
   @doc """
-  Bucket measurements by UTC day, returning per-day health counts — derived
+  Bucket measurements by UTC day, returning per-day health counts - derived
   just-in-time, never read off a stored verdict (verdicts aren't persisted; see
   `Baudflow.Health`). Same output shape the heatmap and `/metrics` consume:
 
       %{bucket: DateTime, total: n, healthy: n, breach: n, failed: n, unknown: n}
 
-  Opts: `:since` (optional `DateTime` lower bound — omit/`nil` for full history),
+  Opts: `:since` (optional `DateTime` lower bound - omit/`nil` for full history),
   `:test_type` (scope to one runner; the heatmap passes `"ookla"`).
 
   Each row's verdict comes from `evaluate/3` against the global thresholds; in
   `:auto` the baselines are the point-in-time trailing medians over the fetched
-  window (`trailing_baselines/2`, one pass per `test_type` — no per-row query, no
+  window (`trailing_baselines/2`, one pass per `test_type` - no per-row query, no
   stored column to backfill). `failed` rows are always `:failed`. `[]` when
   nothing matches.
   """
@@ -330,7 +330,7 @@ defmodule Baudflow.Measurements do
 
   @doc """
   Scalar medians over a window (since, test_type) for the dashboard chart's
-  `:auto` reference line — a flat annotation, not a rolling series.
+  `:auto` reference line - a flat annotation, not a rolling series.
   """
   @spec window_median(DateTime.t(), String.t()) :: %{
           download: float() | nil,
@@ -355,7 +355,7 @@ defmodule Baudflow.Measurements do
   @doc """
   Worst health status of a bucket row from `health_buckets/1`, in priority order
   `failed > breach > healthy > unknown`. A real bucket always has `total >= 1`,
-  so this never returns `:empty` for queried data — `:empty` is the caller's
+  so this never returns `:empty` for queried data - `:empty` is the caller's
   default for a calendar cell with no bucket. Pure; the only caller is
   `daily_health/1`, which reduces a day's counts to this one status.
   """
@@ -368,9 +368,9 @@ defmodule Baudflow.Measurements do
   @doc """
   Daily health map for the heatmap tiles: `%{Date => status}` over the window,
   where `status` is the worst health of the day from `bucket_status/1`. `:since`
-  is optional (omit/`nil` for full history — the wall grid uses that); scoped to
+  is optional (omit/`nil` for full history - the wall grid uses that); scoped to
   `test_type: "ookla"` by default. Calendar shaping (weekday/week coordinates)
-  is the view's job — this only answers "what color is this day?" so all three
+  is the view's job - this only answers "what color is this day?" so all three
   consumers (dashboard, wall grid, embed) share one lookup. A day with no bucket
   is simply absent from the map; the view treats absence as "no data" cell.
   """
@@ -387,7 +387,7 @@ defmodule Baudflow.Measurements do
   @doc """
   Snapshot for the Prometheus `/metrics` endpoint: the latest Ookla measurement,
   the total retained count, and the healthy share over the uptime window. The
-  single source — the metrics controller formats this map and queries nothing
+  single source - the metrics controller formats this map and queries nothing
   else.
 
   `latest` is `nil` only on a fresh install with no Ookla tests. `uptime` is
@@ -433,7 +433,7 @@ defmodule Baudflow.Measurements do
     since = DateTime.add(DateTime.utc_now(), -days * 24 * 3600, :second)
 
     # Reuse the existing per-day health aggregation (all test types, windowed),
-    # then reduce to window totals — no second health-aggregation query path.
+    # then reduce to window totals - no second health-aggregation query path.
     buckets = health_buckets(since: since)
     total = Enum.reduce(buckets, 0, fn b, acc -> acc + b.total end)
     healthy = Enum.reduce(buckets, 0, fn b, acc -> acc + b.healthy end)
@@ -442,7 +442,7 @@ defmodule Baudflow.Measurements do
     %{healthy: healthy, total: total, percent: percent}
   end
 
-  # `since: nil` means no lower bound — the wall grid fetches full history. A
+  # `since: nil` means no lower bound - the wall grid fetches full history. A
   # dedicated clause keeps the unbounded query off the `where` plan entirely.
   defp maybe_since(query, nil), do: query
 
@@ -514,7 +514,7 @@ defmodule Baudflow.Measurements do
 
   # Baseline pool for a list: eligible rows of the same test_types spanning each
   # row's prior window, in one query (a history page spans few rows, so this stays
-  # small) — sorted ascending for the slide.
+  # small) - sorted ascending for the slide.
   defp baseline_pool([]), do: []
 
   defp baseline_pool(measurements) do
@@ -533,7 +533,7 @@ defmodule Baudflow.Measurements do
   end
 
   # Two-pointer slide (targets + pool ascending, same test_type): the window holds
-  # eligible pool rows with `timestamp ∈ (target − window, target)` — admit newer
+  # eligible pool rows with `timestamp ∈ (target − window, target)` - admit newer
   # rows, evict ones past the window as targets advance. Accumulates `{id, baseline}`.
   defp slide([], _pool, _window, acc), do: acc
 
@@ -637,7 +637,7 @@ defmodule Baudflow.Measurements do
   # Outcome filters the persisted test result (did the run complete?), the only
   # SQL-able health signal now that the verdict is derived JIT. "succeeded" rows
   # still carry a JIT badge of `:healthy` or `:breach`; "failed" rows badge
-  # `:failed` — so the filter and the badge never contradict each other.
+  # `:failed` - so the filter and the badge never contradict each other.
   defp maybe_filter_outcome(query, nil), do: query
   defp maybe_filter_outcome(query, ""), do: query
   defp maybe_filter_outcome(query, "succeeded"), do: from(m in query, where: m.failed == false)

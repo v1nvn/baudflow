@@ -3,9 +3,9 @@ defmodule Baudflow.Notifications.Event do
   Closed, typed event vocabulary for the pipeline.
 
   `kind` is one of `:healthy | :breach | :recovered | :failed`. Constructed ONLY
-  in `Baudflow.Health` (the single state owner) — every other module reads
+  in `Baudflow.Health` (the single state owner) - every other module reads
   events, never builds them. (A companion credo rule banning construction outside
-  `Health` was deferred from step 9 — Health is already the sole author by
+  `Health` was deferred from step 9 - Health is already the sole author by
   inspection; revisit the ratchet separately.)
 
   `streak` is the breach streak snapshotted at construction (a `:breach` event
@@ -34,7 +34,7 @@ defmodule Baudflow.Notifications.Event do
   @doc """
   Reconstruct an event from its Oban args (the shape Health enqueues).
 
-  Maps the kind string back to a known atom via the closed `@kinds` set — never
+  Maps the kind string back to a known atom via the closed `@kinds` set - never
   `String.to_atom/1` on input.
   """
   @spec from_args(map()) :: t()

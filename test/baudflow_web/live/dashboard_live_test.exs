@@ -165,12 +165,12 @@ defmodule BaudflowWeb.DashboardLiveTest do
       refute has_element?(lv, "button[phx-value-range='7d'][class*='active']")
     end
 
-    # #5 — the dashboard range is a per-browser preference stored in localStorage
+    # #5 - the dashboard range is a per-browser preference stored in localStorage
     # and replayed via connect_params (see app.js), so the server queries the right
     # window on first render with no flash.
 
     test "honors the persisted time range from connect_params on mount", %{conn: conn} do
-      # connect_params carry the localStorage value the client would replay — see
+      # connect_params carry the localStorage value the client would replay - see
       # `get_connect_params/1` in mount and app.js `readSavedTimeRange`.
       {:ok, lv, _html} =
         conn

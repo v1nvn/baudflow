@@ -36,7 +36,7 @@ defmodule BaudflowWeb.Router do
     get "/health", HealthController, :check
   end
 
-  # Prometheus scrape endpoint. Plain text, no pipeline — bypasses the :api JSON
+  # Prometheus scrape endpoint. Plain text, no pipeline - bypasses the :api JSON
   # content negotiation and the :browser CSRF/session plugs. Picked up by the
   # auth gate once #18 lands, like /health and /heatmap/embed.
   scope "/", BaudflowWeb do

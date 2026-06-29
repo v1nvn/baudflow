@@ -5,7 +5,7 @@
 //
 // Fetches the inner SVG of each icon (raw.githubusercontent.com/lucide-icons),
 // trying candidates in order and falling back to a solid `circle` if every
-// candidate 404s — so a renamed icon never breaks the build.
+// candidate 404s - so a renamed icon never breaks the build.
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -78,7 +78,7 @@ const file = `---
 // Inline Lucide icon set. Sized in em (scales with the parent's font-size, like
 // the text glyphs it replaced) and stroked with currentColor so it inherits the
 // accent color of its wrapper. Regenerate the path map with
-// \`node scripts/gen-icons.mjs\` — do not hand-edit the PATHS literal.
+// \`node scripts/gen-icons.mjs\` - do not hand-edit the PATHS literal.
 interface Props {
   name: keyof typeof PATHS;
   class?: string;

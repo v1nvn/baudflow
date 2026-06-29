@@ -96,9 +96,9 @@ defmodule BaudflowWeb.HistoryLive do
     end
   end
 
-  # A failed test carries nil speeds — round only when present, else show "—".
+  # A failed test carries nil speeds - round only when present, else show "-".
   defp fmt(value, precision \\ 1)
-  defp fmt(nil, _precision), do: "—"
+  defp fmt(nil, _precision), do: "-"
   defp fmt(value, precision) when is_number(value), do: Float.round(value, precision)
 
   defp pagination_path(page, filters, sort_by, sort_dir) do

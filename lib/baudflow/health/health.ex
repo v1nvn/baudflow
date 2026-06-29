@@ -5,17 +5,17 @@ defmodule Baudflow.Health do
 
   The single place a health verdict is computed. Two entry points:
 
-    * `verdict/3` — `{healthy, benchmarks}` for a measurement against resolved
+    * `verdict/3` - `{healthy, benchmarks}` for a measurement against resolved
       thresholds (+ a baseline in `:auto` mode). Used just-in-time by every
       reader (heatmap, /metrics, dashboard hero, result detail, history filter)
-      so verdicts are never stored — change the mode/ratio and every view
+      so verdicts are never stored - change the mode/ratio and every view
       re-derives on the next read.
-    * `evaluate/3` — adds a `transition` vs the schedule's prior breach streak,
+    * `evaluate/3` - adds a `transition` vs the schedule's prior breach streak,
       for the live `HealthWorker` (events/streak/escalation). Same derivation.
 
   Mode comes from `Scheduling.thresholds_for/1` (`:auto | :absolute | :off`).
   `:auto` judges each value against the caller-supplied rolling-median baseline
-  (`baseline == :insufficient` while there isn't enough history to judge — no
+  (`baseline == :insufficient` while there isn't enough history to judge - no
   verdict yet). `:absolute` uses the fixed Mbps/ms thresholds. `:off` yields nil.
   """
 
@@ -33,7 +33,7 @@ defmodule Baudflow.Health do
   Verdict for a measurement against resolved `thresholds` (`Scheduling.thresholds_for/1`
   or `global_thresholds/0`), plus a `baseline` map in `:auto` mode (the rolling
   median from `Measurements.trailing_median/2`; `:insufficient` while
-  uncalibrated — yields no verdict). Returns `{healthy, benchmarks}`.
+  uncalibrated - yields no verdict). Returns `{healthy, benchmarks}`.
   """
   @spec verdict(Measurement.t(), map(), baseline()) :: {boolean() | nil, map() | nil}
   def verdict(%Measurement{} = measurement, thresholds, baseline \\ nil) do
@@ -116,7 +116,7 @@ defmodule Baudflow.Health do
 
   # Absolute check: needs both a threshold and a measurement value. Skip when the
   # value is nil (a ping result has no bandwidth, so its download/upload checks
-  # can't run — and `nil >= threshold` would raise) or when the threshold is unset.
+  # can't run - and `nil >= threshold` would raise) or when the threshold is unset.
   defp maybe_check(acc, _name, threshold, value, _compare, _unit)
        when is_nil(value) or not is_number(threshold) or threshold <= 0,
        do: acc

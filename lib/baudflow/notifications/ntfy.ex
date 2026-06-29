@@ -1,6 +1,6 @@
 defmodule Baudflow.Notifications.Ntfy do
   @moduledoc """
-  ntfy.sh channel. Owns its transport config (URL/topic from app env — deploy
+  ntfy.sh channel. Owns its transport config (URL/topic from app env - deploy
   wiring, not user-tunable) and the `Req.post` with hard timeouts. A hung ntfy
   must not hold the worker's queue slot; a failure never raises.
   """

@@ -1,11 +1,11 @@
 defmodule Baudflow.Notifications.Webhook do
   @moduledoc """
   Webhook channel (#24). POSTs the rendered payload as JSON to a user-configured
-  URL — Home Assistant, Grafana, n8n, custom endpoints.
+  URL - Home Assistant, Grafana, n8n, custom endpoints.
 
   Owns its transport config the way the Channel contract demands: the URL is a
   user-tunable `Settings` value (unlike ntfy's deploy-wired app env), and the
-  channel is **enabled iff the URL is non-blank** (one "off" representation — no
+  channel is **enabled iff the URL is non-blank** (one "off" representation - no
   compensating enable flag, matching the escalated_cron / promised_* idioms). A
   hung endpoint never holds the worker's queue slot; a failure never raises. Test
   stubbing rides a `:webhook_plug` app-env entry, the same shape as `:ntfy_plug`

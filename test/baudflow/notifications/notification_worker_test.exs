@@ -1,5 +1,5 @@
 defmodule Baudflow.Notifications.NotificationWorkerTest do
-  # async: false — the capture test's Req.Test stub can be clobbered by a
+  # async: false - the capture test's Req.Test stub can be clobbered by a
   # sibling test stubbing the same owner ({Req.Test, __MODULE__}) concurrently.
   # Serializing keeps the stub-per-test deterministic.
   use Baudflow.DataCase, async: false
@@ -104,7 +104,7 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
 
   describe "perform/1 - recovery (#22)" do
     # Recovery notifies now. stub_capture messages self() on the POST so we can
-    # assert it actually fired — Ntfy swallows Req.Test errors, so a bare :ok
+    # assert it actually fired - Ntfy swallows Req.Test errors, so a bare :ok
     # never proves anything.
     test "posts an alert to ntfy" do
       stub_capture()
@@ -142,9 +142,9 @@ defmodule Baudflow.Notifications.NotificationWorkerTest do
   end
 
   describe "perform/1 - policy" do
-    # No notify means no POST — stub_capture messages self() only on a real POST,
+    # No notify means no POST - stub_capture messages self() only on a real POST,
     # so refute_received is a reliable assertion (Ntfy swallows Req.Test errors,
-    # so an unstubbed wrongful POST would NOT raise — we can't rely on that).
+    # so an unstubbed wrongful POST would NOT raise - we can't rely on that).
 
     test "does not notify on a healthy event" do
       stub_capture()

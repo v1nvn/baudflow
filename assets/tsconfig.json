@@ -1,31 +1,28 @@
-// This file is needed on most editors to enable the intelligent autocompletion
-// of LiveView's JavaScript API methods. You can safely delete it if you don't need it.
-//
-// Note: This file assumes a basic esbuild setup without node_modules.
-// We include a generic paths alias to deps to mimic how esbuild resolves
-// the Phoenix and LiveView JavaScript assets.
-// If you have a package.json in your project, you should remove the
-// paths configuration and instead add the phoenix dependencies to the
-// dependencies section of your package.json:
-//
-// {
-//   ...
-//   "dependencies": {
-//     ...,
-//     "phoenix": "../deps/phoenix",
-//     "phoenix_html": "../deps/phoenix_html",
-//     "phoenix_live_view": "../deps/phoenix_live_view"
-//   }
-// }
-//
-// Feel free to adjust this configuration however you need.
 {
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowJs": false,
     "paths": {
-      "*": ["../deps/*"]
-    },
-    "allowJs": true,
-    "noEmit": true
+      "phoenix_live_view": ["../deps/phoenix_live_view"],
+      "phoenix": ["./js/types/modules/phoenix"],
+      "phoenix_html": ["./js/types/modules/phoenix_html"],
+      "chartjs-adapter-date-fns": [
+        "./js/types/modules/chartjs-adapter-date-fns"
+      ]
+    }
   },
-  "include": ["js/**/*"]
+  "include": ["js/**/*.ts", "js/**/*.d.ts"],
+  "exclude": ["node_modules", "vendor", "../deps"]
 }

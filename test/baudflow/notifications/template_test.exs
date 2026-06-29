@@ -1,5 +1,5 @@
 defmodule Baudflow.Notifications.TemplateTest do
-  # Pure — no DB. Builds structs in memory and renders through the pure seam
+  # Pure - no DB. Builds structs in memory and renders through the pure seam
   # (render_string/3); the Settings resolution in render/2 is exercised end-to-end
   # by notification_worker_test.exs.
   use ExUnit.Case, async: true

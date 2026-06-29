@@ -73,7 +73,7 @@ defmodule Baudflow.SchedulingTest do
     test "returns enabled schedules whose cron matches the current minute" do
       {:ok, _always} = Scheduling.create(%{name: "Always", cron: "* * * * *", enabled: true})
 
-      # a minute guaranteed distinct from "now" (+5, mod 60 — survives roll-over)
+      # a minute guaranteed distinct from "now" (+5, mod 60 - survives roll-over)
       distinct_minute = rem(DateTime.utc_now().minute + 5, 60)
 
       {:ok, _rare} =
@@ -129,7 +129,7 @@ defmodule Baudflow.SchedulingTest do
       {:ok, schedule} = Scheduling.create(%{name: "S", cron: "0 * * * *"})
 
       # The mutators return the streak value they just wrote (read atomically via
-      # `returning:`), not a row-count — so HealthWorker can snapshot it into the
+      # `returning:`), not a row-count - so HealthWorker can snapshot it into the
       # breach event without a racy second read.
       assert {:ok, 1} = Scheduling.increment_breach_streak(schedule)
       assert {:ok, 2} = Scheduling.increment_breach_streak(schedule)
@@ -311,7 +311,7 @@ defmodule Baudflow.SchedulingTest do
       assert ping.escalated_cron == "*/15 * * *"
       assert ping.name == "Ping"
 
-      # Idempotent — re-bootstrap doesn't duplicate either kind.
+      # Idempotent - re-bootstrap doesn't duplicate either kind.
       assert :ok = Scheduling.bootstrap()
       assert length(Scheduling.list_schedules()) == 2
     end

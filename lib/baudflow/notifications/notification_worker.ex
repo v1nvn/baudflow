@@ -5,12 +5,12 @@ defmodule Baudflow.Notifications.NotificationWorker do
       event → policy (notify?) → template (render) → channel (fan out)
 
   The policy is the pure `Baudflow.Notifications.Policy` module; this worker reads
-  `Settings` into the config it hands the policy, then — only when the policy says
-  notify — loads the measurement, builds the Payload, and fans out to each channel.
+  `Settings` into the config it hands the policy, then - only when the policy says
+  notify - loads the measurement, builds the Payload, and fans out to each channel.
   Rendering is the `Template` module's job (#26): one renderer per channel, so ntfy
   and webhook (#24) add a template, never a parallel render path here. Each channel
   owns its own transport config and enable gate (ntfy via app env; webhook via a
-  `Settings` URL — blank means disabled).
+  `Settings` URL - blank means disabled).
   """
 
   use Oban.Worker, queue: :notifications, max_attempts: 3
@@ -39,7 +39,7 @@ defmodule Baudflow.Notifications.NotificationWorker do
     %{breach_notify_streak: max(1, Settings.get_integer("breach_notify_streak", 1))}
   end
 
-  # Fan out to every channel — render per channel via the Template layer, then let
+  # Fan out to every channel - render per channel via the Template layer, then let
   # each channel own its enable gate. ntfy always posts (app env); webhook no-ops
   # when its URL is blank. The worker never branches on channel enable logic.
   defp fan_out(payload) do

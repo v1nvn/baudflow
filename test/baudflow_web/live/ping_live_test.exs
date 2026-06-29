@@ -62,7 +62,7 @@ defmodule BaudflowWeb.PingLiveTest do
       assert job.args["test_type"] == "ping"
       assert job.args["source"] == "manual"
 
-      # The auto-run flips the page into its running state — the live viz mounts.
+      # The auto-run flips the page into its running state - the live viz mounts.
       assert has_element?(lv, "#ping-viz[phx-hook='PingViz']")
     end
 
@@ -80,7 +80,7 @@ defmodule BaudflowWeb.PingLiveTest do
       assert job.args["test_type"] == "ping"
     end
 
-    # A manual ping is debounced only while one is queued/executing — a completed
+    # A manual ping is debounced only while one is queued/executing - a completed
     # run must NOT block an immediate re-run (the fast ping would otherwise sit
     # "running" for the whole unique window). See RunnerWorker.manual_unique/0.
     test "a completed manual ping doesn't dedupe an immediate re-run", %{conn: _conn} do
@@ -137,14 +137,14 @@ defmodule BaudflowWeb.PingLiveTest do
       assert_push_event(lv, "ping_complete", %{})
     end
 
-    test "an Ookla result is ignored — only a ping result appends a point", %{conn: conn} do
+    test "an Ookla result is ignored - only a ping result appends a point", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/ping")
       assert_push_event(lv, "chart_data", _)
 
-      # An Ookla result, then a ping result — broadcast in order. If the Ookla
+      # An Ookla result, then a ping result - broadcast in order. If the Ookla
       # result were handled, it would append first; the first append_point must
       # instead be the ping's, proving the `test_type != "ping"` guard dropped it.
-      # NB: the Ookla fixture is a complete Ookla shape (download + upload) — a
+      # NB: the Ookla fixture is a complete Ookla shape (download + upload) - a
       # half-formed one would crash a concurrent dashboard LiveView over the
       # shared "measurements" topic (Float.round on a nil upload).
       {:ok, ookla} =
@@ -176,7 +176,7 @@ defmodule BaudflowWeb.PingLiveTest do
       assert_push_event(lv, "chart_data", _)
 
       # Both ride the shared "measurements" topic but the ping page has no view
-      # for either — it must no-op them rather than crash the LiveView.
+      # for either - it must no-op them rather than crash the LiveView.
       Phoenix.PubSub.broadcast(
         Baudflow.PubSub,
         "measurements",

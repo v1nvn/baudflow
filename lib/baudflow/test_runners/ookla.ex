@@ -4,7 +4,7 @@ defmodule Baudflow.TestRunners.Ookla do
 
   Lifted verbatim from the legacy `SpeedtestWorker`: Port-based NDJSON
   streaming, the `map_ookla_result` shape, the timeout SLA, and runtime binary
-  resolution. Owns the test mechanics — opening the port, streaming per-phase
+  resolution. Owns the test mechanics - opening the port, streaming per-phase
   progress over PubSub as `{:speedtest_progress, type, data}`, and returning the
   final result. Pipeline concerns (insert, run record, terminal broadcast,
   downstream enqueue) live in `RunnerWorker`.

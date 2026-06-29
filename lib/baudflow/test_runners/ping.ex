@@ -1,10 +1,10 @@
 defmodule Baudflow.TestRunners.Ping do
   @moduledoc """
-  TCP-connect latency backend — the second `TestRunner` impl.
+  TCP-connect latency backend - the second `TestRunner` impl.
 
   A lightweight, high-frequency reachability/latency check with no bandwidth
   cost: `ping_latency` / `ping_jitter` / `ping_low` / `ping_high` / `packet_loss`
-  only. A ping result therefore carries no `download_*` / `upload_*` — those stay
+  only. A ping result therefore carries no `download_*` / `upload_*` - those stay
   nil, `from_result/1` skips the mbps derivation, and `Health` skips the
   download/upload checks (a check needs both a threshold and a value).
 
@@ -14,7 +14,7 @@ defmodule Baudflow.TestRunners.Ping do
   loss. Sampling for a sustained window (default 10s, via the
   `ping_duration_seconds` setting) averages many readings into a stable
   latency/loss value rather than a noisy burst. TCP needs no external binary and
-  no `CAP_NET_RAW` — it works unprivileged under the deployment's locked-down
+  no `CAP_NET_RAW` - it works unprivileged under the deployment's locked-down
   `securityContext`, where neither the `ping` binary, `cap_net_raw`, nor the
   `ping_group_range` sysctl is available. The tradeoff is the price of entry: a
   target that doesn't speak TCP on the configured port reads as 100% loss.
@@ -34,7 +34,7 @@ defmodule Baudflow.TestRunners.Ping do
   alias Baudflow.Settings
 
   # A ping samples at a fixed cadence for a configurable duration, then averages
-  # — a longer run smooths transient spikes into a stable latency/loss reading
+  # - a longer run smooths transient spikes into a stable latency/loss reading
   # (and SLA verdict) instead of a noisy 5-sample burst.
   @samples_per_second 2
   @cadence_ms div(1000, @samples_per_second)
@@ -101,7 +101,7 @@ defmodule Baudflow.TestRunners.Ping do
     # Collect a latency (ms) for every connect that succeeds; remember the first
     # failure's reason so an all-failed probe can report a stable message. Stream
     # cumulative progress after each attempt so the live view renders samples as
-    # they land (mirrors Ookla's per-phase stream — a side-channel only; the
+    # they land (mirrors Ookla's per-phase stream - a side-channel only; the
     # final return value is unchanged).
     {timings, error} =
       Enum.reduce(1..count, {[], nil}, fn sample, {acc, err} ->
@@ -212,7 +212,7 @@ defmodule Baudflow.TestRunners.Ping do
   defp highest(values), do: Enum.max(values)
 
   # Loss as a 0–100 percent. `attempted == 0` is guarded even though @sample_count
-  # is a constant — a malformed call must never divide by zero.
+  # is a constant - a malformed call must never divide by zero.
   defp packet_loss(0, _received), do: 0.0
 
   defp packet_loss(attempted, received) do

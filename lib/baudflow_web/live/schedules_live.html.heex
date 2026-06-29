@@ -14,7 +14,7 @@
 
     <div :if={@schedules == []} class="glass-card">
       <div class="p-4 text-sm text-text-dim">
-        No schedules yet — click <strong>New schedule</strong>.
+        No schedules yet - click <strong>New schedule</strong>.
       </div>
     </div>
 
@@ -50,7 +50,7 @@
               {Scheduling.active_cron(schedule)}
             </td>
             <td class="px-4 py-3 text-text-dim">{schedule.server_id || "auto"}</td>
-            <td class="px-4 py-3 text-text-dim">{if schedule.enabled, do: "✓", else: "—"}</td>
+            <td class="px-4 py-3 text-text-dim">{if schedule.enabled, do: "✓", else: "-"}</td>
             <td class="px-4 py-3 text-text-dim whitespace-nowrap">
               <.local_time id={"time-#{schedule.id}"} at={Scheduling.next_run_at(schedule)} />
             </td>

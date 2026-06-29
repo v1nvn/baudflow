@@ -5,7 +5,7 @@ defmodule Baudflow.HealthTest do
   alias Baudflow.Measurements.Measurement
   alias Baudflow.Scheduling.Schedule
 
-  # Pure unit tests — build structs directly (no DB), all threshold fields
+  # Pure unit tests - build structs directly (no DB), all threshold fields
   # explicit so thresholds_for never falls back to Settings.
   defp schedule(opts) do
     struct!(Schedule,
@@ -96,7 +96,7 @@ defmodule Baudflow.HealthTest do
   end
 
   # :auto verdicts are tested via verdict/3 with an explicit thresholds map and a
-  # baseline — no schedule/DB needed. ratio 0.7 → speed floor 0.7×median,
+  # baseline - no schedule/DB needed. ratio 0.7 → speed floor 0.7×median,
   # ping ceiling median/0.7. baseline medians 100/50/10 → floors 70/35, ping 14.3.
   describe "verdict/3 - auto mode" do
     @auto %{mode: :auto, ratio: 0.7, download: 0, upload: 0, ping: 0}

@@ -36,7 +36,7 @@ defmodule Baudflow.Health.HealthWorker do
 
   defp evaluate_and_mutate(measurement, schedule) do
     if measurement.failed do
-      # A failed test carries no values to threshold — it's its own signal. Emit
+      # A failed test carries no values to threshold - it's its own signal. Emit
       # a :failed event without evaluating thresholds, mutating streak/escalation
       # (a CLI failure is neither a confirmed breach nor a recovery), or
       # broadcasting :health (the runner already broadcast {:result, _} for the
@@ -109,7 +109,7 @@ defmodule Baudflow.Health.HealthWorker do
   end
 
   # Serialized here, deserialized via `Event.from_args/1` (a closed string→atom
-  # map — never `String.to_atom/1` on stored input).
+  # map - never `String.to_atom/1` on stored input).
   defp event_to_args(%Event{
          kind: kind,
          measurement_id: measurement_id,

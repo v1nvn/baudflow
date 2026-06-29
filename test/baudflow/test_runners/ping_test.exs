@@ -9,7 +9,7 @@ defmodule Baudflow.TestRunners.PingTest do
 
   alias Baudflow.TestRunners.Ping
 
-  # 2s × 2 samples/sec = 4 samples — enough to exercise averaging/streaming fast.
+  # 2s × 2 samples/sec = 4 samples - enough to exercise averaging/streaming fast.
   @short %{"duration_seconds" => 2}
 
   describe "parse/1" do
@@ -81,7 +81,7 @@ defmodule Baudflow.TestRunners.PingTest do
 
   # A ping streams per-sample progress over PubSub (mirroring Ookla's per-phase
   # stream) so the live view can draw samples as each connect completes. The
-  # terminal {:result} still carries the final parsed measurement — progress is
+  # terminal {:result} still carries the final parsed measurement - progress is
   # a side-channel only, so parse/1 and run/1's return value are unchanged.
   describe "run/1 progress streaming" do
     test "broadcasts a ping_progress event as each connect completes" do
@@ -133,7 +133,7 @@ defmodule Baudflow.TestRunners.PingTest do
   end
 
   describe "binary_available?/0" do
-    test "is always true — TCP needs no external binary" do
+    test "is always true - TCP needs no external binary" do
       assert Ping.binary_available?() == true
     end
   end
@@ -147,7 +147,7 @@ defmodule Baudflow.TestRunners.PingTest do
     test "scales with the configured run duration" do
       Baudflow.Settings.update_all(%{"ping_duration_seconds" => "20"})
 
-      # 20s run + 5s grace — the safety net must outlast a legitimate long run.
+      # 20s run + 5s grace - the safety net must outlast a legitimate long run.
       assert Ping.timeout_ms() == 25_000
     end
   end

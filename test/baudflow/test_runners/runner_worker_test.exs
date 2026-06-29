@@ -1,5 +1,5 @@
 defmodule Baudflow.TestRunners.RunnerWorkerTest do
-  # async: false — the failure/timeout sub-tests temporarily flip the global
+  # async: false - the failure/timeout sub-tests temporarily flip the global
   # :speedtest_bin env var to point at a throwaway script. Any concurrent test
   # that runs Ookla (pipeline_test) or probes binary_available? (dashboard) would
   # read the flipped value. Serializing this file isolates the flips.
@@ -129,7 +129,7 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
         assert_receive {:test_failed, reason}
         assert reason =~ "Timed out"
 
-        # A timeout is a failure — it lands on the timeline as a failed point.
+        # A timeout is a failure - it lands on the timeline as a failed point.
         assert_receive {:result, %{failed: true, test_type: "ookla"}}
 
         run =
@@ -154,7 +154,7 @@ defmodule Baudflow.TestRunners.RunnerWorkerTest do
   end
 
   describe "perform/1 - ping success" do
-    # The Ping runner dispatches through the same pipeline as Ookla — this is
+    # The Ping runner dispatches through the same pipeline as Ookla - this is
     # what proves the TestRunner abstraction. Ping measures TCP-handshake RTT,
     # so it's pointed at a real localhost listener; a result carries latency but
     # no bandwidth, so download_mbps/upload_mbps stay nil.

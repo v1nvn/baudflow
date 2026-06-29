@@ -20,7 +20,7 @@ const updated = '2026-06-27';
 // Feature matrix: the single most-cited artifact by answer engines.
 // 'yes' | 'partial' | 'no'. Notes link to evidence.
 type Cell = 'yes' | 'partial' | 'no';
-const label: Record<Cell, string> = { yes: 'Yes', partial: 'Partial', no: '—' };
+const label: Record<Cell, string> = { yes: 'Yes', partial: 'Partial', no: '-' };
 const mark = (v: Cell) => `<span class="mark mark-${v}"><i></i>${label[v]}</span>`;
 
 const rows: { f: string; b: Cell; s: Cell; note?: string }[] = [
@@ -155,7 +155,7 @@ const breadcrumbSchema = {
       <div class="section-head">
         <span class="kicker">Feature matrix</span>
         <h2>Side by side</h2>
-        <p>Green = yes · Amber = partial / planned · — = not available. Evidence links point to the upstream issue tracker.</p>
+        <p>Green = yes · Amber = partial / planned · - = not available. Evidence links point to the upstream issue tracker.</p>
       </div>
       <div class="table-scroll">
         <table class="matrix">

@@ -3,12 +3,12 @@ defmodule Baudflow.Notifications.Template do
   The template layer of the four-stage notification pipeline: renders a
   `Baudflow.Notifications.Payload` into a channel-specific message string.
 
-  One renderer for every channel (ntfy today, webhook in #24) — a new channel adds a
+  One renderer for every channel (ntfy today, webhook in #24) - a new channel adds a
   default template + an override slot, never a parallel render path in the worker.
   Templates are EEx strings: webhook's is user-editable via `Settings` (#26, blank =
   built-in default); ntfy's is a fixed default that reproduces the pre-#26 message
   (its output is pinned by `notification_worker_test.exs`). A render error (a bad
-  custom template) logs and falls back to the channel default — a bad setting never
+  custom template) logs and falls back to the channel default - a bad setting never
   crashes the `:notifications` queue.
   """
 
@@ -50,7 +50,7 @@ defmodule Baudflow.Notifications.Template do
   @doc """
   Render an explicit template string against the payload.
 
-  Pure — the test seam. `render/2` resolves the template then delegates here. Falls
+  Pure - the test seam. `render/2` resolves the template then delegates here. Falls
   back to the channel default on any error, so a malformed custom template degrades
   instead of raising.
   """
@@ -71,7 +71,7 @@ defmodule Baudflow.Notifications.Template do
   def default(channel), do: Map.fetch!(@defaults, channel)
 
   # ntfy: fixed default (not user-tunable). webhook: a stored override wins, blank/nil
-  # falls back to the built-in default — one "unset" representation (nil/"" both mean
+  # falls back to the built-in default - one "unset" representation (nil/"" both mean
   # default), matching the escalated_cron / promised_* idioms.
   defp template_for(:ntfy), do: @ntfy_default
 

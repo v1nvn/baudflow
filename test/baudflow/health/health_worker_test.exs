@@ -86,7 +86,7 @@ defmodule Baudflow.Health.HealthWorkerTest do
       assert job.args["kind"] == "failed"
       assert job.args["measurement_id"] == failed.id
 
-      # A CLI failure is neither a confirmed breach nor a recovery — the
+      # A CLI failure is neither a confirmed breach nor a recovery - the
       # breach/recovery state machine must stay put.
       refreshed = Scheduling.get_schedule!(schedule.id)
       assert refreshed.breach_streak == 0

@@ -1,4 +1,4 @@
-/* Baudflow — Tron Legacy Design System */
+/* Baudflow - Tron Legacy Design System */
 /* Dark-first. Neon cyan/blue on near-black. HSL-native. */
 
 @import "tailwindcss" source(none);
@@ -14,7 +14,7 @@
   --font-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, monospace;
   --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
 
-  /* Surfaces — near-black with cold blue undertone */
+  /* Surfaces - near-black with cold blue undertone */
   --color-surface-0: hsl(224, 38%, 4.5%);   /* #060a12  deepest            */
   --color-surface-1: hsl(224, 36%, 10.5%);   /* #0b1121  page background    */
   --color-surface-2: hsl(224, 30%, 16%);     /* #141c2e  cards              */
@@ -25,12 +25,12 @@
   --color-border: hsl(224, 24%, 28%);       /* #1a2438  */
   --color-border-subtle: hsl(224, 18%, 24%);
 
-  /* Text — cool blue-tinted whites */
+  /* Text - cool blue-tinted whites */
   --color-text: hsl(220, 28%, 91%);         /* #e0e6f0  primary text      */
   --color-text-dim: hsl(224, 18%, 66%);     /* #8898b8  secondary text    */
   --color-text-ghost: hsl(224, 12%, 54%);   /* #4a5878  placeholder/text   */
 
-  /* Accents — neon Tron Legacy palette */
+  /* Accents - neon Tron Legacy palette */
   --color-accent: hsl(198, 95%, 52%);       /* #00c8ff  electric neon blue */
   --color-accent-glow: hsl(198, 84%, 70%);  /* #5cdcff  lighter neon       */
   --color-cyan: hsl(186, 92%, 52%);         /* #00e5ff  neon cyan          */
@@ -153,7 +153,7 @@
   position: relative;
 }
 
-/* System status cluster — heatmap viz + instrument readouts.
+/* System status cluster - heatmap viz + instrument readouts.
    One panel, not three cards: the heatmap is a visualization, the rest are
    single readouts, so they get different treatment inside a shared frame
    (echoing the .crt-stat readout idiom) rather than identical card chrome. */
@@ -311,7 +311,7 @@
 /* Split-button Run control: the two CTAs share .cta-run but need flat inner
    edges. .cta-run's `border-radius` shorthand sits later than Tailwind's
    per-corner utilities (equal specificity → source order wins), so the rounded-*
-   utilities are no-ops here — override per-side with a higher-specificity
+   utilities are no-ops here - override per-side with a higher-specificity
    selector instead. Each button keeps its rounded OUTER corner from .cta-run. */
 .run-split > .cta-run-primary {
   border-top-right-radius: 0;
@@ -322,7 +322,7 @@
   border-bottom-left-radius: 0;
   /* Narrower than .cta-run's 1.25rem so the chevron hugs the label instead of
      floating in a wide button (the px-* utility can't override .cta-run's
-     padding shorthand — same source-order trap as the radius above). */
+     padding shorthand - same source-order trap as the radius above). */
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }

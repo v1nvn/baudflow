@@ -1,5 +1,5 @@
 defmodule Baudflow.Notifications.PolicyTest do
-  # Pure unit test — no DB. The policy is a pure function of the event + config;
+  # Pure unit test - no DB. The policy is a pure function of the event + config;
   # Settings live in the worker, never here.
   use ExUnit.Case, async: true
 

@@ -4,7 +4,7 @@ defmodule Baudflow.Scheduling.Schedule do
   and threshold state the pipeline reads and mutates.
 
   The escalation fields (`breach_streak`, `escalation_level`) live here and are
-  mutated only through the atomic functions in `Baudflow.Scheduling` — never via
+  mutated only through the atomic functions in `Baudflow.Scheduling` - never via
   a get→change→update, which races across concurrent Oban jobs. The threshold
   fields are nullable: a `nil` means "inherit the global `Settings` value",
   resolved by `Scheduling.thresholds_for/1` (the single threshold reader).
@@ -42,7 +42,7 @@ defmodule Baudflow.Scheduling.Schedule do
   def changeset(schedule, attrs) do
     schedule
     |> cast(attrs, @fields)
-    # A blank escalated_cron is "no adaptive speedup" — store nil so the single
+    # A blank escalated_cron is "no adaptive speedup" - store nil so the single
     # reader (`Scheduling.active_cron/1`) treats unset as one value, not two.
     |> update_change(:escalated_cron, fn
       "" -> nil
@@ -55,7 +55,7 @@ defmodule Baudflow.Scheduling.Schedule do
   end
 
   # Closed enum for threshold_mode (nil = inherit the global Settings value).
-  # Validated by string membership — never String.to_atom/1 on stored input.
+  # Validated by string membership - never String.to_atom/1 on stored input.
   @threshold_modes ~w(auto absolute off)
 
   defp validate_threshold_mode(changeset) do
@@ -70,7 +70,7 @@ defmodule Baudflow.Scheduling.Schedule do
   Parse a cron string without raising.
 
   Returns `{:ok, expression}` or `{:error, reason}`. A malformed cron is a data
-  problem the caller logs and skips — never a queue-crashing exception.
+  problem the caller logs and skips - never a queue-crashing exception.
   """
   @spec parse_cron(String.t()) :: {:ok, term()} | {:error, term()}
   def parse_cron(cron) when is_binary(cron) do

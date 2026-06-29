@@ -8,13 +8,13 @@ defmodule BaudflowWeb.HeatmapLive do
   @moduledoc """
   Health heatmap as a wall grid of monthly calendar tiles (newest top-left),
   each painted by a `HeatmapMatrix` hook (chartjs-chart-matrix). One unbounded
-  query (`Measurements.daily_health/1`) feeds every tile — the wall grid is pure
+  query (`Measurements.daily_health/1`) feeds every tile - the wall grid is pure
   view logic over the returned `%{Date => status}` map. The current month also
   lives, compact, on the dashboard; a chrome-less copy for iframe embedding is
   at `/heatmap/embed`.
 
   Each day's status is derived just-in-time by `Measurements.daily_health/1`
-  (verdicts are never stored — see `Baudflow.Measurements.health/1`), so a change
+  (verdicts are never stored - see `Baudflow.Measurements.health/1`), so a change
   to the mode/ratio repaints the wall on the next load. Buckets are UTC days, so
   the grouping is offset from the viewer's local evening; each cell's tooltip
   renders the absolute UTC date, which is correct.
@@ -39,7 +39,7 @@ defmodule BaudflowWeb.HeatmapLive do
       end
 
     # Each tile's hook listens for its own event, so push once per tile (not one
-    # blob) — payloads stay small and the canvas ids stay stable across re-renders.
+    # blob) - payloads stay small and the canvas ids stay stable across re-renders.
     socket =
       tiles
       |> Enum.reduce(socket, fn tile, acc ->

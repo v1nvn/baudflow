@@ -12,7 +12,7 @@ defmodule Baudflow.Application do
       Baudflow.Repo,
       # Seed the default schedule from the legacy cron setting on boot
       # (dev/prod). Gated off in test via :bootstrap_on_start so the schedules
-      # table stays empty and tests own their state. :temporary restart — run
+      # table stays empty and tests own their state. :temporary restart - run
       # once; a seed failure must not crash the supervisor.
       {Task,
        fn ->
