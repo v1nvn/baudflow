@@ -24,7 +24,8 @@ docker run -d \
 
 On first boot the release runs migrations automatically. Open
 [localhost:4000](http://localhost:4000) and trigger a manual run, or wait for the
-scheduler.
+scheduler. Only `DATABASE_URL` and `SECRET_KEY_BASE` are required; see
+[Environment variables](../environment-variables/) for the full list.
 
 For a single-command stack that brings up Postgres alongside Baudflow, use the
 `docker-compose.yml` in the repo:
@@ -73,5 +74,4 @@ Or inside an IEx session: `iex -S mix phx.server`.
 ## Next steps
 
 - [Configure](../configuration/) schedules, thresholds, and notifications.
-- Understand the worker [architecture](../architecture/).
 - Add a [ping target](../ping/) or wire up [alerts](../notifications/).

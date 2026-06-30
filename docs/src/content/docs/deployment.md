@@ -22,16 +22,9 @@ for stability; `:latest` follows `main`.
 
 ## Environment
 
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `DATABASE_URL` | yes | (none) | Ecto connection string, e.g. `ecto://user:pass@host/baudflow` |
-| `SECRET_KEY_BASE` | yes | (none) | Signs/encrypts session cookies. Generate with `mix phx.gen.secret` |
-| `PHX_HOST` | no | `example.com` | Public host, used in generated URLs and redirects |
-| `PORT` | no | `4000` | HTTP listen port |
-| `POOL_SIZE` | no | `10` | DB connection pool size |
-| `ECTO_IPV6` | no | (none) | `true` or `1` to connect to Postgres over IPv6 |
-| `DNS_CLUSTER_QUERY` | no | (none) | DNS name for Erlang clustering (multi-node) |
-| `PHX_SERVER` | no | (none) | `true` to start the web server (used by releases) |
+Only `DATABASE_URL` and `SECRET_KEY_BASE` are required for a production release;
+see [Environment variables](../environment-variables/) for the full list,
+including `PHX_HOST`, `PORT`, `POOL_SIZE`, and clustering options.
 
 On boot the release runs `Baudflow.Release.migrate/0`, so migrations apply
 automatically. No separate step is needed unless you run from source (`mix ecto.migrate`).

@@ -299,11 +299,19 @@ registered in `@default_settings`, so resolution never yields `nil`.
 /metrics               MetricsController  (Prometheus text/plain; no pipeline)
 ```
 
-LiveViews subscribe to the single `"measurements"` PubSub topic. Broadcast shapes
-include `{:result, measurement}`, `{:test_failed, reason}`, `{:health, id,
-transition}`, and the live progress events. **A LiveView that subscribes must
-no-op every shape on the topic**, not just the ones it renders - any unhandled
-one crashes the LV.
+LiveViews subscribe to the single `"measurements"` PubSub topic. A terminal
+event is emitted for every outcome so the UI never waits on a timer. Broadcast
+shapes:
+
+- `{:result, measurement}` - a run finished (Ookla or ping).
+- `{:speedtest_progress, phase, data}` - per-phase Ookla NDJSON (download /
+  upload bandwidth).
+- `{:ping_progress, data}` - per-sample ping (cumulative avg / jitter / loss).
+- `{:health, id, transition}` - a health state change.
+- `{:test_failed, reason}` - a terminal failure.
+
+**A LiveView that subscribes must no-op every shape on the topic**, not just the
+ones it renders - any unhandled one crashes the LV.
 
 Stateful navigation flows through `push_patch` + URL params in `handle_params`;
 charts stream via `push_event`. The dashboard's chart seam is one `:chart_config`

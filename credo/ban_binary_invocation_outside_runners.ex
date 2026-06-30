@@ -56,8 +56,6 @@ defmodule Baudflow.CredoChecks.BanBinaryInvocationOutsideRunners do
   defp in_lib?(filename) when is_binary(filename), do: String.starts_with?(filename, "lib/")
   defp in_lib?(_), do: false
 
-  defp runner_impl?(filename) when is_binary(filename),
-    do: String.starts_with?(filename, "lib/baudflow/test_runners/")
-
-  defp runner_impl?(_), do: false
+  # Only reached after `in_lib?/1` short-circuits true, so `filename` is a binary.
+  defp runner_impl?(filename), do: String.starts_with?(filename, "lib/baudflow/test_runners/")
 end
