@@ -74,16 +74,17 @@ defmodule Baudflow.Scheduling do
   # --- Scheduling -------------------------------------------------------------
 
   @doc """
-  Return the enabled schedules whose cron matches the current minute.
+  Return the enabled schedules whose cron matches `now` (default: this minute).
 
-  A schedule with an unparseable cron is logged and skipped - never raised - so
-  one bad row cannot crash the per-minute scheduler queue. (The changeset
-  rejects bad crons at write time; this is the defensive belt.)
+  `now` is a parameter (defaulting to the current wall-clock) so tests can pin
+  it - reading the clock inside made "matches the current minute" assertions
+  flaky on wall-clock coincidence. A schedule with an unparseable cron is
+  logged and skipped - never raised - so one bad row cannot crash the
+  per-minute scheduler queue. (The changeset rejects bad crons at write time;
+  this is the defensive belt.)
   """
-  @spec due_now() :: [Schedule.t()]
-  def due_now do
-    now = DateTime.utc_now()
-
+  @spec due_now(DateTime.t()) :: [Schedule.t()]
+  def due_now(now \\ DateTime.utc_now()) do
     Schedule
     |> where(enabled: true)
     |> Repo.all()
@@ -108,14 +109,19 @@ defmodule Baudflow.Scheduling do
   end
 
   @doc """
-  Compute the next time the schedule fires after now, or `nil` if the cron is
+  Compute the next time the schedule fires after `now`, or `nil` if the cron is
   unparseable or fires less often than once a week.
+
+  `now` is a parameter (defaulting to the current wall-clock) rather than read
+  inside the body, so the whole computation pins to one instant and tests can
+  freeze it - reading the clock internally made time-based assertions flaky on
+  wall-clock coincidence.
   """
-  @spec next_run_at(Schedule.t()) :: DateTime.t() | nil
-  def next_run_at(%Schedule{} = schedule) do
+  @spec next_run_at(Schedule.t(), DateTime.t()) :: DateTime.t() | nil
+  def next_run_at(%Schedule{} = schedule, now \\ DateTime.utc_now()) do
     case Schedule.parse_cron(active_cron(schedule)) do
       {:ok, expression} ->
-        base = now_truncated_to_minute() |> DateTime.add(60, :second)
+        base = truncate_to_minute(now) |> DateTime.add(60, :second)
         find_next(expression, base, 0)
 
       {:error, _} ->
@@ -133,8 +139,8 @@ defmodule Baudflow.Scheduling do
 
   defp find_next(_expression, _candidate, _step), do: nil
 
-  defp now_truncated_to_minute do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+  defp truncate_to_minute(now) do
+    now = DateTime.truncate(now, :second)
     %{now | second: 0}
   end
 
@@ -142,15 +148,16 @@ defmodule Baudflow.Scheduling do
   The soonest next fire across enabled schedules, or `nil` when none run.
 
   Returns `%{name: schedule_name, at: datetime}` for the enabled schedule whose
-  `next_run_at/1` is earliest. Read-only - the dashboard "next test" card uses
-  it; never mutates schedule state.
+  `next_run_at/2` is earliest. `now` threads through to `next_run_at/2` so every
+  schedule is evaluated against the same instant (and tests can pin it).
+  Read-only - the dashboard "next test" card uses it; never mutates schedule state.
   """
-  @spec next_run() :: %{name: String.t(), at: DateTime.t()} | nil
-  def next_run do
+  @spec next_run(DateTime.t()) :: %{name: String.t(), at: DateTime.t()} | nil
+  def next_run(now \\ DateTime.utc_now()) do
     Schedule
     |> where(enabled: true)
     |> Repo.all()
-    |> Enum.map(fn schedule -> {schedule.name, next_run_at(schedule)} end)
+    |> Enum.map(fn schedule -> {schedule.name, next_run_at(schedule, now)} end)
     |> Enum.reject(fn {_name, at} -> is_nil(at) end)
     |> Enum.min_by(fn {_name, at} -> at end, fn -> nil end)
     |> case do
@@ -164,8 +171,8 @@ defmodule Baudflow.Scheduling do
   @doc """
   The cron expression in effect right now: the `escalated_cron` when the schedule
   is escalated (`escalation_level > 0`) and one is configured, else the base
-  `cron`. The single reader for "which cadence runs now" - `due_now/0`,
-  `next_run_at/1` (and so the dashboard "next test" card + the schedules table)
+  `cron`. The single reader for "which cadence runs now" - `due_now/1`,
+  `next_run_at/2` (and so the dashboard "next test" card + the schedules table)
   all read it, so adaptive testing (#13) is a switch here, not a parallel path.
 
   `escalation_level` is maintained by `Health` regardless; without an

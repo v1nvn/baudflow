@@ -10,7 +10,7 @@ Network speed monitoring dashboard. Phoenix 1.8 + LiveView, Oban, Postgres. A cr
 
 Run quality gates through the `justfile` (`just`), not `mix` directly - the recipes are the source of truth and mirror what CI runs.
 
-- `just check` - **the done-gate.** Runs the full CI gate locally: `mix lint` + the test suite against a throwaway Docker Postgres (`just test`, `MIX_ENV=test`) - the two steps ci.yml runs, verbatim. Run it before declaring a task done or pushing. Needs Docker.
+- `just check` - **the done-gate, and it must be green (exit 0) before a task is done or pushed.** It runs every gate `.github/workflows/ci.yml` runs, verbatim: `mix lint` + `just assets-check` (`npm ci`, `typecheck`, `lint`, `format:check`) + the test suite against a throwaway Docker Postgres (`just test`, `MIX_ENV=test`). Run it - don't eyeball "looks fine" or stop at `just precommit`. Needs Docker.
 - `just lint` - the no-DB static gate (`mix lint`: format-**check**, deps audit, warnings-as-errors, credo `--strict`, sobelow, dialyzer). Fast; use it when Docker isn't available.
 - `just precommit` - fast loop (`mix precommit` then `just test`: compile warnings, `deps.unlock --unused`, format, then the suite). **Not CI-equivalent** - it skips the static gate, so it can be green while `just lint`/CI is red. Never use it alone as the done-gate; that is exactly how CI stayed red unnoticed.
 - `just test [path.exs]` / `just test --failed` to target or rerun failures.
@@ -47,7 +47,8 @@ Run quality gates through the `justfile` (`just`), not `mix` directly - the reci
 - Use `Req` for every outbound HTTP call. Prefer `Req.Test` plugs (app env) for stubs, not Mox.
 - Derive timeouts and magic numbers from module attributes (`@timeout_seconds`) - single source of truth.
 - Keep tests deterministic - fake speedtest binary, fixed timestamps, `start_supervised!/1`, assert by DOM id.
-- Run `just check` before declaring a task done - it reproduces CI exactly; `just precommit` is a fast loop that skips `lint` and goes green-locally-red-on-CI if used alone.
+- Pin time in tests of clock-derived logic: take a `now` param (default `DateTime.utc_now/0`) and pass a fixed `~U[...]` - never read `utc_now` inside the function and dodge the current minute with `rem(minute + n, 60)`. That dodge is how `next_run` flaked in CI's `:59` window (every-minute and `0 * * * *` tie at the top of the hour).
+- Run `just check` and see it exit green before declaring a task done or pushing - it reproduces CI exactly; `just precommit` is a fast loop that skips `lint` and goes green-locally-red-on-CI if used alone.
 - Build polished UIs - dark-only Tron neon palette (HSL tokens in `@theme`, chart colors in `chartColors()`).
 - Render user-facing timestamps via `<.local_time>` + the `LocalTime` JS hook (browser-local) - the server can't know the viewer's timezone, so the only `Calendar.strftime` on a datetime lives inside that component as a no-JS fallback.
 - Put a unique DOM `id` on every `phx-hook` element - LiveView won't attach a hook without one (silent no-op), and use the record id inside `:for` loops to stay unique.

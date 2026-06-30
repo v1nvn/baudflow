@@ -71,15 +71,14 @@ defmodule Baudflow.SchedulingTest do
 
   describe "due_now/0" do
     test "returns enabled schedules whose cron matches the current minute" do
+      # Pinned instant (minute 30): "Always" matches every minute, "Rare" fires
+      # on minute 15 and so is not due at this instant.
+      now = ~U[2026-03-15 10:30:42Z]
+
       {:ok, _always} = Scheduling.create(%{name: "Always", cron: "* * * * *", enabled: true})
+      {:ok, _rare} = Scheduling.create(%{name: "Rare", cron: "15 * * * *", enabled: true})
 
-      # a minute guaranteed distinct from "now" (+5, mod 60 - survives roll-over)
-      distinct_minute = rem(DateTime.utc_now().minute + 5, 60)
-
-      {:ok, _rare} =
-        Scheduling.create(%{name: "Rare", cron: "#{distinct_minute} * * * *", enabled: true})
-
-      due = Enum.map(Scheduling.due_now(), & &1.name)
+      due = Enum.map(Scheduling.due_now(now), & &1.name)
       assert "Always" in due
       refute "Rare" in due
     end
@@ -192,12 +191,9 @@ defmodule Baudflow.SchedulingTest do
   describe "next_run_at/1" do
     test "computes the next fire time for an every-minute schedule" do
       {:ok, schedule} = Scheduling.create(%{name: "S", cron: "* * * * *"})
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      next = Scheduling.next_run_at(schedule)
-
-      assert DateTime.compare(next, now) == :gt
-      assert DateTime.diff(next, now, :second) <= 60
+      assert Scheduling.next_run_at(schedule, ~U[2026-03-15 10:30:42Z]) ==
+               ~U[2026-03-15 10:31:00Z]
     end
 
     test "returns nil for an unparseable cron" do
@@ -210,11 +206,12 @@ defmodule Baudflow.SchedulingTest do
       {:ok, _hourly} = Scheduling.create(%{name: "Hourly", cron: "0 * * * *"})
       {:ok, _minutely} = Scheduling.create(%{name: "Minutely", cron: "* * * * *"})
 
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      assert %{name: "Minutely", at: at} = Scheduling.next_run()
-      # a * * * * schedule always fires within the coming minute
-      assert DateTime.compare(at, now) == :gt
-      assert DateTime.diff(at, now, :second) <= 60
+      # Pin the instant: at 10:30:42 the minutely schedule next fires at 10:31:00
+      # and the hourly at 11:00:00, so the minutely is the unambiguous winner.
+      # Reading the wall clock here made this flaky - in minute :59 both fire at
+      # the top of the next hour (a genuine tie with no well-defined winner).
+      assert %{name: "Minutely", at: ~U[2026-03-15 10:31:00Z]} =
+               Scheduling.next_run(~U[2026-03-15 10:30:42Z])
     end
 
     test "ignores disabled schedules" do
@@ -256,38 +253,36 @@ defmodule Baudflow.SchedulingTest do
     end
 
     test "due_now/0 fires on the escalated cron while a schedule is escalated" do
-      # base cron deliberately does NOT match the current minute.
-      distinct_minute = rem(DateTime.utc_now().minute + 5, 60)
+      # Pinned instant (minute 30): base cron (minute 15) does NOT match, so the
+      # schedule is not due until it escalates to the every-minute cadence.
+      now = ~U[2026-03-15 10:30:42Z]
 
       {:ok, schedule} =
         Scheduling.create(%{
           name: "Escalatable",
-          cron: "#{distinct_minute} * * * *",
+          cron: "15 * * * *",
           escalated_cron: "* * * * *",
           enabled: true
         })
 
-      refute "Escalatable" in Enum.map(Scheduling.due_now(), & &1.name)
+      refute "Escalatable" in Enum.map(Scheduling.due_now(now), & &1.name)
 
       {:ok, 1} = Scheduling.escalate(schedule)
 
       # Escalated to minutely → now due even though the base (hourly) cron isn't.
-      assert "Escalatable" in Enum.map(Scheduling.due_now(), & &1.name)
+      assert "Escalatable" in Enum.map(Scheduling.due_now(now), & &1.name)
     end
 
-    test "next_run_at/1 reflects the escalated cadence while escalated" do
+    test "next_run_at/2 reflects the escalated cadence while escalated" do
       {:ok, schedule} =
         Scheduling.create(%{name: "S", cron: "0 * * * *", escalated_cron: "* * * * *"})
 
       {:ok, 1} = Scheduling.escalate(schedule)
       escalated = Scheduling.get_schedule!(schedule.id)
 
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      next = Scheduling.next_run_at(escalated)
-
-      # Minutely cadence fires within the coming minute, not up to an hour out.
-      assert DateTime.compare(next, now) == :gt
-      assert DateTime.diff(next, now, :second) <= 60
+      # Minutely cadence fires at the next minute boundary, not up to an hour out.
+      assert Scheduling.next_run_at(escalated, ~U[2026-03-15 10:30:42Z]) ==
+               ~U[2026-03-15 10:31:00Z]
     end
   end
 
