@@ -86,3 +86,25 @@ See the [Phoenix deployment guides](https://hexdocs.pm/phoenix/deployment.html) 
 - [Phoenix Guides](https://hexdocs.pm/phoenix/overview.html)
 - [Phoenix Docs](https://hexdocs.pm/phoenix)
 - [Elixir Forum](https://elixirforum.com/c/phoenix-forum)
+
+## License
+
+Copyright (C) 2026 Vineet Kumar (@v1nvn)
+
+Baudflow is free software: you can redistribute it and/or modify it under the
+terms of the GNU Affero General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+Baudflow is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the
+[GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html)
+for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+The bundled [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli) is a
+third-party binary under its own separate license terms; the AGPL above applies
+only to the baudflow source, not the Ookla binary.

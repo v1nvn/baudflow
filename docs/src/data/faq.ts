@@ -41,7 +41,7 @@ export const faqs: Faq[] = [
   },
   {
     q: 'How is the Ookla CLI licensed?',
-    a: 'The Ookla Speedtest CLI is a third-party binary bundled into the image for convenience; you accept Ookla\'s license terms by using it. See the Speedtest CLI license for details. baudflow itself is MIT.',
+    a: 'The Ookla Speedtest CLI is a third-party binary bundled into the image for convenience; you accept Ookla\'s license terms by using it. See the Speedtest CLI license for details. baudflow itself is AGPL-3.0.',
   },
   {
     q: 'How long is data kept?',

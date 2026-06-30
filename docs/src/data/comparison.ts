@@ -49,6 +49,6 @@ export const comparisonRows: ComparisonRow[] = [
   { f: 'Multi-language UI', b: 'no', s: 'yes', note: 'ST: community translations via Crowdin' },
   { f: 'Database', b: 'partial', s: 'yes', note: 'Baudflow: PostgreSQL only · ST: SQLite, MySQL, or Postgres' },
   { f: 'Image ecosystem', b: 'partial', s: 'yes', note: 'Baudflow: multi-arch Docker · ST: LinuxServer.io (Synology, Unraid, NAS)' },
-  { f: 'License', b: 'yes', s: 'yes', note: 'Both MIT' },
+  { f: 'License', b: 'yes', s: 'yes', note: 'Baudflow: AGPL-3.0 · ST: MIT' },
   { f: 'Stack', b: 'yes', s: 'yes', note: 'Baudflow: Elixir / Phoenix LiveView + Oban · ST: PHP / Laravel + Filament' },
 ];
