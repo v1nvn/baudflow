@@ -1,7 +1,6 @@
 import js from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
 import eslintConfigPrettier from 'eslint-config-prettier/flat'
-import importX from 'eslint-plugin-import-x'
 import perfectionist from 'eslint-plugin-perfectionist'
 import prettierRecommended from 'eslint-plugin-prettier/recommended'
 import promise from 'eslint-plugin-promise'
@@ -16,8 +15,6 @@ export default defineConfig([
   {
     extends: [
       js.configs['recommended'],
-      importX.flatConfigs.recommended,
-      importX.flatConfigs.typescript,
       ...tseslint.configs.strictTypeChecked,
       ...tseslint.configs.stylisticTypeChecked,
       stylistic.configs.customize({
@@ -40,13 +37,6 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    settings: {
-      'import-x/resolver': {
-        typescript: {
-          project: './tsconfig.json',
-        },
-      },
-    },
     rules: {
       'no-unused-vars': 'off', // handled by @typescript-eslint/no-unused-vars
       // The CRT/ping readouts intentionally interpolate numbers (latency, mbps,
@@ -56,7 +46,6 @@ export default defineConfig([
         'error',
         { allowNumber: true },
       ],
-      'import-x/order': 'off', // perfectionist owns import ordering
       curly: 'error',
       'func-style': ['error', 'declaration'],
       'no-else-return': 'error',

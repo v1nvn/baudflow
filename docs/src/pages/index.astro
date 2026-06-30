@@ -66,19 +66,21 @@ const softwareSchema = {
 >
   <!-- HERO -->
   <section class="hero">
-    <div class="container">
-      <span class="kicker">Self-hosted speed test tracker</span>
-      <h1>Know your <em>network.</em><br />Down to the last megabit.</h1>
-      <p class="lede">
-        Baudflow is a self-hosted speed test tracker that runs automated Ookla
-        speed tests and live TCP-connect pings on a schedule, streams every run
-        in real time, and turns the results into an actionable picture of your
-        connection's health.
-      </p>
-      <div class="ctas">
-        <a class="btn btn-fill" href={`${BASE}#install`}>Get started</a>
-        <a class="btn btn-ghost" href={`${BASE}why/`}>Why baudflow?</a>
-        <a class="btn btn-ghost" href={gh} rel="noopener">Star on GitHub</a>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="kicker">Self-hosted speed test tracker</span>
+        <h1>Know your <em>network.</em><br />Down to the last megabit.</h1>
+        <p class="lede">
+          Baudflow is a self-hosted speed test tracker that runs automated Ookla
+          speed tests and live TCP-connect pings on a schedule, streams every run
+          in real time, and turns the results into an actionable picture of your
+          connection's health.
+        </p>
+        <div class="ctas">
+          <a class="btn btn-fill" href={`${BASE}#install`}>Get started</a>
+          <a class="btn btn-ghost" href={`${BASE}why/`}>Why baudflow?</a>
+          <a class="btn btn-ghost" href={gh} rel="noopener">Star on GitHub</a>
+        </div>
       </div>
       <div class="hero-scope"><Screenshot src={oscilloscope} alt="A live Ookla speed test streaming into baudflow's CRT oscilloscope, download phase, building in real time." /></div>
     </div>
@@ -145,12 +147,22 @@ const softwareSchema = {
 </BaseLayout>
 
 <style>
-  .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
-  .hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 800; max-width: 18ch; margin: 0.7rem auto 0.9rem; }
+  .hero { padding: 3.5rem 0 2.5rem; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.75rem; align-items: center; }
+  .hero-copy { text-align: left; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 800; max-width: 16ch; margin: 0.7rem 0 0.9rem; }
   .hero h1 em { font-style: normal; color: var(--cyan); }
-  .lede { color: var(--text-dim); max-width: 56ch; margin: 0 auto 1.7rem; }
-  .ctas { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.4rem; }
-  .hero-scope { max-width: 680px; margin: 0 auto; }
+  .lede { color: var(--text-dim); max-width: 52ch; margin: 0 0 1.7rem; }
+  .ctas { display: flex; gap: 0.7rem; justify-content: flex-start; flex-wrap: wrap; margin-bottom: 0; }
+  .hero-scope { min-width: 0; }
+  @media (max-width: 880px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .hero-copy { text-align: center; }
+    .hero h1 { margin-left: auto; margin-right: auto; }
+    .lede { margin-left: auto; margin-right: auto; }
+    .ctas { justify-content: center; }
+    .hero-scope { max-width: 680px; margin: 0 auto; }
+  }
 
   .why-teaser { border-top: 1px solid var(--border); }
   .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }

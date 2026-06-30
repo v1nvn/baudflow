@@ -4,15 +4,15 @@ A self-hosted network speed monitoring dashboard built with Phoenix LiveView. Ba
 
 ## Features
 
-- **Automated & manual speed tests** - schedule tests on a cron or trigger one from the dashboard
-- **Live speedtest visualization** - CRT-style oscilloscope display with real-time waveform, phase tracking (ping → download → upload), and live stats as the test runs
-- **Real-time dashboard** - historical charts for download/upload speeds, latency, jitter, packet loss, and test duration via Chart.js
-- **NDJSON streaming** - speedtest CLI output streamed line-by-line via Erlang ports for instant progress updates
-- **Run history** - browse past test runs with success/failure status
-- **Per-result detail** - drill into ping, jitter, download, upload, server, and ISP info for any individual measurement
-- **Configurable settings** - cron schedule, preferred/blocked servers, retention policy, degradation thresholds
-- **Background processing** - Oban workers for test execution, scheduling, cleanup, and notifications
-- **Health endpoint** - `GET /health` for uptime monitoring
+- Schedule tests on a cron, or trigger one from the dashboard
+- Watch each test run on a CRT-style oscilloscope with real-time waveform, phase tracking (ping → download → upload), and live stats
+- Browse historical charts for download/upload speeds, latency, jitter, packet loss, and test duration via Chart.js
+- Speedtest CLI output streams line-by-line over Erlang ports for instant progress updates
+- Browse past test runs with success/failure status
+- Drill into ping, jitter, download, upload, server, and ISP info for any individual measurement
+- Configure the cron schedule, preferred/blocked servers, retention policy, and degradation thresholds
+- Oban workers handle test execution, scheduling, cleanup, and notifications
+- Expose `GET /health` for uptime monitoring
 
 ## Quick Start
 
