@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.11.0](https://github.com/v1nvn/baudflow/compare/v0.10.2...v0.11.0) (2026-06-30)
+
+
+
+
+### Features:
+
+* added AGPL-3.0 LICENSE by v1nvn
+
+### Bug Fixes:
+
+* flaky schedule tests by v1nvn
+
+* reorganize docs by v1nvn
+
 ## [v0.10.2](https://github.com/v1nvn/baudflow/compare/v0.10.1...v0.10.2) (2026-06-30)
 
 
