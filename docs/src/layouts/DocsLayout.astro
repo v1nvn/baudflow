@@ -94,10 +94,9 @@ const breadcrumbSchema = {
     font-weight: 600;
     color: var(--text);
     text-decoration: none;
-    border-left: 2px solid transparent;
   }
   .sidebar > nav > a:hover { background: var(--surface-2); }
-  .sidebar > nav > a.active { color: var(--accent); border-left-color: var(--accent); background: hsl(198 95% 52% / 0.06); }
+  .sidebar > nav > a.active { color: var(--accent); background: hsl(198 95% 52% / 0.06); }
   .section-group { display: flex; flex-direction: column; gap: 0.1rem; margin-top: 0.7rem; }
   .section-label {
     font-family: var(--font-mono);
@@ -114,10 +113,9 @@ const breadcrumbSchema = {
     font-size: 0.86rem;
     color: var(--text-dim);
     text-decoration: none;
-    border-left: 2px solid transparent;
   }
   .section-group a:hover { color: var(--text); background: var(--surface-2); }
-  .section-group a.active { color: var(--accent); border-left-color: var(--accent); background: hsl(198 95% 52% / 0.06); }
+  .section-group a.active { color: var(--accent); background: hsl(198 95% 52% / 0.06); }
   .docs-content { min-width: 0; }
   .pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
   .pager-link { font-size: 0.85rem; color: var(--text-dim); text-decoration: none; padding: 0.55rem 0.9rem; border: 1px solid var(--border); border-radius: 0.5rem; }
@@ -128,7 +126,5 @@ const breadcrumbSchema = {
     .sidebar nav { position: static; flex-direction: row; flex-wrap: wrap; gap: 0.35rem; }
     .section-group { flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 0.35rem; }
     .section-label { width: 100%; padding: 0.6rem 0 0.1rem; }
-    .sidebar a, .section-group a { border-left: none; border-bottom: 2px solid transparent; }
-    .sidebar a.active, .section-group a.active { border-left: none; border-bottom-color: var(--accent); }
   }
 </style>

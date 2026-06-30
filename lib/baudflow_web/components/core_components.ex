@@ -58,10 +58,7 @@ defmodule BaudflowWeb.CoreComponents do
     >
       <div class={[
         "glass-card px-4 py-3 shadow-lg shadow-black/20",
-        "flex items-start gap-3 text-sm cursor-pointer",
-        "border-l-4",
-        @kind == :info && "border-l-info",
-        @kind == :error && "border-l-error"
+        "flex items-start gap-3 text-sm cursor-pointer"
       ]}>
         <.icon
           :if={@kind == :info}

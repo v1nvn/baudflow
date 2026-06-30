@@ -145,8 +145,7 @@ code, pre, kbd, samp { font-family: var(--font-mono); }
 .prose blockquote {
   margin: 1.5rem 0;
   padding: 0.8rem 1.1rem;
-  border-left: 3px solid var(--accent);
   background: var(--surface-2);
-  border-radius: 0 0.5rem 0.5rem 0;
+  border-radius: 0.5rem;
   color: var(--text-dim);
 }
