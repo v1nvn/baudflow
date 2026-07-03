@@ -175,15 +175,8 @@ defmodule BaudflowWeb.PingLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/ping")
       assert_push_event(lv, "chart_data", _)
 
-      # Both ride the shared "measurements" topic but the ping page has no view
-      # for either - it must no-op them rather than crash the LiveView.
-      Phoenix.PubSub.broadcast(
-        Baudflow.PubSub,
-        "measurements",
-        {:speedtest_progress, "download", %{}}
-      )
-
-      Phoenix.PubSub.broadcast(Baudflow.PubSub, "measurements", {:health, 1, :breach})
+      send(lv.pid, {:speedtest_progress, "download", %{}})
+      send(lv.pid, {:health, 1, :breach})
 
       assert render(lv) =~ "Run Ping"
     end

@@ -1,6 +1,6 @@
 ---
 title: Self host
-description: Deploy a self-hosted speed test with baudflow three ways: Docker run, Docker Compose, Kubernetes. Multi-arch non-root image, Ookla CLI bundled, no elevated capabilities, /health and /metrics included.
+description: "Deploy a self-hosted speed test with baudflow three ways: Docker run, Docker Compose, Kubernetes. Multi-arch non-root image, Ookla CLI bundled, no elevated capabilities, /health and /metrics included."
 section: Guides
 order: 10
 article: true
