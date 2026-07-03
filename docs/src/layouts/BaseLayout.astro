@@ -52,8 +52,12 @@ const jsonLdBlocks = [websiteSchema, ...pageSchemas];
     <Font cssVariable="--font-mono" preload />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="hsl(224, 38%, 4.5%)" />
+    <link rel="icon" type="image/png" sizes="96x96" href={`${BASE}favicon-96x96.png`} />
     <link rel="icon" type="image/svg+xml" href={`${BASE}favicon.svg`} />
-    <link rel="icon" type="image/x-icon" href={`${BASE}favicon.ico`} />
+    <link rel="shortcut icon" href={`${BASE}favicon.ico`} />
+    <link rel="apple-touch-icon" sizes="180x180" href={`${BASE}apple-touch-icon.png`} />
+    <link rel="manifest" href={`${BASE}site.webmanifest`} />
+    <meta name="apple-mobile-web-app-title" content="Baudflow" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
