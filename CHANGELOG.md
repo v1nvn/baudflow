@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.11.3](https://github.com/v1nvn/baudflow/compare/v0.11.2...v0.11.3) (2026-07-03)
+
+
+
+
+### Bug Fixes:
+
+* ci failures by v1nvn
+
+* humanize by v1nvn
+
+* refine guides by v1nvn
+
 ## [v0.11.2](https://github.com/v1nvn/baudflow/compare/v0.11.1...v0.11.2) (2026-07-03)
 
 
