@@ -27,6 +27,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Write IndexNow key file
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: '[ -n "$INDEXNOW_KEY" ] && printf %s "$INDEXNOW_KEY" > "docs/public/${INDEXNOW_KEY}.txt" || true'
       - name: Build Astro site
         uses: withastro/action@v6
         with:
@@ -42,3 +46,51 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  indexnow:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit URLs to IndexNow
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${INDEXNOW_KEY:-}" ]; then
+            echo 'INDEXNOW_KEY secret not set; skipping submission.'
+            exit 0
+          fi
+          HOST=baudflow.com
+          # Astro emits sitemap-index.xml -> sitemap-N.xml; follow the index and
+          # collect every <loc> from each child sitemap.
+          mapfile -t URLS < <(
+            curl -fsSL --max-time 15 "https://$HOST/sitemap-index.xml" |
+              grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g' |
+              while IFS= read -r child; do curl -fsSL --max-time 15 "$child"; done |
+              grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g' |
+              sort -u
+          )
+          if [ "${#URLS[@]}" -eq 0 ]; then
+            echo 'No URLs found in sitemap; nothing to submit.'
+            exit 0
+          fi
+          echo "Submitting ${#URLS[@]} URLs to IndexNow…"
+          body=$(
+            printf '%s\n' "${URLS[@]}" | jq -R . | jq -s \
+              --arg host "$HOST" \
+              --arg key "$INDEXNOW_KEY" \
+              --arg kl "https://$HOST/$INDEXNOW_KEY.txt" \
+              '{host:$host, key:$key, keyLocation:$kl, urlList:.}'
+          )
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 -X POST \
+            -H 'Content-Type: application/json' --data "$body" \
+            "https://api.indexnow.org/indexnow")
+          case "$code" in
+            200) echo 'IndexNow: OK (URLs submitted).';;
+            202) echo 'IndexNow: Accepted (key validation pending).';;
+            400) echo "::error::IndexNow 400 Bad Request (invalid payload)."; exit 1;;
+            403) echo "::error::IndexNow 403 Forbidden — key file missing at https://$HOST/$INDEXNOW_KEY.txt or content mismatch."; exit 1;;
+            422) echo "::error::IndexNow 422 — URLs not under host '$HOST' or key fails schema check."; exit 1;;
+            429) echo "::warning::IndexNow 429 Too Many Requests; will retry on next deploy."; exit 0;;
+            *)   echo "::error::IndexNow unexpected HTTP $code."; exit 1;;
+          esac
