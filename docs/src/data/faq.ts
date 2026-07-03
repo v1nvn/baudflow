@@ -17,7 +17,7 @@ export const faqs: Faq[] = [
   },
   {
     q: 'Can baudflow prove my ISP isn\'t delivering the speed I pay for?',
-    a: 'Yes. baudflow compares every automated speed test against the promised speed you configure, then rolls the results into an SLA percentage — "delivered 91.3% of promised speed this month" — plus breach streaks and a calendar heatmap of when your connection fell short. Because it stores the full raw result of every test (server, ISP, ping, jitter, packet loss) and never backfills, the record is auditable from day one: export the chart, scrape /metrics into Grafana, or screenshot the heatmap. It is the kind of evidence an ISP actually has to answer for, instead of a bare Mbps number or "it feels slow."',
+    a: 'Yes. baudflow compares every automated speed test against the promised speed you configure, then rolls the results into an SLA percentage ("delivered 91.3% of promised speed this month"), plus breach streaks and a calendar heatmap of when your connection fell short. Because it stores the full raw result of every test (server, ISP, ping, jitter, packet loss) and never backfills, the record is auditable from day one: export the chart, scrape /metrics into Grafana, or screenshot the heatmap. It is the kind of evidence an ISP actually has to answer for, instead of a bare Mbps number or "it feels slow."',
     tags: ['objection'],
   },
   {

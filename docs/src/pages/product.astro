@@ -22,13 +22,13 @@ const points = [
     icon: 'cadence',
     point: 'One fixed cadence is wasteful',
     payoff: 'Adaptive cadence',
-    body: 'An hourly test gives you a single point per hour — during an outage that is a blur, and the rest of the time you are burning bandwidth for nothing. A breached schedule runs faster on its own until it recovers, then slows back down: a detailed outage timeline without paying for it in bandwidth.',
+    body: 'An hourly test gives you a single point per hour. During an outage that is a blur, and the rest of the time you are burning bandwidth for nothing. A breached schedule runs faster on its own until it recovers, then slows back down: a detailed outage timeline without paying for it in bandwidth.',
   },
   {
     icon: 'ping',
     point: 'Latency, jitter, and loss degrade before throughput',
     payoff: 'First-class ping',
-    body: 'A speed test every hour will happily report full speed while your video calls fall apart. A continuous TCP-connect ping runner with its own live console catches what throughput misses — most outages are its domain.',
+    body: 'A speed test every hour will happily report full speed while your video calls fall apart. A continuous TCP-connect ping runner with its own live console catches what throughput misses; most outages are its domain.',
   },
   {
     icon: 'sla',
@@ -40,7 +40,7 @@ const points = [
     icon: 'pipeline',
     point: 'A pile of if-statements cries wolf',
     payoff: 'Four-layer alert pipeline',
-    body: 'Threshold checks bolted onto a cron fire on every re-check. baudflow\'s event → policy → template → channel pipeline gates a breach to fire exactly once — and notifies on recovery and on outright failure — so an alert means something.',
+    body: 'Threshold checks bolted onto a cron fire on every re-check. baudflow\'s event → policy → template → channel pipeline gates a breach to fire exactly once, and notifies on recovery and on outright failure, so an alert means something.',
   },
 ];
 
@@ -157,7 +157,7 @@ const breadcrumbSchema = {
       </div>
       <div class="prose">
         <p>
-          baudflow is a monitoring platform, not a cron job with a web UI — built
+          baudflow is a monitoring platform, not a cron job with a web UI, built
           for homelabbers who want proof, patterns, and alerts, not just a number.
         </p>
         <p>

@@ -1,6 +1,6 @@
 ---
 title: Self host
-description: Deploy a self-hosted speed test with baudflow three ways — Docker run, Docker Compose, Kubernetes. Multi-arch non-root image, Ookla CLI bundled, no elevated capabilities, /health and /metrics included.
+description: Deploy a self-hosted speed test with baudflow three ways: Docker run, Docker Compose, Kubernetes. Multi-arch non-root image, Ookla CLI bundled, no elevated capabilities, /health and /metrics included.
 section: Guides
 order: 10
 article: true
@@ -9,16 +9,16 @@ updated: "2026-07-03"
 
 A self-hosted speed test runs the Ookla Speedtest CLI from your own network, on
 a schedule, and keeps every result. baudflow ships as a multi-arch, non-root
-image — the CLI already inside, no elevated capabilities. Below: `docker run`,
+image: the CLI is already inside, with no elevated capabilities. Below: `docker run`,
 Compose, and Kubernetes.
 
 ## You need
 
-- **Postgres** — any reachable 14+ instance. baudflow owns its schema and migrates it on boot.
-- **A secret** — `SECRET_KEY_BASE`, 64+ bytes. Generate with `openssl rand -base64 48`.
-- **A host + port** — the container listens on `4000`; put your reverse proxy in front.
+- **Postgres**: any reachable 14+ instance. baudflow owns its schema and migrates it on boot.
+- **A secret**: `SECRET_KEY_BASE`, 64+ bytes. Generate with `openssl rand -base64 48`.
+- **A host + port**: the container listens on `4000`; put your reverse proxy in front.
 
-That's it — no config file, no volume mount, no `CAP_NET_RAW`. Everything else is
+That's it: no config file, no volume mount, no `CAP_NET_RAW`. Everything else is
 an env var. Pick a method.
 
 ## Docker
@@ -39,7 +39,7 @@ docker run -d --name baudflow -p 4000:4000 \
 ```
 
 The release runs migrations on boot, so the first start also lays down the
-schema. Point a browser at port 4000 — this is what you should see:
+schema. Point a browser at port 4000; this is what you should see:
 
 ![baudflow running in a browser after a docker run: the live dashboard with readout, health heatmap, SLA compliance, and speed history.](../../assets/screenshots/dashboard.png)
 
@@ -197,7 +197,7 @@ kubectl -n baudflow rollout status deploy/baudflow
 
 The release migrates on boot, so the manifest above is complete on its own. To
 fail fast on a bad migration *before* the new pod serves traffic, run it as an
-init container instead — that's how the project's own cluster rolls it out:
+init container instead; that's how the project's own cluster rolls it out:
 
 ```yaml
       # add to the pod spec above to migrate before the app serves
@@ -216,7 +216,7 @@ init container instead — that's how the project's own cluster rolls it out:
 ```
 
 The `/health` probe is already wired for liveness and readiness. For TLS,
-termination lives in your Ingress — set `PHX_HOST` to the public hostname and
+termination lives in your Ingress; set `PHX_HOST` to the public hostname and
 let the proxy hold the certificate. The full operational reference (retention,
 backups, clustering) is in [Deployment](../deployment/).
 
@@ -238,7 +238,7 @@ The complete list (`POOL_SIZE`, `ECTO_IPV6`, `DNS_CLUSTER_QUERY`) is in
 
 ## Health & metrics
 
-- `GET /health` → `{"status":"ok"}` — point Uptime Kuma or a kube probe here.
+- `GET /health` → `{"status":"ok"}`: point Uptime Kuma or a kube probe here.
 - `GET /metrics` → Prometheus text, eight `baudflow_*` gauges. Scrape config and the full list are in the [metrics docs](../prometheus-metrics/).
 
 Both bypass the browser pipeline deliberately, so scrapers get plain text with
