@@ -48,5 +48,5 @@ connection. Point a schedule at any host:port that speaks TCP.
 ## What a ping result carries
 
 Latency, jitter, low, high, packet loss, and the full raw sample set. It
-carries no download/upload, so [health](../health/) skips those checks and judges
+carries no download/upload, so [health](../internet-speed-sla/) skips those checks and judges
 ping on latency alone.

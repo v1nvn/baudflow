@@ -41,7 +41,7 @@ never yields `nil`. Three modes:
 - **`off`**: no verdict.
 
 Per-schedule thresholds are a tristate (Inherit / Enabled / Disabled). See
-[Health & thresholds](../health/).
+[Health & thresholds](../internet-speed-sla/).
 
 ## Servers
 

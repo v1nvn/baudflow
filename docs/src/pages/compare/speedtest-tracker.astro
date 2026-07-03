@@ -4,7 +4,7 @@ import { BASE } from '../../utils';
 import { stRepo, stIssue, cellMark as mark, comparisonRows as rows } from '../../data/comparison';
 
 // Honest, source-cited comparison. speedtest-tracker facts verified against the
-// live repo (alexjustesen/speedtest-tracker): MIT, PHP/Laravel, ~5.8k★, v1.14.4,
+// live repo (alexjustesen/speedtest-tracker): MIT, PHP/Laravel, ~5.8k★, v1.14.5,
 // Apprise notifications, SQLite/MySQL/Postgres. Feature gaps cited by open
 // issue number so the claims stay auditable and rot slowly.
 const gh = 'https://github.com/v1nvn/baudflow';
@@ -14,7 +14,7 @@ const ogImage = new URL('og.png', site).href;
 // Derived from Astro.url so this stays in lockstep with BaseLayout's canonical
 // (and the Article/Breadcrumb `item` URLs) if the route slug ever changes.
 const pageUrl = new URL(Astro.url.pathname, site).href;
-const updated = '2026-06-27';
+const updated = '2026-07-03';
 
 const compareFaqs = [
   {
@@ -89,8 +89,9 @@ const breadcrumbSchema = {
         Two self-hosted speed test trackers, compared honestly.
         <a href={stRepo} rel="noopener">speedtest-tracker</a> is the mature,
         widely-used incumbent, a Laravel app with ~5,800 GitHub stars and a
-        LinuxServer.io image. Baudflow is a newer Phoenix LiveView alternative
-        built to ship the features its users have requested for years.
+        LinuxServer.io image. Baudflow is a newer, self-hosted alternative to
+        speedtest-tracker — a Phoenix LiveView app built to ship the features
+        its users have requested for years.
         <strong>Full disclosure: baudflow is ours</strong>, so we’ve kept this
         straight, including the places speedtest-tracker still wins.
       </p>

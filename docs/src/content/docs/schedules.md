@@ -32,7 +32,7 @@ Each schedule owns:
 | `server_id` | Pin an Ookla server (speed tests only). |
 | `target_host` | Override the ping target for this schedule. |
 | `enabled` | Disable without deleting. |
-| `threshold_*` | Per-schedule threshold override (see [Health](../health/)). |
+| `threshold_*` | Per-schedule threshold override (see [Health](../internet-speed-sla/)). |
 
 A malformed cron is rejected at write time and, as a defensive belt, logged and
 skipped at run time, so one bad row can't stall the per-minute queue.

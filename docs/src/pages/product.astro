@@ -251,6 +251,31 @@ const breadcrumbSchema = {
     </section>
   ))}
 
+  <!-- GUIDES (cluster hub → spokes) -->
+  <section class="section pguides">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Go deeper</span>
+        <h2>Guides</h2>
+        <p>Problem-first walkthroughs for the questions that bring people here, each pointing back to this catalog.</p>
+      </div>
+      <div class="pguide-grid">
+        <a class="pguide" href={`${BASE}docs/self-host/`}>
+          <h3>Self host</h3>
+          <p>Run the Ookla CLI from your own network and own every result.</p>
+        </a>
+        <a class="pguide" href={`${BASE}docs/monitor-isp-speed/`}>
+          <h3>Monitor ISP speed</h3>
+          <p>Build the record that holds your provider to what you pay for.</p>
+        </a>
+        <a class="pguide" href={`${BASE}docs/internet-speed-sla/`}>
+          <h3>Internet speed SLA</h3>
+          <p>The share of tests that hit your promised speed, tracked over time.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- HOW IT COMPARES -->
   <section id="compare" class="section compare">
     <div class="container">
@@ -397,4 +422,21 @@ const breadcrumbSchema = {
   .post-install { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; color: var(--text-dim); }
   .post-install a { color: var(--accent); text-decoration: underline; }
   .post-install a:hover { color: var(--accent-glow); }
+
+  .pguides { border-top: 1px solid var(--border); }
+  .pguide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .pguide {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    padding: 1.3rem 1.4rem;
+    text-decoration: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .pguide:hover { border-color: var(--accent); box-shadow: 0 0 18px hsl(198 95% 52% / 0.08); }
+  .pguide h3 { margin: 0 0 0.4rem; font-size: 1rem; color: var(--text); }
+  .pguide p { margin: 0; color: var(--text-dim); font-size: 0.86rem; line-height: 1.5; }
+  @media (max-width: 820px) { .pguide-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .pguide-grid { grid-template-columns: 1fr; } }
 </style>

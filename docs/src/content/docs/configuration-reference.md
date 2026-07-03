@@ -28,7 +28,7 @@ back as typed values with a safe fallback, so a bad value never crashes a queue.
 
 | Key | Default | Type | Purpose |
 |---|---|---|---|
-| `threshold_mode` | `auto` | enum | `auto` \| `absolute` \| `off`. See [Health](../health/). |
+| `threshold_mode` | `auto` | enum | `auto` \| `absolute` \| `off`. See [Health](../internet-speed-sla/). |
 | `threshold_ratio` | `0.7` | float | Auto-mode breach factor (speed < ratio×median; ping > median/ratio). |
 | `threshold_download` | `0` | float | Absolute-mode download floor (Mbps). `0` = unset. |
 | `threshold_upload` | `0` | float | Absolute-mode upload floor (Mbps). `0` = unset. |

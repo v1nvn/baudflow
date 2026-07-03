@@ -8,8 +8,10 @@ interface Props {
   current?: string;
   title: string;
   description?: string;
+  article?: boolean;
+  updated?: string;
 }
-const { current = '', title, description } = Astro.props;
+const { current = '', title, description, article = false, updated } = Astro.props;
 
 // One source for the sidebar: the whole docs collection, ordered by canonical
 // section, then by per-page `order`. prev/next walk this same linear order.
@@ -48,9 +50,28 @@ const breadcrumbSchema = {
   '@type': 'BreadcrumbList',
   itemListElement: crumbs,
 };
+
+// Opt-in for narrative/use-case pages (the folded-in guides): emit a
+// TechArticle entity alongside the breadcrumb so answer engines get article
+// semantics (author, dates). Reference docs leave `article` unset.
+const articleSchema = article
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'TechArticle',
+      headline: title,
+      ...(description ? { description } : {}),
+      ...(updated ? { datePublished: updated, dateModified: updated } : {}),
+      author: { '@type': 'Person', name: 'v1nvn', url: 'https://github.com/v1nvn' },
+      publisher: { '@type': 'Organization', name: 'Baudflow', url: site.href },
+      mainEntityOfPage: current ? new URL(`docs/${current}/`, site).href : docsUrl,
+    }
+  : null;
+const schemas = [breadcrumbSchema, articleSchema].filter(
+  (s): s is Record<string, unknown> => s !== null,
+);
 ---
 
-<BaseLayout title={title} description={description} schema={breadcrumbSchema}>
+<BaseLayout title={title} description={description} ogType={article ? 'article' : 'website'} schema={schemas}>
   <div class="container docs-grid">
     <aside class="sidebar">
       <nav>

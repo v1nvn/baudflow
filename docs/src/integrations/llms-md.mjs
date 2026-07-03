@@ -1,10 +1,3 @@
-// Generates llms.txt, llms-full.txt, and one markdown file per page from the
-// built HTML, on every `astro:build:done`. Site URL, trailing-slash policy,
-// and build format are read from Astro's own config; nothing is hardcoded.
-//
-// Adapted from the astro-llms-md integration (TS → plain ESM JS). One fix vs
-// the upstream: the homepage entry now links to /index.md (it produced /.md).
-
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { glob } from "glob";
 import { parse } from "node-html-parser";

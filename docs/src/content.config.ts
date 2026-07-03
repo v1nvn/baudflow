@@ -17,6 +17,9 @@ const docs = defineCollection({
     description: z.string().default(''),
     section: z.enum(DOC_SECTIONS).default('Guides'),
     order: z.number().default(0),
+    // Narrative/use-case pages opt into TechArticle JSON-LD + og:type=article.
+    article: z.boolean().default(false),
+    updated: z.string().optional(),
   }),
 });
 

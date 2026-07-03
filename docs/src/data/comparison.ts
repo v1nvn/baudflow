@@ -3,7 +3,7 @@
 // /compare/speedtest-tracker/ (full page) so the two never drift.
 //
 // speedtest-tracker facts verified against the live repo
-// (alexjustesen/speedtest-tracker): MIT, PHP/Laravel, ~5.8k★, v1.14.4, Apprise
+// (alexjustesen/speedtest-tracker): MIT, PHP/Laravel, ~5.8k★, v1.14.5, Apprise
 // notifications, SQLite/MySQL/Postgres. Feature gaps are cited by open issue
 // number so the claims stay auditable and rot slowly.
 

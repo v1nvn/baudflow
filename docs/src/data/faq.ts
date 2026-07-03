@@ -16,6 +16,11 @@ export const faqs: Faq[] = [
     tags: ['objection'],
   },
   {
+    q: 'Can baudflow prove my ISP isn\'t delivering the speed I pay for?',
+    a: 'Yes. baudflow compares every automated speed test against the promised speed you configure, then rolls the results into an SLA percentage — "delivered 91.3% of promised speed this month" — plus breach streaks and a calendar heatmap of when your connection fell short. Because it stores the full raw result of every test (server, ISP, ping, jitter, packet loss) and never backfills, the record is auditable from day one: export the chart, scrape /metrics into Grafana, or screenshot the heatmap. It is the kind of evidence an ISP actually has to answer for, instead of a bare Mbps number or "it feels slow."',
+    tags: ['objection'],
+  },
+  {
     q: 'How does baudflow compare to speedtest-tracker?',
     a: 'speedtest-tracker is the mature incumbent: PHP/Laravel, around 5,800 GitHub stars, broad Apprise notifications, SQLite/MySQL/Postgres support, and a multi-language UI. baudflow is a newer Elixir/Phoenix alternative that ships the features its users have requested for years: a live real-time dashboard, a first-class continuous ping runner, SLA tracking against your promised speed, and adaptive schedules. The full side-by-side comparison lives on the compare page.',
   },

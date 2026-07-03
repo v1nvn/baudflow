@@ -15,6 +15,7 @@ const site = Astro.site ?? new URL(Astro.url.origin);
 const softwareSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
+  '@id': site.href + '#software',
   name: 'Baudflow',
   applicationCategory: 'UtilitiesApplication',
   operatingSystem: 'Linux, Docker',
@@ -37,6 +38,22 @@ const softwareSchema = {
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   license: 'https://www.gnu.org/licenses/agpl-3.0.html',
   isAccessibleForFree: true,
+  logo: {
+    '@type': 'ImageObject',
+    url: new URL('favicon-96x96.png', site).href,
+    width: 96,
+    height: 96,
+    caption: 'Baudflow logo',
+  },
+  screenshot: new URL('dashboard.png', site).href,
+  sameAs: ['https://github.com/v1nvn/baudflow'],
+  knowsAbout: [
+    'Internet speed test',
+    'Network monitoring',
+    'Ookla Speedtest',
+    'Latency monitoring',
+    'SLA tracking',
+  ],
   author: { '@type': 'Person', name: 'v1nvn', url: 'https://github.com/v1nvn' },
 };
 ---
