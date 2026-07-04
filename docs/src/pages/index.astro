@@ -68,32 +68,18 @@ const softwareSchema = {
     <div class="container hero-grid">
       <div class="hero-copy">
         <span class="kicker">Self-hosted network monitor</span>
-        <h1>Know your <em>network.</em><br />Down to the last megabit.</h1>
+        <h1>A self-hosted speed test tracker and network monitor.</h1>
         <p class="lede">
-          Baudflow is a self-hosted network monitor that runs automated Ookla
-          speed tests and live TCP-connect pings on a schedule, streams every run
-          in real time, and turns the results into an actionable picture of your
-          connection's health.
+          Baudflow runs automated Ookla speed tests and live TCP-connect pings on
+          a schedule, streams every run in real time, and stores the full results
+          so you can chart health, SLA, and latency over time.
         </p>
         <div class="ctas">
-          <a class="btn btn-fill" href={`${BASE}#install`}>Get started</a>
-          <a class="btn btn-ghost" href={`${BASE}product/`}>Why baudflow?</a>
+          <a class="btn btn-fill" href={`${BASE}docs/getting-started/`}>Get started</a>
           <a class="btn btn-ghost" href={gh} rel="noopener">Star on GitHub</a>
         </div>
       </div>
       <div class="hero-scope"><Screenshot src={oscilloscope} alt="A live Ookla speed test streaming into baudflow's CRT oscilloscope, download phase, building in real time." /></div>
-    </div>
-  </section>
-
-  <!-- WHY CARE -->
-  <section class="section why-care">
-    <div class="container narrow">
-      <div class="section-head">
-        <span class="kicker">Why baudflow</span>
-        <h2>Bandwidth is the easy part. Proof is the hard part.</h2>
-        <p>A speed test gives you a number. Baudflow gives you evidence, patterns, and alerts: a monitoring platform, not a cron job.</p>
-      </div>
-      <p class="more"><a href={`${BASE}product/`}>Explore the full product →</a></p>
     </div>
   </section>
 
@@ -118,7 +104,6 @@ const softwareSchema = {
   .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.75rem; align-items: center; }
   .hero-copy { text-align: left; }
   .hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 800; max-width: 16ch; margin: 0.7rem 0 0.9rem; }
-  .hero h1 em { font-style: normal; color: var(--cyan); }
   .lede { color: var(--text-dim); max-width: 52ch; margin: 0 0 1.7rem; }
   .ctas { display: flex; gap: 0.7rem; justify-content: flex-start; flex-wrap: wrap; }
   .hero-scope { min-width: 0; }
@@ -130,13 +115,6 @@ const softwareSchema = {
     .ctas { justify-content: center; }
     .hero-scope { max-width: 680px; margin: 0 auto; }
   }
-
-  .narrow { max-width: 52rem; }
-  .why-care { border-top: 1px solid var(--border); }
-
-  .more { text-align: center; margin-top: 2rem; font-size: 0.9rem; }
-  .more a { color: var(--accent); text-decoration: none; }
-  .more a:hover { color: var(--accent-glow); text-decoration: underline; }
 
   .install { border-top: 1px solid var(--border); background: hsl(224 38% 4.5% / 0.4); }
   .post-install { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; color: var(--text-dim); }

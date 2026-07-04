@@ -78,8 +78,8 @@ degrade first; the call lags while the speed test reads full speed. baudflow
 runs a continuous TCP-connect ping runner alongside the speed tests, so those
 readings land in the same record and the same `/metrics`. It opens a TCP socket
 and times the handshake, which means it needs **no `CAP_NET_RAW`**: no
-privileged container, no capability grant. See the [ping docs](../ping/) and the
-live console in the [feature walkthrough](/product/#features).
+privileged container, no capability grant. See the [ping docs](../ping/) for the
+live per-sample console.
 
 ## Take it to your provider
 

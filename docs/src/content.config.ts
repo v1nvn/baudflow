@@ -7,7 +7,7 @@ export const DOC_SECTIONS = [
   'Getting started',
   'Guides',
   'Reference',
-  'Project',
+  'Resources',
 ] as const;
 
 const docs = defineCollection({

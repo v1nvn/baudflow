@@ -1,7 +1,7 @@
 ---
 title: Contributing
 description: "Local development: the justfile gates, the throwaway Docker test database, the fake CLI, and conventional-commit versioning."
-section: Project
+section: Resources
 order: 20
 ---
 
@@ -45,3 +45,10 @@ short version: route all DB access through a context; one `changeset/2` per
 schema; store the full raw result; display throughput in bits/sec; new backends
 and channels are behaviour implementations, not branches. When in doubt, read
 `AGENTS.md`. It's the memory.
+
+## Roadmap
+
+Remote agents reporting from multiple locations, auto-grouped incident
+timelines with traceroute context, a REST API, and exportable reports. See
+`ARCHITECTURE.md` and `CHANGELOG.md` in the repo for the broader design and
+what has already shipped.

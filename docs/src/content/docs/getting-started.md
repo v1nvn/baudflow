@@ -50,6 +50,10 @@ Prerequisites:
 - The [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli) on your `$PATH`
   (only needed for speed tests, since the TCP-connect ping runner needs no binary)
 
+> The Ookla Speedtest CLI is a third-party binary; by using it you accept
+> Ookla's license terms. The image bundles it for convenience. baudflow itself
+> is AGPL-3.0.
+
 ```bash
 git clone https://github.com/v1nvn/baudflow && cd baudflow
 mix setup      # install deps, create the database, run migrations
@@ -75,3 +79,6 @@ Or inside an IEx session: `iex -S mix phx.server`.
 
 - [Configure](../configuration/) schedules, thresholds, and notifications.
 - Add a [ping target](../ping/) or wire up [alerts](../notifications/).
+- See how baudflow [compares to speedtest-tracker](../comparison/) — the
+  incumbent is broader (Apprise, SQLite, i18n); baudflow trades that for a live
+  dashboard, continuous ping, and SLA tracking.

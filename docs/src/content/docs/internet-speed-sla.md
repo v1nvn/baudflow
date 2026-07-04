@@ -60,8 +60,7 @@ read. Every Ookla result is stored in full (download, upload, ping, jitter,
 packet loss, server, provider), and the compliance percentage, breach streaks,
 and heatmap are all computed from that store on demand. Change your promised
 speed or switch from auto to absolute and every past month re-derives under the
-new rule the next time you look. Raw data is sacred; derived views are cheap. See
-where the SLA and heatmap live in the [feature walkthrough](/product/#features).
+new rule the next time you look. Raw data is sacred; derived views are cheap.
 
 ## Breach streaks and transitions
 

@@ -32,6 +32,14 @@ automatically. No separate step is needed unless you run from source (`mix ecto.
 Notification transport wiring (for example the ntfy endpoint) is set through
 application env, not these process env vars. See [Notifications](../notifications/).
 
+## Why PostgreSQL?
+
+baudflow leans on Postgres for the workload it is good at: typed columns, JSON
+storage for the full raw result of every test, and window queries for baselines
+and SLA. The container ships with everything else; you just provide the
+database. There is no SQLite or MySQL mode, and none is planned — the schema
+uses those features deliberately.
+
 ## Health & monitoring
 
 - **`GET /health`**: returns `{"status":"ok"}`. Point an external uptime monitor
@@ -49,6 +57,14 @@ The `CleanupWorker` runs daily at 03:00 and prunes measurements older than
 `retention_days` (default 365). To preserve history, back up the PostgreSQL
 database on a cadence that matches your retention window. The full raw result
 JSON is stored on every measurement, so a backup is a complete record.
+
+## Security & access
+
+baudflow is single-user by default and assumes it sits behind your own reverse
+proxy or auth proxy (the project itself runs behind one). There is no built-in
+login yet; the default is intentionally frictionless for a homelab. Auth is on
+the roadmap. Until then, put an auth proxy in front and expose `/health` and
+`/metrics` only if you intend to scrape them from outside the boundary.
 
 ## Production checklist
 

@@ -1,7 +1,7 @@
 ---
 title: Troubleshooting
 description: "Common issues: missing speedtest binary, database connection, ping reading 100% loss, and CI-vs-local test gates."
-section: Project
+section: Resources
 order: 10
 ---
 

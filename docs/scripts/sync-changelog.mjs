@@ -18,7 +18,7 @@ const body = source.includes(marker)
 const out = `---
 title: Changelog
 description: Release history, generated from the project CHANGELOG.
-section: Project
+section: Resources
 order: 30
 ---
 

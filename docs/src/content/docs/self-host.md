@@ -242,8 +242,8 @@ The complete list (`POOL_SIZE`, `ECTO_IPV6`, `DNS_CLUSTER_QUERY`) is in
 - `GET /metrics` → Prometheus text, eight `baudflow_*` gauges. Scrape config and the full list are in the [metrics docs](../prometheus-metrics/).
 
 Both bypass the browser pipeline deliberately, so scrapers get plain text with
-no session/CSRF dance. The [feature walkthrough](/product/#features) covers what
-those gauges feed.
+no session/CSRF dance. Those gauges feed the dashboard's health views, SLA, and
+heatmap.
 
 ## Next steps
 
