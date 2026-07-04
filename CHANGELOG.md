@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.11.6](https://github.com/v1nvn/baudflow/compare/v0.11.5...v0.11.6) (2026-07-04)
+
+
+
+
+### Bug Fixes:
+
+* pages deployment on v* tags by v1nvn
+
 ## [v0.11.5](https://github.com/v1nvn/baudflow/compare/v0.11.4...v0.11.5) (2026-07-04)
 
 
