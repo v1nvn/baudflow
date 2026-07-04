@@ -70,6 +70,7 @@ const jsonLdBlocks = [websiteSchema, ...pageSchemas];
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
     <meta name="generator" content={Astro.generator} />
+    <script is:inline defer src="https://umami.v1n.space/script.js" data-website-id="778b51a5-0074-4b2b-94c6-f0d2453896ac"></script>
     {jsonLdBlocks.map((block) => (
       <script type="application/ld+json" is:inline set:html={JSON.stringify(block)} />
     ))}
