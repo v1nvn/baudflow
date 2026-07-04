@@ -39,19 +39,30 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Record version before release
+        id: before
+        run: MIX_ENV=test mix git_ops.project_info --format github-actions
+
       - name: Bump version, update changelog, commit, tag
-        run: mix git_ops.release --yes --no-major
+        run: mix git_ops.release --yes --no-major || true
         env:
           MIX_ENV: test
 
+      - name: Record version after release
+        id: after
+        run: MIX_ENV=test mix git_ops.project_info --format github-actions
+
       - name: Push version bump and tag
+        if: steps.before.outputs.app_version != steps.after.outputs.app_version
         run: git push --follow-tags origin main
 
       - name: Determine release tag
+        if: steps.before.outputs.app_version != steps.after.outputs.app_version
         id: release-tag
         run: echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
+        if: steps.before.outputs.app_version != steps.after.outputs.app_version
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release-tag.outputs.tag }}
