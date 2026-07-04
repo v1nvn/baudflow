@@ -33,7 +33,7 @@ docker run -d --name baudflow -p 4000:4000 \
   -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal/baudflow" \
   -e SECRET_KEY_BASE="$SECRET_KEY_BASE" \
   -e PHX_HOST="baudflow.example.com" \
-  ghcr.io/v1nvn/baudflow:0.11.1
+  ghcr.io/v1nvn/baudflow:%VERSION%
 
 # open http://localhost:4000
 ```
@@ -64,7 +64,7 @@ services:
       retries: 5
 
   app:
-    image: ghcr.io/v1nvn/baudflow:0.11.1
+    image: ghcr.io/v1nvn/baudflow:%VERSION%
     restart: unless-stopped
     ports:
       - "4000:4000"
@@ -127,7 +127,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: baudflow
-          image: ghcr.io/v1nvn/baudflow:0.11.1
+          image: ghcr.io/v1nvn/baudflow:%VERSION%
           ports:
             - containerPort: 4000
               name: web
@@ -203,7 +203,7 @@ init container instead; that's how the project's own cluster rolls it out:
       # add to the pod spec above to migrate before the app serves
       initContainers:
         - name: migrate
-          image: ghcr.io/v1nvn/baudflow:0.11.1
+          image: ghcr.io/v1nvn/baudflow:%VERSION%
           command: ["/app/bin/baudflow"]
           args: ["eval", "Baudflow.Release.migrate()"]
           env:

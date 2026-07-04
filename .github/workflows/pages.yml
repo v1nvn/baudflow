@@ -1,13 +1,9 @@
 name: Deploy site to Pages
 
 on:
-  # Rebuild the site when the Astro project (in docs/) changes, or when this
-  # workflow itself changes. Elixir-only commits don't trigger a redeploy.
   push:
     branches: [main]
-    paths:
-      - 'docs/**'
-      - '.github/workflows/pages.yml'
+    tags: ["v*"]
   workflow_dispatch:
 
 # Allow GITHUB_TOKEN to read the repo and publish a Pages deployment.
