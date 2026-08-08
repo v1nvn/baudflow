@@ -36,7 +36,7 @@ Voice is Stripe-style, example-first:
 - Keep product-invariant one-liners verbatim — memorable because true: "Scheduling is data, not config keys", "Nothing is backfilled; nothing is lost", "The plain-HTTP surface is deliberately tiny", "Raw data is sacred, derived views are cheap".
 - AI tells to hunt every pass: enumerated completeness ("runs X, Y, Z… turns them into A, B, C"), the "not X — Y" tic (≤1/page, only for a real invariant), em-dash as default connective, perfect parallel-list rhythm, bullet-as-default when one sentence would do.
 
-The published image runs `/app/bin/server` and does **not** migrate on boot; only the repo's own `docker-compose.yml` migrates (entrypoint override). So bare `docker run` needs a one-off `/app/bin/migrate`, and any "migrations run on boot" / "up in under a minute" claim must hold only for a path that actually migrates. *(Open: wire a release boot_hook so bare docker run just works, then simplify the docs.)*
+The Dockerfile `CMD` runs `bin/migrate` (`eval Baudflow.Release.migrate`) then `bin/server`, so the published image migrates on boot — a bare `docker run` against a fresh DB comes up ready, and "migrations run on boot" / "up in under a minute" are accurate. Keep the overlays (`bin/server`, `bin/migrate`) as the stock `mix phx.gen.release` artifacts — don't edit generated files; the image CMD is the place to wire boot behavior. dev/test are unaffected (no release is started).
 
 ## DO
 

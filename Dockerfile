@@ -80,4 +80,8 @@ COPY --from=builder --chown=1000:1000 /app/_build/prod/rel/baudflow ./
 
 USER 1000:1000
 
-CMD ["/app/bin/server"]
+# Migrate on boot, then serve. The overlays (`bin/migrate`, `bin/server`) are
+# left as the stock `mix phx.gen.release` artifacts; the image's own CMD is what
+# makes a bare `docker run` come up migrated. `exec` keeps baudflow as PID 1 for
+# clean signal handling; `&&` aborts the boot if a migration fails.
+CMD ["sh", "-c", "/app/bin/migrate && exec /app/bin/server"]

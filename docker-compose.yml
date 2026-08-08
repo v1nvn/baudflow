@@ -36,11 +36,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        /app/bin/baudflow eval "Baudflow.Release.migrate()"
-        exec /app/bin/baudflow start
+    # The image migrates on boot before serving; no entrypoint override needed.
 
 volumes:
   pgdata:

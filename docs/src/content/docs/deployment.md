@@ -23,7 +23,7 @@ follows `main`.
 ## Requirements
 
 - **Postgres** — any reachable 14+ instance. baudflow owns its schema;
-  migrations run as an explicit step (each method below shows how).
+  migrations run automatically on boot.
 - **A secret** — `SECRET_KEY_BASE`, 64+ bytes. Generate with
   `openssl rand -base64 48`.
 - **A host + port** — the container listens on `4000`; put a reverse proxy in
@@ -34,20 +34,12 @@ var.
 
 ## Docker
 
-Bring your own Postgres and point the container at it. The image does not
-migrate on boot, so run migrations as a one-off first:
+Bring your own Postgres and point the container at it. The image migrates on
+boot, so a single `docker run` against a fresh database comes up ready:
 
 ```sh
-# generate a signing key (>=64 bytes) once, reuse it across restarts
 SECRET_KEY_BASE=$(openssl rand -base64 48)
 
-# one-time: run migrations against your database
-docker run --rm \
-  -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal/baudflow" \
-  -e SECRET_KEY_BASE="$SECRET_KEY_BASE" \
-  ghcr.io/v1nvn/baudflow:%VERSION% /app/bin/migrate
-
-# start the server
 docker run -d --name baudflow -p 4000:4000 \
   -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal/baudflow" \
   -e SECRET_KEY_BASE="$SECRET_KEY_BASE" \
@@ -57,7 +49,8 @@ docker run -d --name baudflow -p 4000:4000 \
 # open http://localhost:4000
 ```
 
-Re-run the `migrate` command after each upgrade.
+Migrations run on every boot. You can also run `/app/bin/migrate` manually at
+any time.
 
 ## Docker Compose
 
@@ -91,11 +84,7 @@ services:
       PHX_SERVER: "true"
     depends_on:
       db: { condition: service_healthy }
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        /app/bin/migrate
-        exec /app/bin/server
+    # The image migrates on boot, so no entrypoint override is needed.
 
 volumes:
   pgdata:
@@ -216,24 +205,7 @@ kubectl apply -f baudflow.yaml
 kubectl -n baudflow rollout status deploy/baudflow
 ```
 
-The Deployment above does not migrate on its own. Add this init container so
-migrations run before the app pod serves traffic:
-
-```yaml
-      # add to the pod spec above to migrate before the app serves
-      initContainers:
-        - name: migrate
-          image: ghcr.io/v1nvn/baudflow:%VERSION%
-          command: ["/app/bin/baudflow"]
-          args: ["eval", "Baudflow.Release.migrate()"]
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef: { name: baudflow-db, key: uri }
-            - name: SECRET_KEY_BASE
-              valueFrom:
-                secretKeyRef: { name: baudflow-secrets, key: secret-key-base }
-```
+The container migrates on boot before serving, so no init container is needed.
 
 The `/health` probe is already wired for liveness and readiness. TLS termination
 lives in your Ingress; set `PHX_HOST` to the public hostname and let the proxy
@@ -340,25 +312,16 @@ and the WebSocket upgrade check fail.
 
 ## Upgrading
 
-Pull the new image tag, apply migrations, restart. Migrations are applied by
-`Baudflow.Release.migrate/0`, runnable as `/app/bin/migrate` in the image — it
-runs every pending `:up` migration in order.
+Pull the new image tag and restart. Migrations run on boot, so the new pod
+applies every pending `:up` migration (via `Baudflow.Release.migrate/0`) before
+it serves.
 
 ```sh
-# 1. pull the new tag
 docker pull ghcr.io/v1nvn/baudflow:%VERSION%
-
-# 2. apply migrations as a one-shot with the new image
-docker run --rm \
-  -e DATABASE_URL=... -e SECRET_KEY_BASE=... \
-  ghcr.io/v1nvn/baudflow:%VERSION% /app/bin/migrate
-
-# 3. restart on the new tag (the docker run / compose up / kubectl set image from above)
+# restart on the new tag (the docker run / compose up / kubectl set image from above)
 ```
 
-On Kubernetes, run migrate as a one-off Job — or wire the init container from the
-Kubernetes section so it runs before every new pod — then roll the Deployment and
-watch the rollout:
+On Kubernetes, roll the Deployment and watch the rollout:
 
 ```sh
 kubectl -n baudflow rollout status deploy/baudflow
