@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BASE } from '../../utils';
+
+const entries = (await getCollection('articles')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+---
+
+<BaseLayout
+  title="Articles"
+  description="Long-form reads about baudflow: why it exists, how it compares to speedtest-tracker, and how to turn its record into leverage with your ISP."
+>
+  <div class="container articles-index">
+    <div class="prose">
+      <h1>Articles</h1>
+      <p>
+        The operator manual lives in the <a href={`${BASE}docs/`}>docs</a>. This is
+        the longer-form stuff — why baudflow exists, how it compares, and the case
+        for turning its record into leverage with your provider.
+      </p>
+    </div>
+    <div class="article-cards">
+      {entries.map((e) => (
+        <a class="article-card" href={`${BASE}articles/${e.id}/`}>
+          <h3>{e.data.title}</h3>
+          <p>{e.data.description}</p>
+          <span class="go">Read →</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .articles-index { padding: 3rem 0 3.5rem; }
+  .article-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+  .article-card {
+    display: block; padding: 1.3rem 1.4rem; border: 1px solid var(--border);
+    border-radius: var(--radius); background: var(--surface-2); text-decoration: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .article-card:hover { border-color: var(--accent); box-shadow: 0 0 18px hsl(198 95% 52% / 0.08); }
+  .article-card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--text); }
+  .article-card p { margin: 0 0 0.9rem; font-size: 0.86rem; color: var(--text-dim); line-height: 1.5; }
+  .article-card .go { font-family: var(--font-mono); font-size: 0.74rem; color: var(--accent); }
+  @media (max-width: 640px) { .article-cards { grid-template-columns: 1fr; } }
+</style>

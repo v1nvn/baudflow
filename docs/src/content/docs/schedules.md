@@ -1,8 +1,8 @@
 ---
 title: Schedules & adaptive cadence
 description: Run multiple schedules at once, and let a breached schedule run faster until it recovers.
-section: Guides
-order: 30
+section: Operate
+order: 20
 ---
 
 A schedule is a row: a cron cadence, a test type, a target, and its own escalation

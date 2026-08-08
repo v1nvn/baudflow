@@ -1,13 +1,14 @@
 ---
 title: Ping monitoring
-description: A first-class ping console with a live per-sample diagnostics panel, using unprivileged TCP-connect RTT.
-section: Guides
-order: 60
+description: A live per-sample TCP-connect ping console — latency, jitter, and loss, unprivileged. No ICMP, no CAP_NET_RAW.
+section: Operate
+order: 40
 ---
 
-Ping is a first-class citizen, not a bolt-on. It has its own page (`/ping`), a
-live diagnostics panel that streams each sample as it lands, and its own history
-chart. It's deliberately ping-only, so a speed test never perturbs it.
+baudflow's ping monitor measures TCP-handshake RTT against a target, on its own
+schedule, separate from speed tests so a test never perturbs it. The `/ping`
+page streams each sample live into a diagnostics panel and keeps its own history
+chart.
 
 ## Live diagnostics
 

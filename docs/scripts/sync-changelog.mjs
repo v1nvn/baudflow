@@ -18,8 +18,8 @@ const body = source.includes(marker)
 const out = `---
 title: Changelog
 description: Release history, generated from the project CHANGELOG.
-section: Resources
-order: 30
+section: Project
+order: 20
 ---
 
 Canonical source: [CHANGELOG.md on GitHub](https://github.com/v1nvn/baudflow/blob/main/CHANGELOG.md).

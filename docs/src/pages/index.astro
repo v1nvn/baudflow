@@ -78,6 +78,7 @@ const softwareSchema = {
           <a class="btn btn-fill" href={`${BASE}docs/getting-started/`}>Get started</a>
           <a class="btn btn-ghost" href={gh} rel="noopener">Star on GitHub</a>
         </div>
+        <a class="why-link" href={`${BASE}articles/why-i-built-baudflow/`}>Why I built baudflow →</a>
       </div>
       <div class="hero-scope"><Screenshot src={oscilloscope} alt="A live Ookla speed test streaming into baudflow's CRT oscilloscope, download phase, building in real time." /></div>
     </div>
@@ -106,6 +107,8 @@ const softwareSchema = {
   .hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 800; max-width: 16ch; margin: 0.7rem 0 0.9rem; }
   .lede { color: var(--text-dim); max-width: 52ch; margin: 0 0 1.7rem; }
   .ctas { display: flex; gap: 0.7rem; justify-content: flex-start; flex-wrap: wrap; }
+  .why-link { display: block; margin-top: 1.2rem; font-size: 0.9rem; color: var(--text-dim); text-decoration: none; transition: color 0.15s ease; }
+  .why-link:hover { color: var(--accent); }
   .hero-scope { min-width: 0; }
   @media (max-width: 880px) {
     .hero-grid { grid-template-columns: 1fr; gap: 2rem; }

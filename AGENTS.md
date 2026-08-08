@@ -23,6 +23,21 @@ Run quality gates through the `justfile` (`just`), not `mix` directly - the reci
 - `lib/baudflow_web/live/` - one `*Live` per page, template colocated; `components/` for shared HEEx.
 - `config/` - `runtime.exs`/`dev.exs` carry queues + crontab; `test.exs` keeps Oban `testing: :manual`.
 
+## Docs site (`docs/`, Astro + Markdown)
+
+Two content collections, not one (`content.config.ts`):
+- **`docs`** = the operator manual. Sidebar sections are fixed: `Start / Operate / Integrate / Reference / Project` (`DOC_SECTIONS`). Each page declares `section` + `order`; the sidebar and the `/docs/` card grid both derive from them, so a page with a stale or missing `section` vanishes from both (and breaks the Zod enum at build).
+- **`articles`** = editorial / SEO content (origin story, comparison, ISP deep-dive) at `/articles/`, via `ArticleLayout`. Deliberately not in the docs sidebar. The only place first person and a warmer voice are allowed.
+
+Voice is Stripe-style, example-first:
+- Lead with a real command / payload / table, then the shortest framing sentence. Reference pages are table-driven; operational pages (`deployment`, `troubleshooting`) have **no lede** — open straight at `##`.
+- Flat, declarative, one idea per sentence. No first person, no throat-clearing, no marketing nouns (ban: *platform, seamless, powerful, comprehensive, robust, intelligent, real-time (adj.), first-class, delightful, leverage (v.)*) — name the concrete thing instead.
+- Inside `/docs`, assume the reader already chose baudflow — stop selling, start operating. Re-pitching the product thesis after page one is the main thing to cut.
+- Keep product-invariant one-liners verbatim — memorable because true: "Scheduling is data, not config keys", "Nothing is backfilled; nothing is lost", "The plain-HTTP surface is deliberately tiny", "Raw data is sacred, derived views are cheap".
+- AI tells to hunt every pass: enumerated completeness ("runs X, Y, Z… turns them into A, B, C"), the "not X — Y" tic (≤1/page, only for a real invariant), em-dash as default connective, perfect parallel-list rhythm, bullet-as-default when one sentence would do.
+
+The published image runs `/app/bin/server` and does **not** migrate on boot; only the repo's own `docker-compose.yml` migrates (entrypoint override). So bare `docker run` needs a one-off `/app/bin/migrate`, and any "migrations run on boot" / "up in under a minute" claim must hold only for a path that actually migrates. *(Open: wire a release boot_hook so bare docker run just works, then simplify the docs.)*
+
 ## DO
 
 - Keep the four stages decoupled - decide, run, evaluate, notify - each in its own worker/context, triggered by Oban jobs, never reaching into another's internals.
@@ -75,3 +90,4 @@ Run quality gates through the `justfile` (`just`), not `mix` directly - the reci
 - Don't use `:httpc`, `:httpoison`, or `:tesla`; don't add deps unless asked.
 - Don't change CI without understanding the branch-protection and image-build gating.
 - Don't create files, add features beyond what was asked, or comment code you didn't touch.
+- Don't document features that don't exist - verify capability claims against source before writing them (notifications = ntfy + webhook only; `amd64`/`arm64`, no `arm/v7`; SLA windows; migrate-on-boot). Attribute a competitor's features to the competitor, not to baudflow. See Docs site.

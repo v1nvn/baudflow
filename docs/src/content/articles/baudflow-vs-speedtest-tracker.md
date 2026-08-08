@@ -1,19 +1,20 @@
 ---
 title: Comparison with speedtest-tracker
 description: "An honest, source-cited comparison of baudflow and speedtest-tracker — where each wins and where the gaps are, with links to the upstream issue tracker."
-section: Reference
-order: 50
-article: true
-updated: '2026-07-04'
+order: 20
+updated: '2026-08-08'
 ---
 
 Two self-hosted speed test trackers, compared honestly.
 [speedtest-tracker](https://github.com/alexjustesen/speedtest-tracker) is the
-mature incumbent — PHP/Laravel, around 5,800 GitHub stars, broad Apprise
+mature incumbent — PHP/Laravel, around 5,900 GitHub stars, broad Apprise
 notifications, SQLite/MySQL/Postgres support, and a multi-language UI. baudflow
 is a newer Elixir/Phoenix alternative that ships the features its users have
 requested for years: a live real-time dashboard, a first-class continuous ping
 runner, SLA tracking against your promised speed, and adaptive schedules.
+
+> New here? [Why I built baudflow](../why-i-built-baudflow/) is the origin story — the
+> security-posture friction that started the project.
 
 ## TL;DR
 
@@ -58,7 +59,7 @@ point to the upstream issue tracker.
 - **Multi-language UI.** Community translations via Crowdin. baudflow is English-only today.
 - **Built-in auth.** Login and OIDC out of the box. baudflow is single-user by design and expects a reverse proxy.
 - **Ecosystem polish.** The LinuxServer.io image lands on Synology, Unraid, and consumer NAS gear with one click.
-- **Maturity.** ~5,800 stars and years of production use across a large install base.
+- **Maturity.** ~5,900 stars and years of production use across a large install base.
 
 ## Where baudflow pulls ahead
 

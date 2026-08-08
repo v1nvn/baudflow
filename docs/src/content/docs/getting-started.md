@@ -1,12 +1,12 @@
 ---
 title: Getting started
 description: "Get Baudflow running in under a minute: a Docker one-liner or a local Mix dev setup."
-section: Getting started
+section: Start
 order: 10
 ---
 
-Baudflow is a Phoenix LiveView app backed by PostgreSQL and Oban. Run the
-prebuilt container image (the Ookla CLI is bundled in) or boot it from source.
+baudflow is a Phoenix LiveView app backed by PostgreSQL. Run the prebuilt
+container image — the Ookla CLI is bundled — or boot it from source.
 
 ## Option A: Docker (recommended)
 
@@ -22,10 +22,12 @@ docker run -d \
   ghcr.io/v1nvn/baudflow:%VERSION%
 ```
 
-On first boot the release runs migrations automatically. Open
-[localhost:4000](http://localhost:4000) and trigger a manual run, or wait for the
-scheduler. Only `DATABASE_URL` and `SECRET_KEY_BASE` are required; see
-[Environment variables](../environment-variables/) for the full list.
+Open [localhost:4000](http://localhost:4000) and trigger a manual run, or wait
+for the scheduler. The image does not migrate on boot — the `docker compose up`
+path below runs migrations for you; for a bare `docker run`, run `migrate` first
+(see [Deployment](../deployment/)). Only `DATABASE_URL` and `SECRET_KEY_BASE`
+are required; see [Environment variables](../environment-variables/) for the
+full list.
 
 For a single-command stack that brings up Postgres alongside Baudflow, use the
 `docker-compose.yml` in the repo:
@@ -79,6 +81,4 @@ Or inside an IEx session: `iex -S mix phx.server`.
 
 - [Configure](../configuration/) schedules, thresholds, and notifications.
 - Add a [ping target](../ping/) or wire up [alerts](../notifications/).
-- See how baudflow [compares to speedtest-tracker](../comparison/) — the
-  incumbent is broader (Apprise, SQLite, i18n); baudflow trades that for a live
-  dashboard, continuous ping, and SLA tracking.
+- Harden it for production: [Deployment](../deployment/).

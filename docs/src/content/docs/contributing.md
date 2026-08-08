@@ -1,8 +1,8 @@
 ---
 title: Contributing
 description: "Local development: the justfile gates, the throwaway Docker test database, the fake CLI, and conventional-commit versioning."
-section: Resources
-order: 20
+section: Project
+order: 10
 ---
 
 Baudflow is developed against a strict quality gate that mirrors CI. The

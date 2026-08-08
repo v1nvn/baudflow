@@ -1,9 +1,7 @@
 ---
 title: Monitor ISP speed
 description: "Monitor ISP speed by building an auditable record of your own line with baudflow, then reading it out: scrape Prometheus /metrics into Grafana, embed the health heatmap, or screenshot the calendar for a provider."
-section: Guides
-order: 70
-article: true
+order: 30
 updated: "2026-07-03"
 ---
 
@@ -53,7 +51,7 @@ baudflow_uptime_percentage   # share of the window that was healthy
 ```
 
 Graph them in Grafana or alert on them in Alertmanager like any other exporter.
-The full exposition notes are in the [metrics reference](../prometheus-metrics/).
+The full exposition notes are in the [metrics reference](../../docs/prometheus-metrics/).
 
 ## Embed the heatmap
 
@@ -78,7 +76,7 @@ degrade first; the call lags while the speed test reads full speed. baudflow
 runs a continuous TCP-connect ping runner alongside the speed tests, so those
 readings land in the same record and the same `/metrics`. It opens a TCP socket
 and times the handshake, which means it needs **no `CAP_NET_RAW`**: no
-privileged container, no capability grant. See the [ping docs](../ping/) for the
+privileged container, no capability grant. See the [ping docs](../../docs/ping/) for the
 live per-sample console.
 
 ## Take it to your provider
@@ -93,6 +91,6 @@ between "it feels slow" and a record.
 
 ## Next steps
 
-- [Prometheus metrics](../prometheus-metrics/): the full exposition reference.
-- [Ping monitoring](../ping/): the latency dimension throughput misses.
-- [Internet speed SLA](../internet-speed-sla/): the share of tests that hit your promised speed.
+- [Prometheus metrics](../../docs/prometheus-metrics/): the full exposition reference.
+- [Ping monitoring](../../docs/ping/): the latency dimension throughput misses.
+- [Internet speed SLA](../../docs/internet-speed-sla/): the share of tests that hit your promised speed.

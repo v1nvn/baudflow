@@ -1,7 +1,7 @@
 ---
 title: Notifications
 description: The four-layer alert pipeline (event, policy, template, channel), with ntfy and webhooks.
-section: Guides
+section: Operate
 order: 50
 ---
 
@@ -15,6 +15,19 @@ event → policy (notify?) → template (render) → channel (send)
 to notify, and only then loads the measurement and fans out. Adding a channel is
 one behaviour implementation and one `Template.render/1` line, not a branch in
 the worker.
+
+A ping schedule's latency first crosses the threshold:
+
+```
+breach event (streak reached 1)
+  → Policy.notify?/2      →  true   (streak hit breach_notify_streak, default 1)
+  → Template.render/1     →  renders the channel body
+  → channel send/1        →  POST to your ntfy topic
+```
+
+The same breach climbing to streak 2, 3, … stays quiet — the policy fired once
+at streak 1 and won't again until recovery. A recovery or a failed test each
+notify on their own transition.
 
 ## Events
 

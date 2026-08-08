@@ -1,0 +1,81 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { BASE } from '../utils';
+
+// Articles are editorial pages (origin story, comparison, deep-dive narrative):
+// single-column prose, no docs sidebar, TechArticle semantics for search, and a
+// prev/next pager walking the articles collection in `order`.
+interface Props {
+  current?: string;
+  title: string;
+  description?: string;
+  updated?: string;
+}
+const { current = '', title, description, updated } = Astro.props;
+
+const entries = (await getCollection('articles')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const idx = entries.findIndex((e) => e.id === current);
+const prev = idx > 0 ? entries[idx - 1] : null;
+const next = idx >= 0 && idx < entries.length - 1 ? entries[idx + 1] : null;
+
+const site = Astro.site ?? new URL(Astro.url.origin);
+const articlesUrl = new URL('articles/', site).href;
+const crumbs = [
+  { '@type': 'ListItem', position: 1, name: 'Home', item: site.href },
+  { '@type': 'ListItem', position: 2, name: 'Articles', item: articlesUrl },
+];
+if (current) {
+  crumbs.push({
+    '@type': 'ListItem',
+    position: 3,
+    name: title,
+    item: new URL(`articles/${current}/`, site).href,
+  });
+}
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: crumbs,
+};
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: title,
+  ...(description ? { description } : {}),
+  ...(updated ? { datePublished: updated, dateModified: updated } : {}),
+  author: { '@type': 'Person', name: 'v1nvn', url: 'https://github.com/v1nvn' },
+  publisher: { '@type': 'Organization', name: 'Baudflow', url: site.href },
+  mainEntityOfPage: current ? new URL(`articles/${current}/`, site).href : articlesUrl,
+};
+const schemas = [breadcrumbSchema, articleSchema];
+---
+
+<BaseLayout title={title} description={description} ogType="article" schema={schemas}>
+  <div class="container article">
+    <article class="prose">
+      <p class="kicker"><a href={`${BASE}articles/`}>Articles</a></p>
+      <slot />
+      {(prev || next) && (
+        <nav class="pager">
+          {prev && <a class="pager-link" href={`${BASE}articles/${prev.id}/`}>← {prev.data.title}</a>}
+          {next && <a class="pager-link right" href={`${BASE}articles/${next.id}/`}>{next.data.title} →</a>}
+        </nav>
+      )}
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .article { padding: 2.5rem 0 3rem; }
+  .article :global(.prose) { max-width: 46rem; margin: 0 auto; }
+  .kicker { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; margin: 0 0 1rem; }
+  .kicker a { color: var(--text-ghost); text-decoration: none; }
+  .kicker a:hover { color: var(--accent); }
+  .pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .pager-link { font-size: 0.85rem; color: var(--text-dim); text-decoration: none; padding: 0.55rem 0.9rem; border: 1px solid var(--border); border-radius: 0.5rem; }
+  .pager-link:hover { color: var(--accent); border-color: var(--accent); }
+  .pager-link.right { margin-left: auto; }
+</style>

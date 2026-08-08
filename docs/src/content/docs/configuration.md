@@ -1,8 +1,8 @@
 ---
 title: Configuration
 description: How settings, schedules, servers, thresholds, and notifications fit together, all from the Settings page.
-section: Guides
-order: 20
+section: Operate
+order: 10
 ---
 
 Almost everything is configured at runtime from the **Settings** page
